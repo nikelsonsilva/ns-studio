@@ -1,0 +1,180 @@
+@import "tailwindcss";
+
+/* NS Studio Barber Dark Premium Theme */
+@theme {
+  /* Barber Backgrounds */
+  --color-barber-950: #0a0a0a;
+  --color-barber-900: #18181b;
+  --color-barber-800: #27272a;
+  --color-barber-700: #3f3f46;
+  --color-barber-600: #52525b;
+
+  /* Barber Gold */
+  --color-barber-gold: #f59e0b;
+  --color-barber-goldhover: #d97706;
+  --color-barber-goldlight: #fbbf24;
+  --color-barber-golddark: #b45309;
+
+  /* Surfaces */
+  --color-surface: #0a0a0a;
+  --color-surface-raised: #18181b;
+  --color-surface-elevated: #27272a;
+
+  /* Borders */
+  --color-border-subtle: #27272a;
+  --color-border-strong: #3f3f46;
+
+  /* Text */
+  --color-text-strong: #ffffff;
+  --color-text-soft: #d4d4d8;
+  --color-text-muted: #a1a1aa;
+  --color-text-faint: #71717a;
+
+  /* Primary Gold */
+  --color-primary-300: #fcd34d;
+  --color-primary-400: #fbbf24;
+  --color-primary-500: #f59e0b;
+  --color-primary-600: #d97706;
+  --color-primary-700: #b45309;
+
+  /* Status Colors */
+  --color-success-400: #4ade80;
+  --color-success-500: #22c55e;
+  --color-success-600: #16a34a;
+
+  --color-danger-400: #f87171;
+  --color-danger-500: #ef4444;
+  --color-danger-600: #dc2626;
+
+  --color-warning-400: #fb923c;
+  --color-warning-500: #f97316;
+  --color-warning-600: #ea580c;
+
+  --color-info-400: #38bdf8;
+  --color-info-500: #0ea5e9;
+  --color-info-600: #0284c7;
+
+  /* Shadows */
+  --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+  --shadow-card-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.3);
+  --shadow-card-gold: 0 0 20px rgba(245, 158, 11, 0.15);
+  --shadow-modal: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+
+  /* Border Radius */
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
+
+  /* Animation */
+  --animate-fade-in: fade-in 200ms ease-out;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+:root {
+  --color-primary: #f59e0b;
+  --color-primary-hover: #d97706;
+}
+
+/* Utility Classes */
+@layer utilities {
+
+  /* Gold Button */
+  .btn-gold {
+    background-color: #f59e0b !important;
+    color: #000000 !important;
+    border-color: #f59e0b !important;
+    font-weight: 700;
+  }
+
+  .btn-gold:hover {
+    background-color: #d97706 !important;
+    border-color: #d97706 !important;
+  }
+
+  /* Schedule Button */
+  .btn-schedule {
+    background-color: #27272a;
+    color: white;
+    font-weight: 700;
+    border-radius: 0.5rem;
+  }
+
+  .btn-schedule:hover {
+    background-color: #3f3f46;
+  }
+
+  /* VIP Tag */
+  .tag-vip {
+    background-color: rgba(245, 158, 11, 0.2);
+    color: #f59e0b;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+  }
+
+  /* Card hover gold border */
+  .card-hover-gold:hover {
+    border-color: rgba(245, 158, 11, 0.5);
+  }
+
+  /* Filter chip active */
+  .chip-active {
+    background-color: #f59e0b !important;
+    color: #000000 !important;
+    border-color: #f59e0b !important;
+  }
+
+  /* Slide in animation */
+  .animate-slide-in-right {
+    animation: slideInRight 0.3s ease-out;
+  }
+
+  @keyframes slideInRight {
+    from {
+      opacity: 0;
+      transform: translateX(100px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+}
+
+/* Time Input Styling - Dark Theme */
+input[type="time"] {
+  color-scheme: dark;
+}
+
+input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.7);
+  cursor: pointer;
+}
+
+input[type="time"]::-webkit-datetime-edit {
+  color: #ffffff;
+}
+
+input[type="time"]::-webkit-datetime-edit-fields-wrapper {
+  color: #ffffff;
+}
+
+/* Firefox time input */
+input[type="time"]::-moz-focus-inner {
+  border: 0;
+}
+
+/* Number input styling */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  opacity: 0.5;
+}

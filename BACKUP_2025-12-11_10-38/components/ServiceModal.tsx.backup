@@ -1,0 +1,221 @@
+import React, { useState, useEffect } from 'react';
+import { X, DollarSign, Clock, Tag, FileText } from 'lucide-react';
+import { createService, updateService } from '../lib/database';
+import type { Service } from '../types';
+
+interface ServiceModalProps {
+    service?: Service | null;
+    onClose: () => void;
+    onSuccess: () => void;
+    existingCategories?: string[];
+}
+
+const ServiceModal: React.FC<ServiceModalProps> = ({ service, onClose, onSuccess, existingCategories = [] }) => {
+    const [formData, setFormData] = useState({
+        name: '',
+        description: '',
+        category: '',
+        price: 0,
+        duration_minutes: 30,
+        is_active: true,
+    });
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState('');
+
+    useEffect(() => {
+        if (service) {
+            setFormData({
+                name: service.name,
+                description: service.description || '',
+                category: service.category || '',
+                price: service.price,
+                duration_minutes: service.duration_minutes,
+                is_active: service.is_active ?? true,
+            });
+        }
+    }, [service]);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsLoading(true);
+        setError('');
+
+        console.log('🔍 ServiceModal: Salvando serviço...', formData);
+
+        console.error('❌ ServiceModal: Erro ao salvar:', err);
+        setError('Erro ao salvar serviço. Tente novamente.');
+        console.error(err);
+    } finally {
+        setIsLoading(false);
+    }
+};
+
+return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+        <div className="bg-barber-900 w-full max-w-lg rounded-xl border border-barber-800 shadow-2xl overflow-hidden">
+            {/* Header */}
+            <div className="p-6 border-b border-barber-800 flex justify-between items-center bg-barber-950">
+                <h3 className="text-xl font-bold text-white">
+                    {service ? 'Editar Serviço' : 'Novo Serviço'}
+                </h3>
+                <button
+                    onClick={onClose}
+                    className="text-gray-500 hover:text-white transition-colors"
+                >
+                    <X size={24} />
+                </button>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                {error && (
+                    <div className="bg-red-500/10 border border-red-500/20 text-red-500 text-sm p-3 rounded-lg">
+                        {error}
+                    </div>
+                )}
+
+                {/* Name */}
+                <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-2">
+                        Nome do Serviço *
+                    </label>
+                    <div className="relative">
+                        <Tag className="absolute left-3 top-3 text-gray-500" size={18} />
+                        <input
+                            type="text"
+                            required
+                            value={formData.name}
+                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                            className="w-full bg-barber-950 border border-barber-800 text-white rounded-lg pl-10 pr-4 py-2.5 outline-none focus:border-barber-gold transition-colors"
+                            placeholder="Ex: Corte, Coloração, Manicure"
+                        />
+                    </div>
+                </div>
+
+                {/* Category */}
+                <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-2">
+                        Categoria
+                    </label>
+                    <input
+                        type="text"
+                        list="categories"
+                        value={formData.category}
+                        onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                        className="w-full bg-barber-950 border border-barber-800 text-white rounded-lg px-4 py-2.5 outline-none focus:border-barber-gold transition-colors"
+                        placeholder="Ex: Cabelo, Estética, Unhas"
+                    />
+                    <datalist id="categories">
+                        {existingCategories.map((cat, idx) => (
+                            <option key={idx} value={cat} />
+                        ))}
+                    </datalist>
+                </div>
+
+                {/* Price and Duration */}
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-400 mb-2">
+                            Preço (R$) *
+                        </label>
+                        <div className="relative">
+                            <DollarSign className="absolute left-3 top-3 text-gray-500" size={18} />
+                            <input
+                                type="text"
+                                required
+                                value={formData.price === 0 ? '' : (formData.price).toFixed(2).replace('.', ',')}
+                                onChange={(e) => {
+                                    const value = e.target.value.replace(/\D/g, '');
+                                    const numValue = parseInt(value || '0') / 100;
+                                    setFormData({ ...formData, price: numValue });
+                                }}
+                                className="w-full bg-barber-950 border border-barber-800 text-white rounded-lg pl-10 pr-4 py-2.5 outline-none focus:border-barber-gold transition-colors"
+                                placeholder="0,00"
+                            />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-400 mb-2">
+                            Duração (min) *
+                        </label>
+                        <div className="relative">
+                            <Clock className="absolute left-3 top-3 text-gray-500" size={18} />
+                            <input
+                                type="number"
+                                required
+                                min="5"
+                                step="5"
+                                value={formData.duration_minutes}
+                                onChange={(e) => setFormData({ ...formData, duration_minutes: parseInt(e.target.value) })}
+                                className="w-full bg-barber-950 border border-barber-800 text-white rounded-lg pl-10 pr-4 py-2.5 outline-none focus:border-barber-gold transition-colors"
+                                placeholder="30"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Description */}
+                <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-2">
+                        Descrição
+                    </label>
+                    <div className="relative">
+                        <FileText className="absolute left-3 top-3 text-gray-500" size={18} />
+                        <textarea
+                            value={formData.description}
+                            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                            className="w-full bg-barber-950 border border-barber-800 text-white rounded-lg pl-10 pr-4 py-2.5 outline-none focus:border-barber-gold transition-colors resize-none"
+                            placeholder="Descrição opcional do serviço..."
+                            rows={3}
+                        />
+                    </div>
+                </div>
+
+                {/* Status Toggle */}
+                <div className="flex items-center justify-between gap-4 p-4 bg-barber-950 rounded-lg border border-barber-800">
+                    <div className="flex-1 min-w-0">
+                        <label className="block text-sm font-medium text-white mb-1">
+                            Status do Serviço
+                        </label>
+                        <p className="text-xs text-gray-400 truncate">
+                            {formData.is_active ? 'Disponível' : 'Oculto'}
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, is_active: !formData.is_active })}
+                        className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors ${formData.is_active ? 'bg-green-500' : 'bg-gray-600'
+                            }`}
+                    >
+                        <span
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${formData.is_active ? 'translate-x-6' : 'translate-x-1'
+                                }`}
+                        />
+                    </button>
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-3 pt-4">
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="flex-1 bg-barber-800 hover:bg-barber-700 text-white font-medium py-2.5 rounded-lg transition-colors"
+                    >
+                        Cancelar
+                    </button>
+                    <button
+                        type="submit"
+                        disabled={isLoading}
+                        className="flex-1 bg-barber-gold hover:bg-barber-goldhover text-black font-bold py-2.5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {isLoading ? 'Salvando...' : service ? 'Atualizar' : 'Criar Serviço'}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+);
+};
+
+export default ServiceModal;
