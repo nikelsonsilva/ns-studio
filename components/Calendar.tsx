@@ -73,7 +73,10 @@ interface CalendarProps {
 }
 
 const Calendar: React.FC<CalendarProps> = ({ initialDate, isFocusMode = false, setFocusMode }) => {
-  // === SUPABASE DATA FETCHING (Backend Logic) ===
+  // ╔════════════════════════════════════════════════════════════════════════════╗
+  // ║  SECTION: SUPABASE DATA FETCHING                                           ║
+  // ║  Queries for professionals, services, products, and appointments           ║
+  // ╚════════════════════════════════════════════════════════════════════════════╝
   const { data: barbersData } = useSupabaseQuery(fetchProfessionals);
   const { data: servicesData } = useSupabaseQuery(fetchServices);
   const { data: productsData } = useSupabaseQuery(fetchProducts);
@@ -83,7 +86,10 @@ const Calendar: React.FC<CalendarProps> = ({ initialDate, isFocusMode = false, s
   const services = servicesData || [];
   const products = productsData || [];
 
-  // === STATE ===
+  // ╔════════════════════════════════════════════════════════════════════════════╗
+  // ║  SECTION: COMPONENT STATE                                                  ║
+  // ║  All useState hooks for calendar UI state                                  ║
+  // ╚════════════════════════════════════════════════════════════════════════════╝
   const [currentDate, setCurrentDate] = useState(initialDate || new Date());
   const [miniCalendarMonth, setMiniCalendarMonth] = useState(initialDate || new Date());
   const [selectedBarberId, setSelectedBarberId] = useState('all');
@@ -1032,9 +1038,48 @@ const Calendar: React.FC<CalendarProps> = ({ initialDate, isFocusMode = false, s
   };
 
   // Helper for determining visible barbers based on filter
-  const visibleBarbers = selectedBarberId === 'all'
+  const filteredBarbers = selectedBarberId === 'all'
     ? (showInactive ? barbers : barbers.filter(b => b.is_active !== false))
     : barbers.filter(b => b.id === selectedBarberId);
+
+  // Helper to check if a professional is currently working
+  const isProfessionalWorkingNow = (professionalId: string): boolean => {
+    const now = currentTime;
+    const dayOfWeek = now.getDay();
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+    const availability = profAvailability.find(
+      a => a.professional_id === professionalId && a.day_of_week === dayOfWeek
+    );
+
+    if (!availability || !availability.is_active) return false;
+
+    const [startH, startM] = availability.start_time.split(':').map(Number);
+    const [endH, endM] = availability.end_time.split(':').map(Number);
+    const startMinutes = startH * 60 + startM;
+    let endMinutes = endH * 60 + endM;
+    if (endMinutes === 0) endMinutes = 1440; // Midnight = end of day
+
+    // Check if in break
+    if (availability.break_start && availability.break_end) {
+      const [bsH, bsM] = availability.break_start.split(':').map(Number);
+      const [beH, beM] = availability.break_end.split(':').map(Number);
+      const breakStart = bsH * 60 + bsM;
+      const breakEnd = beH * 60 + beM;
+      if (currentMinutes >= breakStart && currentMinutes < breakEnd) return false;
+    }
+
+    return currentMinutes >= startMinutes && currentMinutes < endMinutes;
+  };
+
+  // Sort professionals: working now first, then alphabetically
+  const visibleBarbers = [...filteredBarbers].sort((a, b) => {
+    const aWorking = isProfessionalWorkingNow(a.id);
+    const bWorking = isProfessionalWorkingNow(b.id);
+    if (aWorking && !bWorking) return -1;
+    if (!aWorking && bWorking) return 1;
+    return (a.name || '').localeCompare(b.name || '');
+  });
 
   // Dynamic slot height - increases when many professionals for better readability
   const profBonus = visibleBarbers.length > 3 ? Math.floor((visibleBarbers.length - 3) / 5) * 10 : 0;
@@ -1572,15 +1617,18 @@ const Calendar: React.FC<CalendarProps> = ({ initialDate, isFocusMode = false, s
               })}
             </div>
           ) : (
-            <div className="w-full relative pb-10">
-              {/* Sticky Header */}
+            <div className="w-full relative overflow-x-auto">
+              {/* ===== STICKY HEADER START ===== */}
               <div
                 ref={headerRef}
-                className="sticky top-0 z-40 bg-zinc-800 border-b border-zinc-700 grid shadow-xl w-full min-w-0"
-                style={{ gridTemplateColumns: getGridTemplate() }}
+                className="sticky top-0 z-40 bg-zinc-800 border-b border-zinc-700 grid shadow-xl"
+                style={{
+                  gridTemplateColumns: getGridTemplate(),
+                  minWidth: `calc(60px + ${visibleBarbers.length * MIN_COLUMN_WIDTH}px)`
+                }}
               >
-                {/* Corner - Sticky left for horizontal scroll */}
-                <div className="border-r border-zinc-700 h-12 flex items-center justify-center bg-zinc-900 sticky left-0 z-50 min-w-0">
+                {/* Corner Cell - Shows clock icon, sticky left for horizontal scroll */}
+                <div className="border-r border-zinc-700 h-12 flex items-center justify-center bg-zinc-900 sticky left-0 z-50">
                   <Clock size={14} className="text-amber-500" />
                 </div>
 
@@ -1610,26 +1658,27 @@ const Calendar: React.FC<CalendarProps> = ({ initialDate, isFocusMode = false, s
                 )}
               </div>
 
-              {/* Timeline Body */}
-              <div className="min-w-0 w-full">
+              {/* ===== TIMELINE BODY START ===== */}
+              <div style={{ minWidth: `calc(60px + ${visibleBarbers.length * MIN_COLUMN_WIDTH}px)` }}>
                 {timeSlots.map((timeSlot) => {
                   // timeSlot is now a string like "09:00", "09:30", etc.
                   const timeString = timeSlot;
                   const isPast = isTimeSlotPast(timeString);
                   const [slotHour, slotMinute] = timeString.split(':').map(Number);
 
+                  // ===== SLOT ROW - One row per time slot =====
                   return (
                     <div
                       key={timeSlot}
-                      className="grid relative group w-full min-w-0"
+                      className="grid relative group w-full"
                       style={{ gridTemplateColumns: getGridTemplate(), minHeight: `${SLOT_HEIGHT_PX}px` }}
                     >
-                      {/* Time Label (Col 1) */}
-                      <div className={`border-r border-b border-zinc-800 bg-zinc-900/90 flex items-start justify-center pt-2 text-[10px] sm:text-xs font-bold transition-colors sticky left-0 z-30 min-w-0 ${isPast ? 'text-zinc-600' : 'text-zinc-300'}`}>
+                      {/* Time Label Column - sticky left for horizontal scroll */}
+                      <div className={`border-r border-b border-zinc-800 bg-zinc-900 flex items-start justify-center pt-2 text-[10px] sm:text-xs font-bold transition-colors sticky left-0 z-30 ${isPast ? 'text-zinc-600' : 'text-zinc-300'}`}>
                         {timeString}
                       </div>
 
-                      {/* Slots (Cols 2+) */}
+                      {/* Professional Slot Columns - one per professional */}
                       {viewMode === 'day' ? (
                         visibleBarbers.map((barber) => {
                           // Filter appointments that overlap with this time slot
@@ -1918,29 +1967,45 @@ const Calendar: React.FC<CalendarProps> = ({ initialDate, isFocusMode = false, s
                   );
                 })}
 
-                {isSameDay(currentDate, getNowInBrazil()) && timeIndicator && (
-                  <div
-                    className="absolute left-0 right-0 z-50 pointer-events-none flex items-center"
-                    style={{ top: `${timeIndicator.position}px` }}
-                  >
-                    <div className="bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-r-md -ml-[2px] shadow-md z-50 flex items-center gap-1">
-                      <Clock size={10} className="text-white animate-pulse" />
-                      {timeIndicator.time}
-                    </div>
-                    <div className="h-[2px] bg-red-600 w-full shadow-sm relative opacity-80"></div>
-                  </div>
-                )}
 
-                {/* Fim de Expediente Footer */}
+
+                {/* ===== FIM DE EXPEDIENTE FOOTER ===== */}
                 {viewMode !== 'month' && businessHoursForDay && (
-                  <div className="flex items-center justify-center gap-2 py-2 px-3 border-t border-zinc-800 bg-zinc-950/80">
+                  <div className="flex items-center justify-center gap-2 py-2 px-3 border-t border-zinc-800 bg-zinc-950/80 sticky left-0">
                     <Store size={12} className="text-zinc-500" />
-                    <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Fim de Expediente</span>
+                    <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider whitespace-nowrap">Fim de Expediente</span>
                     <span className="text-[10px] text-zinc-600">•</span>
                     <span className="text-xs font-bold text-white">{businessHoursForDay.close}</span>
                   </div>
                 )}
+                {/* ===== END FIM DE EXPEDIENTE FOOTER ===== */}
               </div>
+
+              {/* ===== CURRENT TIME INDICATOR ===== */}
+              {/* Uses calculated width to span full scrollable grid content */}
+              {isSameDay(currentDate, getNowInBrazil()) && timeIndicator && (
+                <div
+                  className="absolute z-50 pointer-events-none flex items-center"
+                  style={{
+                    top: `${timeIndicator.position + 48}px`,
+                    left: 0,
+                    // Calculate width: time column (60px) + all professional columns
+                    minWidth: `calc(60px + ${visibleBarbers.length * MIN_COLUMN_WIDTH}px)`
+                  }}
+                >
+                  {/* Sticky time badge - stays visible when scrolling */}
+                  <div
+                    className="sticky left-0 bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-r-md shadow-md z-50 flex items-center gap-1 shrink-0"
+                  >
+                    <Clock size={10} className="text-white animate-pulse" />
+                    {timeIndicator.time}
+                  </div>
+                  {/* Line extends full width of grid */}
+                  <div className="h-[2px] bg-red-600 flex-1 shadow-sm opacity-80"></div>
+                </div>
+              )}
+              {/* ===== END CURRENT TIME INDICATOR ===== */}
+
             </div>
           )}
         </div>
