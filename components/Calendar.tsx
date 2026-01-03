@@ -1987,9 +1987,11 @@ const Calendar: React.FC<CalendarProps> = ({ initialDate, isFocusMode = false, s
                 <div
                   className="absolute z-50 pointer-events-none flex items-center"
                   style={{
-                    top: `${timeIndicator.position + 48}px`,
+                    // Position already includes header offset from getCurrentTimePosition
+                    top: `${timeIndicator.position}px`,
                     left: 0,
-                    // Calculate width: time column (60px) + all professional columns
+                    // Width: 100% of viewport OR calculated grid width, whichever is larger
+                    width: '100%',
                     minWidth: `calc(60px + ${visibleBarbers.length * MIN_COLUMN_WIDTH}px)`
                   }}
                 >
