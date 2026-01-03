@@ -1617,18 +1617,18 @@ const Calendar: React.FC<CalendarProps> = ({ initialDate, isFocusMode = false, s
               })}
             </div>
           ) : (
-            <div className="w-full relative overflow-x-auto">
-              {/* ===== STICKY HEADER START ===== */}
+            <div className="w-full relative">
+              {/* ===== STICKY HEADER WITH GLASSMORPHISM ===== */}
               <div
                 ref={headerRef}
-                className="sticky top-0 z-40 bg-zinc-800 border-b border-zinc-700 grid shadow-xl"
+                className="sticky top-0 z-40 backdrop-blur-md bg-zinc-900/80 border-b border-white/10 grid shadow-2xl"
                 style={{
                   gridTemplateColumns: getGridTemplate(),
                   minWidth: `calc(60px + ${visibleBarbers.length * MIN_COLUMN_WIDTH}px)`
                 }}
               >
-                {/* Corner Cell - Shows clock icon, sticky left for horizontal scroll */}
-                <div className="border-r border-zinc-700 h-12 flex items-center justify-center bg-zinc-900 sticky left-0 z-50">
+                {/* Corner Cell - Shows clock icon */}
+                <div className="border-r border-white/10 h-12 flex items-center justify-center backdrop-blur-md bg-zinc-950/80 sticky left-0 z-50">
                   <Clock size={14} className="text-amber-500" />
                 </div>
 
@@ -1637,7 +1637,7 @@ const Calendar: React.FC<CalendarProps> = ({ initialDate, isFocusMode = false, s
                   visibleBarbers.map(barber => {
                     const isAvailable = isProfessionalWorkingAt(barber.id, format(currentTime, 'HH:mm'));
                     return (
-                      <div key={barber.id} className="h-12 px-2 flex items-center justify-center gap-1.5 border-r border-zinc-700 hover:bg-zinc-700/80 transition-colors bg-zinc-800 min-w-0">
+                      <div key={barber.id} className="h-12 px-2 flex items-center justify-center gap-1.5 border-r border-white/10 hover:bg-white/5 transition-colors backdrop-blur-md bg-zinc-900/60 min-w-0">
                         <div className="relative shrink-0">
                           {barber.avatar ? <img src={barber.avatar} className="w-6 h-6 rounded-full object-cover border border-zinc-600 shadow-sm" /> : <div className="w-6 h-6 rounded-full bg-zinc-700 flex items-center justify-center border border-zinc-600"><span className="text-white font-bold text-[10px]">{barber.name[0]}</span></div>}
                           <div className={`absolute -bottom-0.5 -right-0.5 w-2 h-2 border-[1.5px] border-zinc-800 rounded-full ${isAvailable ? 'bg-green-500' : 'bg-zinc-500'}`}></div>
