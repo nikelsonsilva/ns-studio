@@ -3,7 +3,6 @@ import { X, Search, ArrowRight, ArrowLeft, Check, Copy, UserPlus, Phone, Mail, C
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { supabase } from '../lib/supabase';
-import { getCurrentBusinessId } from '../lib/database';
 import { createStripePaymentLink } from '../lib/stripePaymentLinks';
 import { copyToClipboard } from '../lib/bookingLinks';
 import { isStripeConfigured } from '../lib/stripeConfig';
@@ -293,7 +292,7 @@ const ManualBookingModal: React.FC<ManualBookingModalProps> = ({
                 start_datetime: startDateTime.toISOString(),
                 end_datetime: endDateTime.toISOString(),
                 status: paymentMethod === 'presential' ? 'confirmed' : 'pending',
-                payment_status: paymentMethod === 'presential' ? 'paid' : 'awaiting_payment',
+                payment_status: paymentMethod === 'presential' ? 'pending' : 'awaiting_payment',
                 payment_method: paymentMethod,
                 customer_name: selectedClient.name
             };
@@ -352,7 +351,7 @@ const ManualBookingModal: React.FC<ManualBookingModalProps> = ({
             <div
                 className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fadeIn"
                 style={{
-                    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                    backgroundColor: 'var(--dark-modal-overlay)',
                     backdropFilter: 'blur(8px)',
                     WebkitBackdropFilter: 'blur(8px)'
                 }}
@@ -362,24 +361,24 @@ const ManualBookingModal: React.FC<ManualBookingModalProps> = ({
                 <div
                     className="w-full max-w-lg rounded-2xl overflow-hidden animate-slideUp"
                     style={{
-                        background: 'linear-gradient(180deg, #1c1c1f 0%, #121214 100%)',
-                        border: '1px solid rgba(255, 255, 255, 0.08)',
-                        boxShadow: '0 25px 80px rgba(0, 0, 0, 0.6), 0 0 40px rgba(245, 158, 11, 0.05)'
+                        background: 'var(--dark-modal-bg)',
+                        border: '1px solid var(--dark-modal-border)',
+                        boxShadow: 'var(--dark-modal-shadow)'
                     }}
                     onClick={(e) => e.stopPropagation()}
                 >
-                    {/* Premium Header with Gradient */}
+                    {/* Premium Header */}
                     <div
                         className="relative px-6 py-5"
                         style={{
-                            background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, transparent 50%)',
-                            borderBottom: '1px solid rgba(255, 255, 255, 0.06)'
+                            background: 'var(--dark-modal-header-bg)',
+                            borderBottom: '1px solid var(--dark-modal-border)'
                         }}
                     >
                         {/* Decorative glow */}
                         <div
-                            className="absolute top-0 left-0 w-32 h-32 rounded-full opacity-30 blur-3xl"
-                            style={{ background: 'radial-gradient(circle, rgba(245, 158, 11, 0.4) 0%, transparent 70%)' }}
+                            className="absolute top-0 left-0 w-32 h-32 rounded-full opacity-10 blur-3xl"
+                            style={{ background: 'radial-gradient(circle, var(--dark-brand-primary) 0%, transparent 70%)' }}
                         />
 
                         <div className="relative flex justify-between items-center">
@@ -387,15 +386,15 @@ const ManualBookingModal: React.FC<ManualBookingModalProps> = ({
                                 <div
                                     className="w-10 h-10 rounded-xl flex items-center justify-center"
                                     style={{
-                                        background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-                                        boxShadow: '0 4px 15px rgba(245, 158, 11, 0.3)'
+                                        background: 'var(--dark-brand-10)',
+                                        border: '1px solid var(--dark-brand-20)'
                                     }}
                                 >
-                                    <Sparkles size={20} className="text-black" />
+                                    <Sparkles size={20} style={{ color: 'var(--dark-brand-primary)' }} />
                                 </div>
                                 <div>
-                                    <h3 className="text-lg font-bold text-white">Novo Agendamento</h3>
-                                    <p className="text-xs text-zinc-500">
+                                    <h3 className="text-lg font-bold" style={{ color: 'var(--dark-text-main)' }}>Novo Agendamento</h3>
+                                    <p className="text-xs" style={{ color: 'var(--dark-text-muted)' }}>
                                         {format(selectedDate, "EEEE, d 'de' MMMM", { locale: ptBR })} • {selectedTime}
                                     </p>
                                 </div>
@@ -403,15 +402,15 @@ const ManualBookingModal: React.FC<ManualBookingModalProps> = ({
                             <button
                                 onClick={onClose}
                                 className="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:bg-white/10"
-                                style={{ color: 'rgba(255, 255, 255, 0.5)' }}
+                                style={{ color: 'var(--dark-text-muted)' }}
                             >
                                 <X size={18} />
                             </button>
                         </div>
                     </div>
 
-                    {/* Step Progress - Premium Design */}
-                    <div className="px-6 py-4" style={{ background: 'rgba(0, 0, 0, 0.2)' }}>
+                    {/* Step Progress - Clean Design */}
+                    <div className="px-6 py-4" style={{ background: 'var(--dark-bg-elevated-30)' }}>
                         <div className="flex items-center justify-between">
                             {steps.map((step, index) => {
                                 const IconComponent = step.icon;
@@ -425,24 +424,23 @@ const ManualBookingModal: React.FC<ManualBookingModalProps> = ({
                                                 className="relative w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300"
                                                 style={{
                                                     background: isCompleted
-                                                        ? 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)'
+                                                        ? 'var(--dark-status-confirmed-bg)'
                                                         : isActive
-                                                            ? 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)'
-                                                            : 'rgba(255, 255, 255, 0.05)',
-                                                    boxShadow: isCompleted
-                                                        ? '0 4px 20px rgba(34, 197, 94, 0.3)'
+                                                            ? 'var(--dark-brand-10)'
+                                                            : 'var(--dark-bg-subtle-20)',
+                                                    border: isCompleted
+                                                        ? '1px solid var(--dark-status-confirmed-border)'
                                                         : isActive
-                                                            ? '0 4px 20px rgba(245, 158, 11, 0.3)'
-                                                            : 'none',
-                                                    border: !isCompleted && !isActive ? '1px solid rgba(255, 255, 255, 0.1)' : 'none'
+                                                            ? '1px solid var(--dark-brand-30)'
+                                                            : '1px solid var(--dark-border-default)'
                                                 }}
                                             >
                                                 {isCompleted ? (
-                                                    <Check size={20} className="text-white" />
+                                                    <Check size={20} style={{ color: 'var(--dark-status-confirmed)' }} />
                                                 ) : (
                                                     <IconComponent
                                                         size={20}
-                                                        style={{ color: isActive ? '#000' : 'rgba(255, 255, 255, 0.4)' }}
+                                                        style={{ color: isActive ? 'var(--dark-brand-primary)' : 'var(--dark-text-faint)' }}
                                                     />
                                                 )}
 
@@ -451,8 +449,8 @@ const ManualBookingModal: React.FC<ManualBookingModalProps> = ({
                                                     <div
                                                         className="absolute inset-0 rounded-2xl animate-pulse"
                                                         style={{
-                                                            background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-                                                            opacity: 0.3
+                                                            background: 'var(--dark-brand-primary)',
+                                                            opacity: 0.1
                                                         }}
                                                     />
                                                 )}
@@ -461,10 +459,10 @@ const ManualBookingModal: React.FC<ManualBookingModalProps> = ({
                                                 className="text-[11px] font-medium tracking-wide"
                                                 style={{
                                                     color: isCompleted
-                                                        ? '#22c55e'
+                                                        ? 'var(--dark-status-confirmed)'
                                                         : isActive
-                                                            ? '#f59e0b'
-                                                            : 'rgba(255, 255, 255, 0.4)'
+                                                            ? 'var(--dark-brand-primary)'
+                                                            : 'var(--dark-text-faint)'
                                                 }}
                                             >
                                                 {step.label}
@@ -475,15 +473,16 @@ const ManualBookingModal: React.FC<ManualBookingModalProps> = ({
                                             <div className="flex-1 mx-3 relative h-0.5">
                                                 <div
                                                     className="absolute inset-0 rounded-full"
-                                                    style={{ background: 'rgba(255, 255, 255, 0.08)' }}
+                                                    style={{ background: 'var(--dark-border-subtle)' }}
                                                 />
                                                 <div
                                                     className="absolute inset-0 rounded-full transition-all duration-500"
                                                     style={{
                                                         background: isCompleted
-                                                            ? 'linear-gradient(90deg, #22c55e 0%, #16a34a 100%)'
+                                                            ? 'var(--dark-status-confirmed)'
                                                             : 'transparent',
-                                                        width: isCompleted ? '100%' : '0%'
+                                                        width: isCompleted ? '100%' : '0%',
+                                                        opacity: 0.5
                                                     }}
                                                 />
                                             </div>
@@ -501,14 +500,14 @@ const ManualBookingModal: React.FC<ManualBookingModalProps> = ({
                             <div
                                 className="mb-4 p-4 rounded-xl flex items-start gap-3 animate-shake"
                                 style={{
-                                    background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.05) 100%)',
-                                    border: '1px solid rgba(239, 68, 68, 0.3)'
+                                    background: 'var(--dark-badge-danger-bg)',
+                                    border: '1px solid var(--dark-badge-danger-border)'
                                 }}
                             >
-                                <div className="w-5 h-5 rounded-full bg-red-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                                    <X size={12} className="text-red-400" />
+                                <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: 'var(--dark-btn-danger-bg)' }}>
+                                    <X size={12} style={{ color: 'var(--dark-badge-danger-text)' }} />
                                 </div>
-                                <p className="text-sm text-red-400">{error}</p>
+                                <p className="text-sm" style={{ color: 'var(--dark-badge-danger-text)' }}>{error}</p>
                             </div>
                         )}
 
@@ -516,7 +515,7 @@ const ManualBookingModal: React.FC<ManualBookingModalProps> = ({
                         {currentStep === 1 && (
                             <div className="space-y-4">
                                 <div className="flex items-center justify-between">
-                                    <h2 className="text-base font-semibold text-white">
+                                    <h2 className="text-base font-semibold" style={{ color: 'var(--dark-text-main)' }}>
                                         {isCreatingNewClient ? 'Cadastrar Cliente' : 'Selecionar Cliente'}
                                     </h2>
                                     <button
@@ -526,9 +525,9 @@ const ManualBookingModal: React.FC<ManualBookingModalProps> = ({
                                         }}
                                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
                                         style={{
-                                            background: 'rgba(245, 158, 11, 0.1)',
-                                            color: '#f59e0b',
-                                            border: '1px solid rgba(245, 158, 11, 0.2)'
+                                            background: 'var(--dark-brand-5)',
+                                            color: 'var(--dark-brand-primary)',
+                                            border: '1px solid var(--dark-brand-20)'
                                         }}
                                     >
                                         {isCreatingNewClient ? (
@@ -543,29 +542,23 @@ const ManualBookingModal: React.FC<ManualBookingModalProps> = ({
                                     <div className="space-y-4">
                                         {/* Name Input */}
                                         <div>
-                                            <label className="block text-[11px] uppercase tracking-wider text-zinc-500 mb-2 font-medium">
+                                            <label className="block text-[11px] uppercase tracking-wider mb-2 font-medium" style={{ color: 'var(--dark-text-subtle)' }}>
                                                 Nome Completo *
                                             </label>
                                             <div className="relative group">
                                                 <User
                                                     size={16}
-                                                    className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-amber-500 transition-colors"
+                                                    className="absolute left-4 top-1/2 -translate-y-1/2 transition-colors"
+                                                    style={{ color: 'var(--dark-text-subtle)' }}
                                                 />
                                                 <input
                                                     type="text"
                                                     placeholder="Digite o nome..."
-                                                    className="w-full pl-11 pr-4 py-3 rounded-xl text-sm text-white placeholder-zinc-600 outline-none transition-all"
+                                                    className="w-full pl-11 pr-4 py-3 rounded-xl text-sm placeholder-zinc-600 outline-none transition-all"
                                                     style={{
-                                                        background: 'rgba(255, 255, 255, 0.03)',
-                                                        border: '1px solid rgba(255, 255, 255, 0.08)'
-                                                    }}
-                                                    onFocus={(e) => {
-                                                        e.target.style.borderColor = 'rgba(245, 158, 11, 0.5)';
-                                                        e.target.style.background = 'rgba(245, 158, 11, 0.05)';
-                                                    }}
-                                                    onBlur={(e) => {
-                                                        e.target.style.borderColor = 'rgba(255, 255, 255, 0.08)';
-                                                        e.target.style.background = 'rgba(255, 255, 255, 0.03)';
+                                                        background: 'var(--dark-bg-input)',
+                                                        border: '1px solid var(--dark-border-default)',
+                                                        color: 'var(--dark-text-main)'
                                                     }}
                                                     value={newClientName}
                                                     onChange={(e) => setNewClientName(e.target.value)}
@@ -576,29 +569,23 @@ const ManualBookingModal: React.FC<ManualBookingModalProps> = ({
 
                                         {/* Phone Input */}
                                         <div>
-                                            <label className="block text-[11px] uppercase tracking-wider text-zinc-500 mb-2 font-medium">
+                                            <label className="block text-[11px] uppercase tracking-wider mb-2 font-medium" style={{ color: 'var(--dark-text-subtle)' }}>
                                                 Telefone *
                                             </label>
                                             <div className="relative group">
                                                 <Phone
                                                     size={16}
-                                                    className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-amber-500 transition-colors"
+                                                    className="absolute left-4 top-1/2 -translate-y-1/2 transition-colors"
+                                                    style={{ color: 'var(--dark-text-subtle)' }}
                                                 />
                                                 <input
                                                     type="tel"
                                                     placeholder="(11) 99999-9999"
-                                                    className="w-full pl-11 pr-4 py-3 rounded-xl text-sm text-white placeholder-zinc-600 outline-none transition-all"
+                                                    className="w-full pl-11 pr-4 py-3 rounded-xl text-sm placeholder-zinc-600 outline-none transition-all"
                                                     style={{
-                                                        background: 'rgba(255, 255, 255, 0.03)',
-                                                        border: '1px solid rgba(255, 255, 255, 0.08)'
-                                                    }}
-                                                    onFocus={(e) => {
-                                                        e.target.style.borderColor = 'rgba(245, 158, 11, 0.5)';
-                                                        e.target.style.background = 'rgba(245, 158, 11, 0.05)';
-                                                    }}
-                                                    onBlur={(e) => {
-                                                        e.target.style.borderColor = 'rgba(255, 255, 255, 0.08)';
-                                                        e.target.style.background = 'rgba(255, 255, 255, 0.03)';
+                                                        background: 'var(--dark-bg-input)',
+                                                        border: '1px solid var(--dark-border-default)',
+                                                        color: 'var(--dark-text-main)'
                                                     }}
                                                     value={newClientPhone}
                                                     onChange={(e) => setNewClientPhone(e.target.value)}
@@ -608,29 +595,23 @@ const ManualBookingModal: React.FC<ManualBookingModalProps> = ({
 
                                         {/* Email Input */}
                                         <div>
-                                            <label className="block text-[11px] uppercase tracking-wider text-zinc-500 mb-2 font-medium">
-                                                Email <span className="text-zinc-600">(opcional)</span>
+                                            <label className="block text-[11px] uppercase tracking-wider mb-2 font-medium" style={{ color: 'var(--dark-text-subtle)' }}>
+                                                Email <span style={{ color: 'var(--dark-text-faint)' }}>(opcional)</span>
                                             </label>
                                             <div className="relative group">
                                                 <Mail
                                                     size={16}
-                                                    className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-amber-500 transition-colors"
+                                                    className="absolute left-4 top-1/2 -translate-y-1/2 transition-colors"
+                                                    style={{ color: 'var(--dark-text-subtle)' }}
                                                 />
                                                 <input
                                                     type="email"
                                                     placeholder="email@exemplo.com"
-                                                    className="w-full pl-11 pr-4 py-3 rounded-xl text-sm text-white placeholder-zinc-600 outline-none transition-all"
+                                                    className="w-full pl-11 pr-4 py-3 rounded-xl text-sm placeholder-zinc-600 outline-none transition-all"
                                                     style={{
-                                                        background: 'rgba(255, 255, 255, 0.03)',
-                                                        border: '1px solid rgba(255, 255, 255, 0.08)'
-                                                    }}
-                                                    onFocus={(e) => {
-                                                        e.target.style.borderColor = 'rgba(245, 158, 11, 0.5)';
-                                                        e.target.style.background = 'rgba(245, 158, 11, 0.05)';
-                                                    }}
-                                                    onBlur={(e) => {
-                                                        e.target.style.borderColor = 'rgba(255, 255, 255, 0.08)';
-                                                        e.target.style.background = 'rgba(255, 255, 255, 0.03)';
+                                                        background: 'var(--dark-bg-input)',
+                                                        border: '1px solid var(--dark-border-default)',
+                                                        color: 'var(--dark-text-main)'
                                                     }}
                                                     value={newClientEmail}
                                                     onChange={(e) => setNewClientEmail(e.target.value)}
@@ -644,9 +625,8 @@ const ManualBookingModal: React.FC<ManualBookingModalProps> = ({
                                             disabled={isCreatingClient || !newClientName.trim() || !newClientPhone.trim()}
                                             className="w-full py-3.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                                             style={{
-                                                background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-                                                color: '#000',
-                                                boxShadow: '0 4px 20px rgba(245, 158, 11, 0.25)'
+                                                background: 'var(--dark-brand-primary)',
+                                                color: 'var(--dark-text-inverted)'
                                             }}
                                         >
                                             {isCreatingClient ? (
@@ -660,18 +640,17 @@ const ManualBookingModal: React.FC<ManualBookingModalProps> = ({
                                     <>
                                         {/* Search Input */}
                                         <div className="relative group">
-                                            <Search
-                                                size={18}
-                                                className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-amber-500 transition-colors"
-                                            />
+                                            <div className="absolute left-4 top-0 bottom-0 flex items-center">
+                                                <Search size={18} style={{ color: 'var(--dark-text-subtle)' }} />
+                                            </div>
                                             <input
                                                 type="text"
                                                 placeholder="Buscar cliente..."
-                                                className="w-full pl-12 pr-4 py-3.5 rounded-xl text-sm text-white placeholder-zinc-500 outline-none transition-all"
+                                                className="w-full pl-12 pr-4 py-3.5 rounded-xl text-sm outline-none transition-all"
                                                 style={{
-                                                    background: 'rgba(255, 255, 255, 0.03)',
-                                                    border: '1px solid rgba(245, 158, 11, 0.3)',
-                                                    boxShadow: '0 0 20px rgba(245, 158, 11, 0.05)'
+                                                    background: 'var(--dark-bg-input)',
+                                                    border: '1px solid var(--dark-border-default)',
+                                                    color: 'var(--dark-text-main)'
                                                 }}
                                                 value={searchTerm}
                                                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -685,14 +664,15 @@ const ManualBookingModal: React.FC<ManualBookingModalProps> = ({
                                                 <div className="text-center py-8">
                                                     <div
                                                         className="w-14 h-14 rounded-2xl mx-auto mb-3 flex items-center justify-center"
-                                                        style={{ background: 'rgba(255, 255, 255, 0.05)' }}
+                                                        style={{ background: 'var(--dark-bg-subtle-20)' }}
                                                     >
-                                                        <User size={24} className="text-zinc-600" />
+                                                        <User size={24} style={{ color: 'var(--dark-text-faint)' }} />
                                                     </div>
-                                                    <p className="text-sm text-zinc-500 mb-2">Nenhum cliente encontrado</p>
+                                                    <p className="text-sm mb-2" style={{ color: 'var(--dark-text-subtle)' }}>Nenhum cliente encontrado</p>
                                                     <button
                                                         onClick={() => setIsCreatingNewClient(true)}
-                                                        className="text-sm font-medium text-amber-500 hover:text-amber-400 transition-colors"
+                                                        className="text-sm font-medium transition-colors"
+                                                        style={{ color: 'var(--dark-brand-primary)' }}
                                                     >
                                                         + Criar novo cliente
                                                     </button>
@@ -704,38 +684,28 @@ const ManualBookingModal: React.FC<ManualBookingModalProps> = ({
                                                         onClick={() => handleClientSelect(client)}
                                                         className="w-full p-4 rounded-xl flex items-center justify-between transition-all group"
                                                         style={{
-                                                            background: 'rgba(255, 255, 255, 0.02)',
-                                                            border: '1px solid rgba(255, 255, 255, 0.06)'
-                                                        }}
-                                                        onMouseEnter={(e) => {
-                                                            e.currentTarget.style.background = 'rgba(245, 158, 11, 0.08)';
-                                                            e.currentTarget.style.borderColor = 'rgba(245, 158, 11, 0.2)';
-                                                            e.currentTarget.style.transform = 'translateX(4px)';
-                                                        }}
-                                                        onMouseLeave={(e) => {
-                                                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.02)';
-                                                            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.06)';
-                                                            e.currentTarget.style.transform = 'translateX(0)';
+                                                            background: 'var(--dark-bg-elevated-30)',
+                                                            border: '1px solid var(--dark-border-subtle)'
                                                         }}
                                                     >
                                                         <div className="flex items-center gap-3">
                                                             <div
                                                                 className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold"
                                                                 style={{
-                                                                    background: `linear-gradient(135deg, hsl(${(index * 40) % 360}, 60%, 50%) 0%, hsl(${(index * 40 + 30) % 360}, 60%, 40%) 100%)`,
+                                                                    background: `hsl(${(index * 40) % 360}, 50%, 35%)`,
                                                                     color: 'white'
                                                                 }}
                                                             >
                                                                 {client.name.charAt(0).toUpperCase()}
                                                             </div>
                                                             <div className="text-left">
-                                                                <div className="font-semibold text-white text-sm">{client.name}</div>
-                                                                <div className="text-xs text-zinc-500">{client.phone}</div>
+                                                                <div className="font-semibold text-sm" style={{ color: 'var(--dark-text-main)' }}>{client.name}</div>
+                                                                <div className="text-xs" style={{ color: 'var(--dark-text-subtle)' }}>{client.phone}</div>
                                                             </div>
                                                         </div>
                                                         <ArrowRight
                                                             size={18}
-                                                            className="text-zinc-600 group-hover:text-amber-500 transition-colors"
+                                                            style={{ color: 'var(--dark-text-faint)' }}
                                                         />
                                                     </button>
                                                 ))
@@ -753,29 +723,29 @@ const ManualBookingModal: React.FC<ManualBookingModalProps> = ({
                                 <div
                                     className="p-4 rounded-xl flex items-center justify-between"
                                     style={{
-                                        background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(245, 158, 11, 0.02) 100%)',
-                                        border: '1px solid rgba(245, 158, 11, 0.15)'
+                                        background: 'var(--dark-brand-10)',
+                                        border: '1px solid var(--dark-brand-20)'
                                     }}
                                 >
                                     <div className="flex items-center gap-3">
                                         <div
                                             className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold"
                                             style={{
-                                                background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-                                                color: 'black'
+                                                background: 'var(--dark-brand-primary)',
+                                                color: 'var(--dark-text-inverted)'
                                             }}
                                         >
                                             {selectedClient.name.charAt(0).toUpperCase()}
                                         </div>
                                         <div>
-                                            <div className="font-semibold text-white text-sm">{selectedClient.name}</div>
-                                            <div className="text-xs text-zinc-500">{selectedClient.phone}</div>
+                                            <div className="font-semibold text-sm" style={{ color: 'var(--dark-text-main)' }}>{selectedClient.name}</div>
+                                            <div className="text-xs" style={{ color: 'var(--dark-text-subtle)' }}>{selectedClient.phone}</div>
                                         </div>
                                     </div>
                                     <button
                                         onClick={() => setCurrentStep(1)}
                                         className="text-xs font-medium px-3 py-1.5 rounded-lg transition-all"
-                                        style={{ color: '#f59e0b', background: 'rgba(245, 158, 11, 0.1)' }}
+                                        style={{ color: 'var(--dark-brand-primary)', background: 'var(--dark-brand-10)' }}
                                     >
                                         Alterar
                                     </button>
@@ -783,7 +753,7 @@ const ManualBookingModal: React.FC<ManualBookingModalProps> = ({
 
                                 {/* Service Select */}
                                 <div>
-                                    <label className="block text-[11px] uppercase tracking-wider text-zinc-500 mb-2 font-medium">
+                                    <label className="block text-[11px] uppercase tracking-wider mb-2 font-medium" style={{ color: 'var(--dark-text-subtle)' }}>
                                         Serviço
                                     </label>
                                     <select
@@ -791,9 +761,9 @@ const ManualBookingModal: React.FC<ManualBookingModalProps> = ({
                                         onChange={(e) => setSelectedService(services.find(s => s.id === e.target.value) || null)}
                                         className="w-full p-3.5 rounded-xl text-sm cursor-pointer outline-none transition-all appearance-none"
                                         style={{
-                                            background: 'rgba(255, 255, 255, 0.03)',
-                                            border: '1px solid rgba(255, 255, 255, 0.08)',
-                                            color: 'white',
+                                            background: 'var(--dark-bg-input)',
+                                            border: '1px solid var(--dark-border-default)',
+                                            color: 'var(--dark-text-main)',
                                             backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23f59e0b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
                                             backgroundRepeat: 'no-repeat',
                                             backgroundPosition: 'right 12px center',
@@ -802,7 +772,7 @@ const ManualBookingModal: React.FC<ManualBookingModalProps> = ({
                                         }}
                                     >
                                         {services.map((service) => (
-                                            <option key={service.id} value={service.id} style={{ background: '#1c1c1f' }}>
+                                            <option key={service.id} value={service.id} style={{ background: 'var(--dark-bg-card)' }}>
                                                 {service.name} - R$ {service.price.toFixed(2)}
                                             </option>
                                         ))}
@@ -811,7 +781,7 @@ const ManualBookingModal: React.FC<ManualBookingModalProps> = ({
 
                                 {/* Professional Select */}
                                 <div>
-                                    <label className="block text-[11px] uppercase tracking-wider text-zinc-500 mb-2 font-medium">
+                                    <label className="block text-[11px] uppercase tracking-wider mb-2 font-medium" style={{ color: 'var(--dark-text-subtle)' }}>
                                         Profissional
                                     </label>
                                     <select
@@ -819,9 +789,9 @@ const ManualBookingModal: React.FC<ManualBookingModalProps> = ({
                                         onChange={(e) => setSelectedProfessional(professionals.find(p => p.id === e.target.value)!)}
                                         className="w-full p-3.5 rounded-xl text-sm cursor-pointer outline-none transition-all appearance-none"
                                         style={{
-                                            background: 'rgba(255, 255, 255, 0.03)',
-                                            border: '1px solid rgba(255, 255, 255, 0.08)',
-                                            color: 'white',
+                                            background: 'var(--dark-bg-input)',
+                                            border: '1px solid var(--dark-border-default)',
+                                            color: 'var(--dark-text-main)',
                                             backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23f59e0b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
                                             backgroundRepeat: 'no-repeat',
                                             backgroundPosition: 'right 12px center',
@@ -830,7 +800,7 @@ const ManualBookingModal: React.FC<ManualBookingModalProps> = ({
                                         }}
                                     >
                                         {professionals.map((prof) => (
-                                            <option key={prof.id} value={prof.id} style={{ background: '#1c1c1f' }}>
+                                            <option key={prof.id} value={prof.id} style={{ background: 'var(--dark-bg-card)' }}>
                                                 {prof.name}
                                             </option>
                                         ))}
@@ -841,17 +811,17 @@ const ManualBookingModal: React.FC<ManualBookingModalProps> = ({
                                 <div
                                     className="p-4 rounded-xl"
                                     style={{
-                                        background: 'rgba(255, 255, 255, 0.02)',
-                                        border: '1px solid rgba(255, 255, 255, 0.06)'
+                                        background: 'var(--dark-bg-elevated-30)',
+                                        border: '1px solid var(--dark-border-subtle)'
                                     }}
                                 >
                                     <div className="flex items-center gap-2 mb-2">
-                                        <Clock size={14} className="text-amber-500" />
-                                        <span className="text-xs text-zinc-500 uppercase tracking-wider">Data e Horário</span>
+                                        <Clock size={14} style={{ color: 'var(--dark-brand-primary)' }} />
+                                        <span className="text-xs uppercase tracking-wider" style={{ color: 'var(--dark-text-subtle)' }}>Data e Horário</span>
                                     </div>
-                                    <div className="text-white font-semibold">
+                                    <div style={{ color: 'var(--dark-text-main)' }} className="font-semibold">
                                         {format(selectedDate, "EEEE, d 'de' MMMM", { locale: ptBR })}
-                                        <span className="text-amber-500 ml-2">às {selectedTime}</span>
+                                        <span style={{ color: 'var(--dark-brand-primary)' }} className="ml-2">às {selectedTime}</span>
                                     </div>
                                 </div>
 
@@ -861,9 +831,9 @@ const ManualBookingModal: React.FC<ManualBookingModalProps> = ({
                                         onClick={() => setCurrentStep(1)}
                                         className="flex-1 py-3 rounded-xl text-sm font-semibold transition-all"
                                         style={{
-                                            background: 'rgba(255, 255, 255, 0.05)',
-                                            color: 'white',
-                                            border: '1px solid rgba(255, 255, 255, 0.1)'
+                                            background: 'var(--dark-bg-subtle-20)',
+                                            color: 'var(--dark-text-main)',
+                                            border: '1px solid var(--dark-border-default)'
                                         }}
                                     >
                                         Voltar
@@ -872,9 +842,8 @@ const ManualBookingModal: React.FC<ManualBookingModalProps> = ({
                                         onClick={handleContinueToPayment}
                                         className="flex-1 py-3 rounded-xl text-sm font-semibold transition-all"
                                         style={{
-                                            background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-                                            color: 'black',
-                                            boxShadow: '0 4px 20px rgba(245, 158, 11, 0.25)'
+                                            background: 'var(--dark-brand-primary)',
+                                            color: 'var(--dark-text-inverted)'
                                         }}
                                     >
                                         Continuar
@@ -891,30 +860,30 @@ const ManualBookingModal: React.FC<ManualBookingModalProps> = ({
                                     <div
                                         className="p-5 rounded-xl space-y-4"
                                         style={{
-                                            background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%)',
-                                            border: '1px solid rgba(255, 255, 255, 0.06)'
+                                            background: 'var(--dark-bg-card)',
+                                            border: '1px solid var(--dark-border-default)'
                                         }}
                                     >
-                                        <div className="text-xs text-zinc-500 uppercase tracking-wider font-medium">
+                                        <div className="text-xs uppercase tracking-wider font-medium" style={{ color: 'var(--dark-text-subtle)' }}>
                                             Resumo do Agendamento
                                         </div>
 
                                         <div className="grid grid-cols-2 gap-4">
                                             <div className="space-y-1">
-                                                <div className="text-[11px] text-zinc-600 uppercase">Cliente</div>
-                                                <div className="text-sm font-medium text-white">{selectedClient?.name}</div>
+                                                <div className="text-[11px] uppercase" style={{ color: 'var(--dark-text-faint)' }}>Cliente</div>
+                                                <div className="text-sm font-medium" style={{ color: 'var(--dark-text-main)' }}>{selectedClient?.name}</div>
                                             </div>
                                             <div className="space-y-1">
-                                                <div className="text-[11px] text-zinc-600 uppercase">Profissional</div>
-                                                <div className="text-sm font-medium text-white">{selectedProfessional?.name}</div>
+                                                <div className="text-[11px] uppercase" style={{ color: 'var(--dark-text-faint)' }}>Profissional</div>
+                                                <div className="text-sm font-medium" style={{ color: 'var(--dark-text-main)' }}>{selectedProfessional?.name}</div>
                                             </div>
                                             <div className="space-y-1">
-                                                <div className="text-[11px] text-zinc-600 uppercase">Serviço</div>
-                                                <div className="text-sm font-medium text-white">{selectedService?.name}</div>
+                                                <div className="text-[11px] uppercase" style={{ color: 'var(--dark-text-faint)' }}>Serviço</div>
+                                                <div className="text-sm font-medium" style={{ color: 'var(--dark-text-main)' }}>{selectedService?.name}</div>
                                             </div>
                                             <div className="space-y-1">
-                                                <div className="text-[11px] text-zinc-600 uppercase">Valor</div>
-                                                <div className="text-sm font-bold text-emerald-400">
+                                                <div className="text-[11px] uppercase" style={{ color: 'var(--dark-text-faint)' }}>Valor</div>
+                                                <div className="text-sm font-bold" style={{ color: 'var(--dark-status-confirmed)' }}>
                                                     R$ {selectedService?.price.toFixed(2)}
                                                 </div>
                                             </div>
@@ -922,10 +891,10 @@ const ManualBookingModal: React.FC<ManualBookingModalProps> = ({
 
                                         <div
                                             className="pt-4 space-y-1"
-                                            style={{ borderTop: '1px solid rgba(255, 255, 255, 0.06)' }}
+                                            style={{ borderTop: '1px solid var(--dark-border-subtle)' }}
                                         >
-                                            <div className="text-[11px] text-zinc-600 uppercase">Data e Horário</div>
-                                            <div className="text-sm font-semibold text-amber-500">
+                                            <div className="text-[11px] uppercase" style={{ color: 'var(--dark-text-faint)' }}>Data e Horário</div>
+                                            <div className="text-sm font-semibold" style={{ color: 'var(--dark-brand-primary)' }}>
                                                 {format(selectedDate, "EEEE, d 'de' MMMM", { locale: ptBR })} às {selectedTime}
                                             </div>
                                         </div>
@@ -939,24 +908,24 @@ const ManualBookingModal: React.FC<ManualBookingModalProps> = ({
                                             <div
                                                 className="p-4 rounded-xl flex items-start gap-3"
                                                 style={{
-                                                    background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(245, 158, 11, 0.02) 100%)',
-                                                    border: '1px solid rgba(245, 158, 11, 0.2)'
+                                                    background: 'var(--dark-badge-warning-bg)',
+                                                    border: '1px solid var(--dark-badge-warning-border)'
                                                 }}
                                             >
-                                                <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center flex-shrink-0">
-                                                    <span className="text-amber-500">⚠️</span>
+                                                <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'var(--dark-brand-10)' }}>
+                                                    <span style={{ color: 'var(--dark-brand-primary)' }}>⚠️</span>
                                                 </div>
                                                 <div>
-                                                    <div className="font-semibold text-amber-400 text-sm mb-1">Stripe não configurado</div>
-                                                    <div className="text-xs text-zinc-400">
-                                                        Configure em <span className="text-amber-500 font-medium">Finanças → Stripe</span> para pagamentos online.
+                                                    <div className="font-semibold text-sm mb-1" style={{ color: 'var(--dark-badge-warning-text)' }}>Stripe não configurado</div>
+                                                    <div className="text-xs" style={{ color: 'var(--dark-text-muted)' }}>
+                                                        Configure em <span className="font-medium" style={{ color: 'var(--dark-brand-primary)' }}>Finanças → Stripe</span> para pagamentos online.
                                                     </div>
                                                 </div>
                                             </div>
                                         )}
 
                                         <div className="space-y-2">
-                                            <label className="block text-[11px] uppercase tracking-wider text-zinc-500 font-medium">
+                                            <label className="block text-[11px] uppercase tracking-wider font-medium" style={{ color: 'var(--dark-text-subtle)' }}>
                                                 Forma de Pagamento
                                             </label>
 
@@ -968,26 +937,26 @@ const ManualBookingModal: React.FC<ManualBookingModalProps> = ({
                                                     className="p-4 rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed group relative overflow-hidden"
                                                     style={{
                                                         background: stripeConfigured
-                                                            ? 'linear-gradient(180deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.02) 100%)'
-                                                            : 'rgba(255, 255, 255, 0.02)',
+                                                            ? 'var(--dark-brand-5)'
+                                                            : 'var(--dark-bg-subtle-20)',
                                                         border: stripeConfigured
-                                                            ? '1px solid rgba(59, 130, 246, 0.2)'
-                                                            : '1px solid rgba(255, 255, 255, 0.06)'
+                                                            ? '1px solid var(--dark-brand-20)'
+                                                            : '1px solid var(--dark-border-subtle)'
                                                     }}
                                                 >
                                                     <div
                                                         className="w-12 h-12 rounded-xl mx-auto mb-3 flex items-center justify-center"
                                                         style={{
                                                             background: stripeConfigured
-                                                                ? 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)'
-                                                                : 'rgba(255, 255, 255, 0.05)'
+                                                                ? 'var(--dark-brand-primary)'
+                                                                : 'var(--dark-bg-subtle-20)'
                                                         }}
                                                     >
-                                                        <CreditCard size={22} style={{ color: stripeConfigured ? 'white' : '#52525b' }} />
+                                                        <CreditCard size={22} style={{ color: stripeConfigured ? 'var(--dark-text-inverted)' : 'var(--dark-text-faint)' }} />
                                                     </div>
-                                                    <div className="font-semibold text-white text-sm mb-1">Link de Pagamento</div>
-                                                    <div className="text-[10px] text-zinc-500">
-                                                        {stripeConfigured ? 'Enviar link via WhatsApp' : 'Configure o Stripe'}
+                                                    <div className="font-semibold text-sm mb-1" style={{ color: 'var(--dark-text-main)' }}>Link de Pagamento</div>
+                                                    <div className="text-[10px]" style={{ color: 'var(--dark-text-subtle)' }}>
+                                                        {stripeConfigured ? 'Pagamento Online' : 'Configure o Stripe'}
                                                     </div>
                                                 </button>
 
@@ -996,18 +965,18 @@ const ManualBookingModal: React.FC<ManualBookingModalProps> = ({
                                                     onClick={() => setPaymentMethod('presential')}
                                                     className="p-4 rounded-xl transition-all group relative overflow-hidden"
                                                     style={{
-                                                        background: 'linear-gradient(180deg, rgba(34, 197, 94, 0.1) 0%, rgba(34, 197, 94, 0.02) 100%)',
-                                                        border: '1px solid rgba(34, 197, 94, 0.2)'
+                                                        background: 'var(--dark-status-confirmed-bg)',
+                                                        border: '1px solid var(--dark-status-confirmed-border)'
                                                     }}
                                                 >
                                                     <div
                                                         className="w-12 h-12 rounded-xl mx-auto mb-3 flex items-center justify-center"
-                                                        style={{ background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)' }}
+                                                        style={{ background: 'var(--dark-btn-success-bg)' }}
                                                     >
-                                                        <Check size={22} className="text-white" />
+                                                        <Check size={22} style={{ color: 'var(--dark-btn-success-text)' }} />
                                                     </div>
-                                                    <div className="font-semibold text-white text-sm mb-1">Pago no Local</div>
-                                                    <div className="text-[10px] text-zinc-500">Confirmar agendamento</div>
+                                                    <div className="font-semibold text-sm mb-1" style={{ color: 'var(--dark-text-main)' }}>Pagar no Local</div>
+                                                    <div className="text-[10px]" style={{ color: 'var(--dark-text-subtle)' }}>Manual / POS</div>
                                                 </button>
                                             </div>
                                         </div>
@@ -1017,9 +986,9 @@ const ManualBookingModal: React.FC<ManualBookingModalProps> = ({
                                             onClick={() => setCurrentStep(2)}
                                             className="w-full py-3 rounded-xl text-sm font-medium transition-all mt-2"
                                             style={{
-                                                background: 'rgba(255, 255, 255, 0.03)',
-                                                color: 'rgba(255, 255, 255, 0.6)',
-                                                border: '1px solid rgba(255, 255, 255, 0.06)'
+                                                background: 'var(--dark-bg-subtle-20)',
+                                                color: 'var(--dark-text-muted)',
+                                                border: '1px solid var(--dark-border-subtle)'
                                             }}
                                         >
                                             <ArrowLeft size={16} className="inline mr-2" />
@@ -1036,13 +1005,12 @@ const ManualBookingModal: React.FC<ManualBookingModalProps> = ({
                                             disabled={isLoading}
                                             className="w-full py-4 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-50"
                                             style={{
-                                                background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-                                                color: 'white',
-                                                boxShadow: '0 4px 20px rgba(59, 130, 246, 0.3)'
+                                                background: 'var(--dark-brand-primary)',
+                                                color: 'var(--dark-text-inverted)'
                                             }}
                                         >
                                             {isLoading ? (
-                                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                                <div className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin" />
                                             ) : (
                                                 <><CreditCard size={18} /> Gerar Link de Pagamento</>
                                             )}
@@ -1051,7 +1019,7 @@ const ManualBookingModal: React.FC<ManualBookingModalProps> = ({
                                         <button
                                             onClick={() => setPaymentMethod(null)}
                                             className="w-full py-2.5 rounded-xl text-sm font-medium transition-all"
-                                            style={{ color: 'rgba(255, 255, 255, 0.5)' }}
+                                            style={{ color: 'var(--dark-text-muted)' }}
                                         >
                                             Voltar
                                         </button>
@@ -1063,35 +1031,35 @@ const ManualBookingModal: React.FC<ManualBookingModalProps> = ({
                                     <div
                                         className="p-5 rounded-xl space-y-4"
                                         style={{
-                                            background: 'linear-gradient(180deg, rgba(34, 197, 94, 0.15) 0%, rgba(34, 197, 94, 0.02) 100%)',
-                                            border: '1px solid rgba(34, 197, 94, 0.2)'
+                                            background: 'var(--dark-badge-success-bg)',
+                                            border: '1px solid var(--dark-badge-success-border)'
                                         }}
                                     >
                                         <div className="flex items-center gap-3">
                                             <div
                                                 className="w-10 h-10 rounded-xl flex items-center justify-center"
-                                                style={{ background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)' }}
+                                                style={{ background: 'var(--dark-btn-success-bg)' }}
                                             >
-                                                <Check size={20} className="text-white" />
+                                                <Check size={20} style={{ color: 'var(--dark-btn-success-text)' }} />
                                             </div>
                                             <div>
-                                                <div className="font-semibold text-emerald-400">Link gerado com sucesso!</div>
-                                                <div className="text-xs text-zinc-500">Envie para o cliente via WhatsApp</div>
+                                                <div className="font-semibold" style={{ color: 'var(--dark-status-confirmed)' }}>Link gerado com sucesso!</div>
+                                                <div className="text-xs" style={{ color: 'var(--dark-text-subtle)' }}>Envie para o cliente via WhatsApp</div>
                                             </div>
                                         </div>
 
                                         <div
                                             className="p-3 rounded-lg flex items-center gap-2"
-                                            style={{ background: 'rgba(0, 0, 0, 0.3)' }}
+                                            style={{ background: 'var(--dark-bg-overlay-30)' }}
                                         >
-                                            <span className="text-xs text-zinc-400 truncate flex-1 font-mono">{bookingLink}</span>
+                                            <span className="text-xs truncate flex-1 font-mono" style={{ color: 'var(--dark-text-muted)' }}>{bookingLink}</span>
                                             <button
                                                 onClick={() => {
                                                     copyToClipboard(bookingLink);
                                                     setShowToast(true);
                                                 }}
                                                 className="p-2 rounded-lg transition-all hover:bg-white/10"
-                                                style={{ color: '#f59e0b' }}
+                                                style={{ color: 'var(--dark-brand-primary)' }}
                                             >
                                                 <Copy size={16} />
                                             </button>
@@ -1101,9 +1069,8 @@ const ManualBookingModal: React.FC<ManualBookingModalProps> = ({
                                             onClick={() => { onSuccess(); onClose(); }}
                                             className="w-full py-3.5 rounded-xl font-semibold text-sm transition-all"
                                             style={{
-                                                background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
-                                                color: 'white',
-                                                boxShadow: '0 4px 20px rgba(34, 197, 94, 0.3)'
+                                                background: 'var(--dark-btn-success-bg)',
+                                                color: 'var(--dark-btn-success-text)'
                                             }}
                                         >
                                             Concluir
@@ -1119,9 +1086,8 @@ const ManualBookingModal: React.FC<ManualBookingModalProps> = ({
                                             disabled={isLoading}
                                             className="w-full py-4 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-50"
                                             style={{
-                                                background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
-                                                color: 'white',
-                                                boxShadow: '0 4px 20px rgba(34, 197, 94, 0.3)'
+                                                background: 'var(--dark-btn-success-bg)',
+                                                color: 'var(--dark-btn-success-text)'
                                             }}
                                         >
                                             {isLoading ? (
@@ -1134,7 +1100,7 @@ const ManualBookingModal: React.FC<ManualBookingModalProps> = ({
                                         <button
                                             onClick={() => setPaymentMethod(null)}
                                             className="w-full py-2.5 rounded-xl text-sm font-medium transition-all"
-                                            style={{ color: 'rgba(255, 255, 255, 0.5)' }}
+                                            style={{ color: 'var(--dark-text-muted)' }}
                                         >
                                             Voltar
                                         </button>

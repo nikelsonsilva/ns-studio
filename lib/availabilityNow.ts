@@ -355,11 +355,44 @@ export async function getProfessionalsAvailableNow(
                 (a: Appointment) => a.professional_id === prof.id
             );
 
+            // Determinar o buffer do profissional (custom ou global)
+            const profBuffer = (prof as any).custom_buffer ? ((prof as any).buffer_minutes || globalBufferMinutes) : globalBufferMinutes;
+
+            // Calcular o próximo slot disponível (próxima hora cheia ou próximo slot baseado no buffer)
+            const slotInterval = profBuffer; // Usar buffer como intervalo de slots (igual ao calendário)
+            const nextSlotMinutes = Math.ceil(currentMinutes / slotInterval) * slotInterval;
+
             let hasConflict = false;
+
             for (const appt of profAppointments) {
                 const apptStart = new Date(appt.start_datetime);
                 const apptEnd = new Date(appt.end_datetime);
+
+                // Verificação 1: Profissional está ATUALMENTE em atendimento
                 if (now >= apptStart && now < apptEnd) {
+                    hasConflict = true;
+                    break;
+                }
+
+                // Verificação 2: O próximo slot conflita com um agendamento existente (incluindo buffer)
+                const apptStartMinutes = apptStart.getHours() * 60 + apptStart.getMinutes();
+                const apptEndMinutes = apptEnd.getHours() * 60 + apptEnd.getMinutes();
+
+                // O novo slot inicia em nextSlotMinutes e termina em nextSlotMinutes + minDuration
+                const slotEndMinutes = nextSlotMinutes + minDuration;
+
+                // Conflito se: slot começa antes do fim do agendamento+buffer E slot termina depois do início do agendamento-buffer
+                // Simplificado: qualquer sobreposição real
+                if (nextSlotMinutes < apptEndMinutes && slotEndMinutes > apptStartMinutes) {
+                    console.log(`🚫 [AvailableNow] ${prof.name}: Next slot ${minutesToTime(nextSlotMinutes)} conflicts with appointment at ${minutesToTime(apptStartMinutes)}-${minutesToTime(apptEndMinutes)}`);
+                    hasConflict = true;
+                    break;
+                }
+
+                // Verificação 3: Buffer antes do próximo agendamento - o novo slot precisa terminar antes de (agendamento - buffer)
+                // Se o slot termina muito perto do início do próximo agendamento
+                if (slotEndMinutes > apptStartMinutes - profBuffer && nextSlotMinutes < apptStartMinutes) {
+                    console.log(`🚫 [AvailableNow] ${prof.name}: Next slot ${minutesToTime(nextSlotMinutes)}-${minutesToTime(slotEndMinutes)} too close to appointment at ${minutesToTime(apptStartMinutes)} (buffer: ${profBuffer}min)`);
                     hasConflict = true;
                     break;
                 }
@@ -367,7 +400,7 @@ export async function getProfessionalsAvailableNow(
 
             if (hasConflict) {
                 // [LOG REMOVED]
-                continue; // Em atendimento
+                continue; // Em atendimento ou próximo slot conflita
             }
 
             // [LOG REMOVED]
@@ -382,6 +415,16 @@ export async function getProfessionalsAvailableNow(
                     hasConflict = true;
                     break;
                 }
+
+                // Também verificar se próximo slot conflita com bloqueio
+                const blockStartMinutes = blockStart.getHours() * 60 + blockStart.getMinutes();
+                const blockEndMinutes = blockEnd.getHours() * 60 + blockEnd.getMinutes();
+                const slotEndMinutes = nextSlotMinutes + minDuration;
+
+                if (nextSlotMinutes < blockEndMinutes && slotEndMinutes > blockStartMinutes) {
+                    hasConflict = true;
+                    break;
+                }
             }
 
             if (hasConflict) {
@@ -389,8 +432,7 @@ export async function getProfessionalsAvailableNow(
             }
 
             // Calcular freeUntil (próximo compromisso ou fechamento)
-            // Determinar o buffer do profissional (custom ou global)
-            const profBuffer = (prof as any).custom_buffer ? ((prof as any).buffer_minutes || globalBufferMinutes) : globalBufferMinutes;
+            // profBuffer já foi calculado acima
 
             // O último horário disponível para INICIAR um atendimento é: fechamento - buffer
             // Isso garante que o atendimento termine antes do fechamento

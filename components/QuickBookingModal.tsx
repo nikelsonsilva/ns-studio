@@ -5,9 +5,9 @@
  */
 import React, { useState, useEffect } from 'react';
 import {
-  Calendar, Clock, User, ArrowRight, Check, Search, UserPlus,
   ArrowLeft, Mail, Phone, Copy, AlertTriangle, Link as LinkIcon,
-  Banknote, CreditCard, CheckCircle, Zap
+  Banknote, CreditCard, CheckCircle, Zap, Sparkles, X, User, Check,
+  Search, ArrowRight, Clock, UserPlus
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -271,6 +271,11 @@ const QuickBookingModal: React.FC<QuickBookingModalProps> = ({
     setIsCreatingClient(false);
   };
 
+  const handleServiceSelect = (service: Service) => {
+    setSelectedService(service);
+    setError('');
+  };
+
   const handleContinueToPayment = () => {
     if (!selectedService) {
       setError('Selecione um servico');
@@ -356,7 +361,7 @@ const QuickBookingModal: React.FC<QuickBookingModalProps> = ({
         start_datetime: startDateTime.toISOString(),
         end_datetime: endDateTime.toISOString(),
         status: paymentMethod === 'presential' ? 'confirmed' : 'pending',
-        payment_status: paymentMethod === 'presential' ? 'paid' : 'awaiting_payment',
+        payment_status: paymentMethod === 'presential' ? 'pending' : 'awaiting_payment',
         payment_method: paymentMethod,
         customer_name: selectedClient.name,
         is_encaixe: true // Encaixes não bloqueiam slots regulares
@@ -409,452 +414,770 @@ const QuickBookingModal: React.FC<QuickBookingModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title="Agendamento Rapido"
-      subtitle={`${selectedDate && !isNaN(selectedDate.getTime()) ? format(selectedDate, 'dd/MM') : format(new Date(), 'dd/MM')} as ${selectedTime} - ${professional.name}`}
-      icon={<Zap size={24} />}
-      footer={
-        <div className="flex gap-4 w-full">
-          {currentStep === 1 && isCreatingNewClient && (
-            <Button
-              className="w-full"
-              onClick={handleCreateClient}
-              disabled={isCreatingClient || !newClientName.trim() || !newClientPhone.trim()}
-            >
-              {isCreatingClient ? 'Cadastrando...' : <><Check size={20} /> Cadastrar e Continuar</>}
-            </Button>
-          )}
-          {currentStep === 2 && (
-            <Button className="w-full" onClick={handleContinueToPayment}>
-              Continuar para Pagamento <ArrowRight size={20} />
-            </Button>
-          )}
-          {currentStep === 3 && (
-            <>
-              {paymentMethod === 'online' && !bookingLink && (
-                <Button
-                  className="w-full"
-                  onClick={handleCreateAppointment}
-                  disabled={isLoading}
-                >
-                  {isLoading ? 'Gerando...' : <><CreditCard size={20} /> Gerar Link de Pagamento</>}
-                </Button>
-              )}
-              {paymentMethod === 'online' && bookingLink && (
-                <Button
-                  variant="secondary"
-                  className="w-full"
-                  onClick={() => { onSuccess(); onClose(); }}
-                >
-                  Concluir e Fechar
-                </Button>
-              )}
-              {paymentMethod === 'presential' && (
-                <Button
-                  className="w-full bg-success-500 hover:bg-success-600"
-                  onClick={handleCreateAppointment}
-                  disabled={isLoading}
-                >
-                  {isLoading ? 'Finalizando...' : <><CheckCircle size={22} /> Confirmar Agendamento</>}
-                </Button>
-              )}
-            </>
-          )}
-        </div>
-      }
-    >
-      {/* Quick Booking Badge */}
-      {!showDurationWarning ? (
-        <div className="mb-4 flex items-center gap-2 bg-success-500/10 border border-success-500/30 rounded-lg px-3 py-2">
-          <Zap size={16} className="text-success-500" />
-          <span className="text-xs text-success-400 font-medium">
-            Encaixe disponivel - horario livre
-          </span>
-        </div>
-      ) : (
-        <div className="mb-4 flex flex-col gap-1 bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2">
-          <div className="flex items-center gap-2">
-            <AlertTriangle size={16} className="text-amber-500" />
-            <span className="text-xs text-amber-400 font-medium">
-              Aviso: Servico pode conflitar com proximo agendamento
-            </span>
-          </div>
-          {nextAppointmentTime && (
-            <span className="text-xs text-amber-300/70 ml-6">
-              Proximo agendamento as {nextAppointmentTime}
-            </span>
-          )}
-        </div>
-      )}
-
-      {/* Step Progress */}
-      <div className="px-4 pb-3">
-        <div className="flex items-center justify-between relative">
-          <div className="absolute top-3 left-0 right-0 h-[2px] bg-[var(--surface-subtle)] -z-10" />
+    <>
+      {/* Backdrop with blur */}
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fadeIn"
+        style={{
+          backgroundColor: 'var(--dark-modal-overlay)',
+          backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)'
+        }}
+        onClick={onClose}
+      >
+        {/* Modal Container */}
+        <div
+          className="w-full max-w-lg rounded-2xl overflow-hidden animate-slideUp"
+          style={{
+            background: 'var(--dark-modal-bg)',
+            border: '1px solid var(--dark-modal-border)',
+            boxShadow: 'var(--dark-modal-shadow)'
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Premium Header - Subtle Alignment */}
           <div
-            className="absolute top-3 left-0 h-[2px] bg-gradient-to-r from-barber-gold to-amber-500 transition-all duration-500 -z-10"
-            style={{ width: `${((currentStep - 1) / 2) * 100}%` }}
-          />
+            className="relative px-6 py-5"
+            style={{
+              background: 'var(--dark-modal-header-bg)',
+              borderBottom: '1px solid var(--dark-modal-border)'
+            }}
+          >
+            {/* Decorative glow */}
+            <div
+              className="absolute top-0 left-0 w-32 h-32 rounded-full opacity-10 blur-3xl"
+              style={{ background: 'radial-gradient(circle, var(--dark-brand-primary) 0%, transparent 70%)' }}
+            />
 
-          {[
-            { num: 1, label: 'Cliente' },
-            { num: 2, label: 'Servico' },
-            { num: 3, label: 'Pagamento' }
-          ].map((step) => (
-            <div key={step.num} className="flex flex-col items-center gap-1.5 bg-[var(--surface-card)] px-2 rounded-lg">
-              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold transition-all duration-300 ${currentStep > step.num
-                ? 'bg-green-500 text-[var(--text-primary)] border-0'
-                : currentStep === step.num
-                  ? 'bg-[var(--brand-primary)] text-black shadow-[0_0_10px_rgba(212,175,55,0.3)] scale-105'
-                  : 'bg-[var(--surface-card)] text-[var(--text-subtle)] border border-[var(--border-default)]'
-                }`}>
-                {currentStep > step.num ? <Check size={12} /> : step.num}
-              </div>
-              <span className={`text-[10px] font-semibold tracking-tight transition-colors duration-300 ${currentStep >= step.num ? 'text-[var(--text-primary)]' : 'text-[var(--text-subtle)]'}`}>
-                {step.label}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="p-4">
-        {error && (
-          <div className="bg-red-500/10 border border-red-500/20 text-red-500 text-sm p-2 rounded mb-3">
-            {error}
-          </div>
-        )}
-
-        {/* Step 1: Select Client */}
-        {currentStep === 1 && (
-          <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-            <div className="flex items-center justify-between">
+            <div className="relative flex justify-between items-center">
               <div className="flex items-center gap-3">
-                {isCreatingNewClient && (
-                  <button
-                    onClick={() => setIsCreatingNewClient(false)}
-                    className="w-8 h-8 rounded-full bg-[var(--surface-subtle)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
-                  >
-                    <ArrowLeft size={16} />
-                  </button>
-                )}
-                <h2 className="text-lg font-bold text-[var(--text-primary)]">
-                  {isCreatingNewClient ? 'Novo Cliente' : 'Selecionar Cliente'}
-                </h2>
-              </div>
-              {!isCreatingNewClient && (
-                <button
-                  onClick={() => {
-                    setIsCreatingNewClient(true);
-                    setNewClientName('');
-                    setNewClientPhone('');
-                    setNewClientEmail('');
-                    setError('');
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center"
+                  style={{
+                    background: 'var(--dark-brand-10)',
+                    border: '1px solid var(--dark-brand-20)'
                   }}
-                  className="text-xs font-bold text-[var(--brand-primary)] hover:text-[var(--brand-primary)]hover flex items-center gap-1.5 transition-colors"
                 >
-                  <UserPlus size={14} />
-                  Cadastrar novo
-                </button>
-              )}
+                  <Zap size={20} style={{ color: 'var(--dark-brand-primary)' }} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold" style={{ color: 'var(--dark-text-main)' }}>Agendamento Rápido</h3>
+                  <p className="text-xs" style={{ color: 'var(--dark-text-muted)' }}>
+                    {selectedDate && !isNaN(selectedDate.getTime()) ? format(selectedDate, "EEEE, d 'de' MMMM", { locale: ptBR }) : 'Data não disponível'} • {selectedTime} • {professional.name}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={onClose}
+                className="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:bg-white/10"
+                style={{ color: 'var(--dark-text-muted)' }}
+              >
+                <X size={18} />
+              </button>
             </div>
+          </div>
+          {/* Step Progress - Premium Design */}
+          <div className="px-6 py-4" style={{ background: 'var(--dark-bg-elevated-30)' }}>
+            <div className="flex items-center justify-between">
+              {[
+                { num: 1, label: 'Cliente', icon: User },
+                { num: 2, label: 'Serviço', icon: Zap },
+                { num: 3, label: 'Pagamento', icon: CreditCard }
+              ].map((step, index, array) => {
+                const IconComponent = step.icon;
+                const isCompleted = currentStep > step.num;
+                const isActive = currentStep === step.num;
 
-            {isCreatingNewClient ? (
-              <div className="space-y-4">
-                <Input
-                  label="Nome Completo"
-                  placeholder="Ex: Joao Silva"
-                  icon={<User size={18} />}
-                  value={newClientName}
-                  onChange={(e) => setNewClientName(e.target.value)}
-                  autoFocus
-                />
-                <Input
-                  label="Telefone"
-                  placeholder="(11) 99999-9999"
-                  icon={<Phone size={18} />}
-                  value={newClientPhone}
-                  onChange={(e) => {
-                    let v = e.target.value.replace(/\D/g, '');
-                    if (v.length > 11) v = v.substring(0, 11);
-                    if (v.length > 2) v = `(${v.substring(0, 2)}) ${v.substring(2)}`;
-                    if (v.length > 9) v = `${v.substring(0, 9)}-${v.substring(9)}`;
-                    setNewClientPhone(v);
-                  }}
-                />
-                <Input
-                  label="E-mail (opcional)"
-                  type="email"
-                  placeholder="email@exemplo.com"
-                  icon={<Mail size={18} />}
-                  value={newClientEmail}
-                  onChange={(e) => setNewClientEmail(e.target.value)}
-                />
+                return (
+                  <React.Fragment key={step.num}>
+                    <div className="flex flex-col items-center gap-2">
+                      <div
+                        className="relative w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300"
+                        style={{
+                          background: isCompleted
+                            ? 'var(--dark-status-confirmed-bg)'
+                            : isActive
+                              ? 'var(--dark-brand-10)'
+                              : 'var(--dark-bg-subtle-20)',
+                          border: isCompleted
+                            ? '1px solid var(--dark-status-confirmed-border)'
+                            : isActive
+                              ? '1px solid var(--dark-brand-30)'
+                              : '1px solid var(--dark-border-default)'
+                        }}
+                      >
+                        {isCompleted ? (
+                          <Check size={20} style={{ color: 'var(--dark-status-confirmed)' }} />
+                        ) : (
+                          <IconComponent
+                            size={20}
+                            style={{ color: isActive ? 'var(--dark-brand-primary)' : 'var(--dark-text-faint)' }}
+                          />
+                        )}
+
+                        {/* Pulse animation for active step - very subtle */}
+                        {isActive && (
+                          <div
+                            className="absolute inset-0 rounded-2xl animate-pulse"
+                            style={{
+                              background: 'var(--dark-brand-primary)',
+                              opacity: 0.1
+                            }}
+                          />
+                        )}
+                      </div>
+                      <span
+                        className="text-[11px] font-medium tracking-wide"
+                        style={{
+                          color: isCompleted
+                            ? 'var(--dark-status-confirmed)'
+                            : isActive
+                              ? 'var(--dark-brand-primary)'
+                              : 'var(--dark-text-faint)'
+                        }}
+                      >
+                        {step.label}
+                      </span>
+                    </div>
+
+                    {index < array.length - 1 && (
+                      <div className="flex-1 mx-3 relative h-0.5">
+                        <div
+                          className="absolute inset-0 rounded-full"
+                          style={{ background: 'var(--dark-border-subtle)' }}
+                        />
+                        <div
+                          className="absolute inset-0 rounded-full transition-all duration-500"
+                          style={{
+                            background: isCompleted
+                              ? 'var(--dark-status-confirmed)'
+                              : 'transparent',
+                            width: isCompleted ? '100%' : '0%',
+                            opacity: 0.5
+                          }}
+                        />
+                      </div>
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Content Area */}
+          <div className="p-6 max-h-[60vh] overflow-y-auto custom-scrollbar">
+            {/* Quick Booking Badge / Duration Warning */}
+            {!showDurationWarning ? (
+              <div
+                className="mb-4 p-3 rounded-xl flex items-center gap-3"
+                style={{
+                  background: 'var(--dark-badge-success-bg)',
+                  border: '1px solid var(--dark-badge-success-border)'
+                }}
+              >
+                <Zap size={16} style={{ color: 'var(--dark-badge-success-text)' }} />
+                <span className="text-xs font-medium" style={{ color: 'var(--dark-badge-success-text)' }}>
+                  Encaixe disponível - horário livre
+                </span>
               </div>
             ) : (
-              <div className="space-y-4">
-                <Input
-                  placeholder="Buscar por nome ou telefone..."
-                  icon={<Search size={20} />}
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  autoFocus
-                />
+              <div
+                className="mb-4 p-3 rounded-xl flex flex-col gap-1"
+                style={{
+                  background: 'var(--dark-badge-warning-bg)',
+                  border: '1px solid var(--dark-badge-warning-border)'
+                }}
+              >
+                <div className="flex items-center gap-3">
+                  <AlertTriangle size={16} style={{ color: 'var(--dark-badge-warning-text)' }} />
+                  <span className="text-xs font-medium" style={{ color: 'var(--dark-badge-warning-text)' }}>
+                    Aviso: Serviço pode conflitar com próximo agendamento
+                  </span>
+                </div>
+                {nextAppointmentTime && (
+                  <span className="text-[10px] ml-7 font-bold uppercase tracking-wider" style={{ color: 'var(--dark-text-subtle)' }}>
+                    Próximo agendamento às {nextAppointmentTime}
+                  </span>
+                )}
+              </div>
+            )}
 
-                <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1 custom-scrollbar">
-                  {filteredClients.length === 0 ? (
-                    <div className="text-center py-8 bg-[var(--surface-app)]/30 rounded-xl border border-dashed border-[var(--border-default)]">
-                      <div className="w-10 h-10 rounded-full bg-[var(--surface-subtle)] flex items-center justify-center mx-auto mb-2 text-[var(--text-subtle)]">
-                        <Search size={18} />
+            {/* Error Message */}
+            {error && (
+              <div
+                className="mb-4 p-4 rounded-xl flex items-start gap-3 animate-shake"
+                style={{
+                  background: 'var(--dark-badge-danger-bg)',
+                  border: '1px solid var(--dark-badge-danger-border)'
+                }}
+              >
+                <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: 'var(--dark-btn-danger-bg)' }}>
+                  <X size={12} style={{ color: 'var(--dark-badge-danger-text)' }} />
+                </div>
+                <p className="text-sm" style={{ color: 'var(--dark-badge-danger-text)' }}>{error}</p>
+              </div>
+            )}
+
+            {/* Step 1: Select Client */}
+            {currentStep === 1 && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-base font-semibold text-white">
+                    {isCreatingNewClient ? 'Cadastrar Cliente' : 'Selecionar Cliente'}
+                  </h2>
+                  <button
+                    onClick={() => {
+                      setIsCreatingNewClient(!isCreatingNewClient);
+                      setError('');
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                    style={{
+                      background: 'var(--dark-brand-5)',
+                      color: 'var(--dark-brand-primary)',
+                      border: '1px solid var(--dark-brand-20)'
+                    }}
+                  >
+                    {isCreatingNewClient ? (
+                      <><Search size={12} /> Buscar</>
+                    ) : (
+                      <><UserPlus size={12} /> Novo</>
+                    )}
+                  </button>
+                </div>
+
+                {isCreatingNewClient ? (
+                  <div className="space-y-4">
+                    {/* Name Input */}
+                    <div>
+                      <label className="block text-[11px] uppercase tracking-wider text-zinc-500 mb-2 font-medium">
+                        Nome Completo *
+                      </label>
+                      <div className="relative group">
+                        <User
+                          size={16}
+                          className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-amber-500 transition-colors"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Digite o nome..."
+                          className="w-full pl-11 pr-4 py-3 rounded-xl text-sm text-white placeholder-zinc-600 outline-none transition-all"
+                          style={{
+                            background: 'var(--dark-bg-input)',
+                            border: '1px solid var(--dark-border-default)'
+                          }}
+                          value={newClientName}
+                          onChange={(e) => setNewClientName(e.target.value)}
+                          autoFocus
+                        />
                       </div>
-                      <p className="text-[var(--text-muted)] text-sm">Nenhum cliente encontrado</p>
-                      <button
-                        onClick={() => setIsCreatingNewClient(true)}
-                        className="text-[var(--brand-primary)] text-xs font-bold mt-2 hover:underline"
-                      >
-                        Cadastrar novo
-                      </button>
                     </div>
-                  ) : (
-                    filteredClients.map((client) => (
+
+                    {/* Phone Input */}
+                    <div>
+                      <label className="block text-[11px] uppercase tracking-wider text-zinc-500 mb-2 font-medium">
+                        Telefone *
+                      </label>
+                      <div className="relative group">
+                        <Phone
+                          size={16}
+                          className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-amber-500 transition-colors"
+                        />
+                        <input
+                          type="tel"
+                          placeholder="(11) 99999-9999"
+                          className="w-full pl-11 pr-4 py-3 rounded-xl text-sm text-white placeholder-zinc-600 outline-none transition-all"
+                          style={{
+                            background: 'var(--dark-bg-input)',
+                            border: '1px solid var(--dark-border-default)'
+                          }}
+                          value={newClientPhone}
+                          onChange={(e) => {
+                            let v = e.target.value.replace(/\D/g, '');
+                            if (v.length > 11) v = v.substring(0, 11);
+                            if (v.length > 2) v = `(${v.substring(0, 2)}) ${v.substring(2)}`;
+                            if (v.length > 9) v = `${v.substring(0, 9)}-${v.substring(9)}`;
+                            setNewClientPhone(v);
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Email Input */}
+                    <div>
+                      <label className="block text-[11px] uppercase tracking-wider text-zinc-500 mb-2 font-medium">
+                        Email <span className="text-zinc-600">(opcional)</span>
+                      </label>
+                      <div className="relative group">
+                        <Mail
+                          size={16}
+                          className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-amber-500 transition-colors"
+                        />
+                        <input
+                          type="email"
+                          placeholder="email@exemplo.com"
+                          className="w-full pl-11 pr-4 py-3 rounded-xl text-sm text-white placeholder-zinc-600 outline-none transition-all"
+                          style={{
+                            background: 'rgba(255, 255, 255, 0.03)',
+                            border: '1px solid rgba(255, 255, 255, 0.08)'
+                          }}
+                          value={newClientEmail}
+                          onChange={(e) => setNewClientEmail(e.target.value)}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Create Button */}
+                    <button
+                      onClick={handleCreateClient}
+                      disabled={isCreatingClient || !newClientName.trim() || !newClientPhone.trim()}
+                      className="w-full py-3.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                      style={{
+                        background: 'var(--dark-brand-primary)',
+                        color: 'var(--dark-text-inverted)'
+                      }}
+                    >
+                      {isCreatingClient ? (
+                        <div className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                      ) : (
+                        <><UserPlus size={18} /> Criar e Continuar</>
+                      )}
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    {/* Search Input */}
+                    <div className="relative group">
+                      <div className="absolute left-4 top-0 bottom-0 flex items-center">
+                        <Search size={18} className="text-zinc-500 group-focus-within:text-amber-500 transition-colors" />
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Buscar cliente..."
+                        className="w-full pl-12 pr-4 py-3.5 rounded-xl text-sm outline-none transition-all"
+                        style={{
+                          background: 'var(--dark-bg-input)',
+                          border: '1px solid var(--dark-border-default)',
+                          color: 'var(--dark-text-main)'
+                        }}
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        autoFocus
+                      />
+                    </div>
+
+                    {/* Client List */}
+                    <div className="space-y-2 max-h-[280px] overflow-y-auto custom-scrollbar">
+                      {filteredClients.length === 0 ? (
+                        <div className="text-center py-8">
+                          <div
+                            className="w-14 h-14 rounded-2xl mx-auto mb-3 flex items-center justify-center"
+                            style={{ background: 'rgba(255, 255, 255, 0.05)' }}
+                          >
+                            <User size={24} className="text-zinc-600" />
+                          </div>
+                          <p className="text-sm text-zinc-500 mb-2">Nenhum cliente encontrado</p>
+                          <button
+                            onClick={() => setIsCreatingNewClient(true)}
+                            className="text-sm font-medium text-amber-500 hover:text-amber-400 transition-colors"
+                          >
+                            + Criar novo cliente
+                          </button>
+                        </div>
+                      ) : (
+                        filteredClients.map((client, index) => (
+                          <button
+                            key={client.id}
+                            onClick={() => handleClientSelect(client)}
+                            className="w-full p-4 rounded-xl flex items-center justify-between transition-all group"
+                            style={{
+                              background: 'var(--dark-bg-elevated-30)',
+                              border: '1px solid var(--dark-border-subtle)',
+                              transition: 'all 0.2s ease'
+                            }}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div
+                                className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold"
+                                style={{
+                                  background: `linear-gradient(135deg, hsl(${(index * 40) % 360}, 60%, 50%) 0%, hsl(${(index * 40 + 30) % 360}, 60%, 40%) 100%)`,
+                                  color: 'white'
+                                }}
+                              >
+                                {client.name.charAt(0).toUpperCase()}
+                              </div>
+                              <div className="text-left">
+                                <div className="font-semibold text-white text-sm">{client.name}</div>
+                                <div className="text-xs text-zinc-500">{client.phone}</div>
+                              </div>
+                            </div>
+                            <ArrowRight
+                              size={18}
+                              className="text-zinc-600 group-hover:text-amber-500 transition-colors"
+                            />
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Step 2: Service Selection */}
+            {currentStep === 2 && selectedClient && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setCurrentStep(1)}
+                    className="w-10 h-10 rounded-xl flex items-center justify-center transition-all hover:bg-white/5 active:scale-95"
+                    style={{ background: 'var(--dark-bg-subtle-20)', border: '1px solid var(--dark-border-default)' }}
+                  >
+                    <ArrowLeft size={20} className="text-zinc-400" />
+                  </button>
+                  <h2 className="text-base font-semibold text-white">Selecionar Serviço</h2>
+                </div>
+
+                {/* Selected Client Summary */}
+                <div
+                  className="p-4 rounded-2xl flex items-center justify-between group transition-all"
+                  style={{
+                    background: 'var(--dark-brand-10)',
+                    border: '1px solid var(--dark-brand-20)'
+                  }}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="relative">
+                      <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-amber-500 text-black font-bold text-lg">
+                        {selectedClient.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-green-500 border-2 border-[#1c1c1f] flex items-center justify-center">
+                        <Check size={10} className="text-white" />
+                      </div>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-amber-500/70 uppercase font-bold tracking-widest block mb-0.5">Cliente Selecionado</span>
+                      <h3 className="text-sm font-semibold text-white leading-none">{selectedClient.name}</h3>
+                      <p className="text-xs text-zinc-500 mt-1">{selectedClient.phone}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setCurrentStep(1)}
+                    className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+                    style={{ color: 'var(--dark-brand-primary)', background: 'var(--dark-brand-10)' }}
+                  >
+                    Alterar
+                  </button>
+                </div>
+
+                {/* Service Search */}
+                <div className="relative group">
+                  <Search
+                    size={18}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-amber-500 transition-colors"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Buscar serviço..."
+                    className="w-full pl-12 pr-4 py-3.5 rounded-xl text-sm text-white placeholder-zinc-500 outline-none transition-all"
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.03)',
+                      border: '1px solid rgba(255, 255, 255, 0.08)'
+                    }}
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+
+                {/* Service List */}
+                <div className="space-y-2 max-h-[250px] overflow-y-auto custom-scrollbar">
+                  {services
+                    .filter(s => s.name.toLowerCase().includes(searchTerm.toLowerCase()))
+                    .map((service) => (
                       <button
-                        key={client.id}
-                        onClick={() => handleClientSelect(client)}
-                        className="w-full bg-[var(--surface-app)]/50 hover:bg-[var(--surface-subtle)] border border-[var(--border-default)] hover:border-amber-500/40 p-2.5 rounded-lg flex items-center justify-between transition-all group"
+                        key={service.id}
+                        onClick={() => handleServiceSelect(service)}
+                        className={`w-full p-4 rounded-xl flex items-center justify-between transition-all group ${selectedService?.id === service.id ? 'ring-1 ring-[var(--dark-brand-primary)]/30' : ''}`}
+                        style={{
+                          background: selectedService?.id === service.id ? 'var(--dark-brand-5)' : 'var(--dark-card-bg)',
+                          border: selectedService?.id === service.id ? '1px solid var(--dark-brand-20)' : '1px solid var(--dark-border-subtle)',
+                        }}
                       >
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-full bg-[var(--surface-subtle)] flex items-center justify-center text-[var(--brand-primary)] font-bold text-[10px]">
-                            {client.name.substring(0, 2).toUpperCase()}
+                        <div className="flex items-center gap-4">
+                          <div
+                            className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                            style={{ background: 'var(--dark-bg-subtle-20)' }}
+                          >
+                            <Zap size={20} style={{ color: 'var(--dark-brand-primary)' }} />
                           </div>
                           <div className="text-left">
-                            <div className="font-semibold text-[var(--text-primary)] text-sm group-hover:text-[var(--brand-primary)] transition-colors">{client.name}</div>
-                            <div className="text-[10px] text-[var(--text-subtle)] flex items-center gap-1">
-                              <Phone size={9} />
-                              {client.phone}
+                            <div className="font-semibold text-sm transition-colors"
+                              style={{ color: selectedService?.id === service.id ? 'var(--dark-brand-primary)' : 'var(--dark-text-main)' }}
+                            >
+                              {service.name}
+                            </div>
+                            <div className="flex items-center gap-3 mt-1">
+                              <div className="flex items-center gap-1 text-[11px]" style={{ color: 'var(--dark-text-subtle)' }}>
+                                <Clock size={12} style={{ color: 'var(--dark-text-faint)' }} />
+                                {service.duration_minutes} min
+                              </div>
+                              <div className="w-1 h-1 rounded-full" style={{ background: 'var(--dark-border-strong)' }} />
+                              <div className="text-[11px] font-bold" style={{ color: 'var(--dark-status-confirmed)' }}>
+                                R$ {service.price.toFixed(2)}
+                              </div>
                             </div>
                           </div>
                         </div>
-                        <div className="w-6 h-6 rounded-full bg-[var(--surface-card)] flex items-center justify-center text-[var(--text-subtle)] group-hover:text-[var(--brand-primary)] group-hover:bg-[var(--surface-subtle)] transition-all">
-                          <ArrowRight size={14} />
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
+                          style={{ background: 'var(--dark-bg-subtle-20)' }}
+                        >
+                          <ArrowRight size={16} style={{ color: 'var(--dark-brand-primary)' }} />
                         </div>
                       </button>
-                    ))
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Step 2: Service Selection */}
-        {currentStep === 2 && selectedClient && (
-          <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
-            <div className="flex items-center gap-3 mb-2">
-              <button
-                onClick={() => setCurrentStep(1)}
-                className="w-8 h-8 rounded-full bg-[var(--surface-subtle)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
-              >
-                <ArrowLeft size={16} />
-              </button>
-              <h2 className="text-lg font-bold text-[var(--text-primary)]">Servico</h2>
-            </div>
-
-            {/* Client Info */}
-            <div className="bg-[var(--surface-app)]/40 p-3 rounded-xl border border-[var(--border-default)] flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-[var(--surface-subtle)] flex items-center justify-center text-[var(--brand-primary)] font-bold text-xs">
-                  {selectedClient.name.substring(0, 2).toUpperCase()}
-                </div>
-                <div>
-                  <div className="text-[10px] text-[var(--text-subtle)] uppercase tracking-wider">Cliente</div>
-                  <div className="text-[var(--text-primary)] font-bold text-sm">{selectedClient.name}</div>
-                </div>
-              </div>
-              <button
-                onClick={() => setCurrentStep(1)}
-                className="text-[var(--brand-primary)] text-xs font-bold hover:bg-[var(--brand)]/10 px-2 py-1 rounded transition-all"
-              >
-                Alterar
-              </button>
-            </div>
-
-            {/* Service Selection */}
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-widest pl-1">Selecione o Servico</label>
-              <Select
-                value={selectedService?.id || ''}
-                onChange={(e) => setSelectedService(services.find(s => s.id === e.target.value) || null)}
-                options={services.map(s => ({
-                  value: s.id,
-                  label: `${s.name} - R$ ${s.price.toFixed(2)} (${s.duration_minutes} min)`
-                }))}
-              />
-            </div>
-
-            {/* Time Display (Read-Only) */}
-            <div className="bg-[var(--surface-app)]/50 p-4 rounded-xl border border-[var(--border-subtle)]">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-[var(--surface-card)] border border-[var(--border-default)] flex flex-col items-center justify-center text-[var(--brand-primary)]">
-                  <span className="text-[9px] uppercase font-bold leading-none">{format(selectedDate, 'MMM', { locale: ptBR })}</span>
-                  <span className="text-sm font-bold leading-none mt-0.5">{format(selectedDate, 'dd')}</span>
-                </div>
-                <div>
-                  <div className="text-[10px] font-bold text-[var(--text-subtle)] uppercase tracking-widest">Data e Horario</div>
-                  <div className="text-[var(--text-primary)] font-bold">
-                    {format(selectedDate, "EEEE, dd/MM", { locale: ptBR })} as <span className="text-[var(--brand-primary)]">{selectedTime}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Step 3: Payment */}
-        {currentStep === 3 && (
-          <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
-            <div className="flex items-center gap-3 mb-2">
-              <button
-                onClick={() => {
-                  if (bookingLink) return;
-                  if (paymentMethod) setPaymentMethod(null);
-                  else setCurrentStep(2);
-                }}
-                className="w-8 h-8 rounded-full bg-[var(--surface-subtle)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
-                disabled={bookingLink !== ''}
-              >
-                <ArrowLeft size={16} />
-              </button>
-              <h2 className="text-lg font-bold text-[var(--text-primary)] flex-1">
-                {!paymentMethod ? 'Confirmar Agendamento' : bookingLink ? 'Link Gerado!' : 'Pagamento'}
-              </h2>
-            </div>
-
-            {/* Summary Card */}
-            {!bookingLink && (
-              <div className="bg-[var(--surface-app)]/40 rounded-xl border border-[var(--border-default)] overflow-hidden">
-                <div className="bg-[var(--surface-subtle)]/40 px-4 py-2 border-b border-[var(--border-subtle)] flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Resumo</span>
-                  <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-green-500/10 text-[var(--status-success)] text-[10px] font-bold border border-green-500/20">
-                    <div className="w-1 h-1 rounded-full bg-green-500 animate-pulse" />
-                    PRONTO
-                  </div>
-                </div>
-                <div className="p-4 space-y-3">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <div className="text-[10px] font-bold text-[var(--text-subtle)] uppercase">Cliente</div>
-                      <div className="text-[var(--text-primary)] font-bold text-sm truncate">{selectedClient?.name}</div>
-                    </div>
-                    <div>
-                      <div className="text-[10px] font-bold text-[var(--text-subtle)] uppercase">Profissional</div>
-                      <div className="text-[var(--text-primary)] font-bold text-sm truncate">{professional.name}</div>
-                    </div>
-                    <div>
-                      <div className="text-[10px] font-bold text-[var(--text-subtle)] uppercase">Servico</div>
-                      <div className="text-[var(--text-primary)] font-bold text-sm truncate">{selectedService?.name}</div>
-                    </div>
-                    <div>
-                      <div className="text-[10px] font-bold text-[var(--text-subtle)] uppercase">Valor</div>
-                      <div className="text-success-500 font-black text-base">R$ {selectedService?.price.toFixed(2)}</div>
-                    </div>
-                  </div>
+                    ))}
                 </div>
               </div>
             )}
 
-            {/* Payment Method Selection */}
-            {!paymentMethod && !bookingLink && (
-              <div className="space-y-3">
-                {!stripeConfigured && (
-                  <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 flex items-start gap-3">
-                    <AlertTriangle size={18} className="text-amber-500 shrink-0 mt-0.5" />
-                    <div>
-                      <div className="text-amber-500 font-bold text-sm">Stripe nao configurado</div>
-                      <div className="text-amber-200/60 text-xs">
-                        Configure em <b>Financas</b> para gerar links.
+            {/* Step 3: Payment */}
+            {currentStep === 3 && (
+              <div className="space-y-6">
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => {
+                      if (bookingLink) return;
+                      setPaymentMethod(null);
+                      setCurrentStep(2);
+                    }}
+                    className="w-10 h-10 rounded-xl flex items-center justify-center transition-all hover:bg-white/5 active:scale-95"
+                    style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.08)' }}
+                    disabled={!!bookingLink}
+                  >
+                    <ArrowLeft size={20} className="text-zinc-400" />
+                  </button>
+                  <h2 className="text-base font-semibold text-white">
+                    {bookingLink ? 'Link de Pagamento Gerado' : 'Finalizar Agendamento'}
+                  </h2>
+                </div>
+
+                {/* Summary Card */}
+                <div
+                  className="p-5 rounded-2xl flex flex-col gap-4 transition-all"
+                  style={{
+                    background: 'var(--dark-bg-card)',
+                    border: '1px solid var(--dark-border-default)'
+                  }}
+                >
+                  <div className="px-5 py-3 border-b border-white/5 flex items-center justify-between" style={{ background: 'rgba(255, 255, 255, 0.01)' }}>
+                    <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest leading-none">Resumo do Serviço</span>
+                    <Sparkles size={14} className="text-amber-500/50" />
+                  </div>
+
+                  <div className="p-5 space-y-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <div className="text-[10px] font-bold text-zinc-600 uppercase tracking-wider mb-1">Cliente</div>
+                        <div className="text-sm font-semibold text-white">{selectedClient?.name}</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-[10px] font-bold text-zinc-600 uppercase tracking-wider mb-1">Serviço</div>
+                        <div className="text-sm font-semibold text-white">{selectedService?.name}</div>
+                      </div>
+                    </div>
+
+                    <div className="h-px bg-white/5" />
+
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center">
+                          <Clock size={16} className="text-zinc-500" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold uppercase tracking-wider leading-none mb-1" style={{ color: 'var(--dark-text-faint)' }}>Duração</p>
+                          <p className="text-xs text-zinc-300 font-medium">{selectedService?.duration_minutes} min</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[10px] font-bold uppercase tracking-wider leading-none mb-1" style={{ color: 'var(--dark-text-faint)' }}>Total</p>
+                        <p className="text-xl font-bold" style={{ color: 'var(--dark-status-confirmed)' }}>
+                          R$ {selectedService?.price.toFixed(2)}
+                        </p>
                       </div>
                     </div>
                   </div>
+                </div>
+
+                {/* Payment Method Selection */}
+                {!paymentMethod && !bookingLink && (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        onClick={() => setPaymentMethod('online')}
+                        disabled={!stripeConfigured}
+                        className={`group p-4 rounded-2xl border transition-all flex flex-col items-center gap-3 ${stripeConfigured
+                          ? 'hover:border-[var(--dark-brand-50)] hover:bg-[var(--dark-brand-5)]'
+                          : 'opacity-40 cursor-not-allowed grayscale'
+                          }`}
+                        style={{
+                          background: 'var(--dark-bg-subtle-20)',
+                          borderColor: stripeConfigured ? 'var(--dark-border-default)' : 'transparent'
+                        }}
+                      >
+                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${stripeConfigured ? 'shadow-lg shadow-[var(--dark-brand-shadow)]' : ''
+                          }`}
+                          style={{
+                            background: stripeConfigured ? 'var(--dark-brand-primary)' : 'var(--dark-bg-subtle)',
+                            color: stripeConfigured ? 'var(--dark-text-inverted)' : 'var(--dark-text-subtle)'
+                          }}
+                        >
+                          <CreditCard size={24} />
+                        </div>
+                        <div className="text-center">
+                          <div className="font-bold text-white text-sm">Link de Pagamento</div>
+                          <div className="text-[10px] font-bold uppercase mt-0.5 tracking-wider" style={{ color: 'var(--dark-text-subtle)' }}>Pagamento Online</div>
+                        </div>
+                      </button>
+
+                      <button
+                        onClick={() => setPaymentMethod('presential')}
+                        className="group p-4 rounded-2xl border transition-all flex flex-col items-center gap-3 hover:border-[var(--dark-status-confirmed-border)] hover:bg-[var(--dark-status-confirmed-bg)]"
+                        style={{
+                          background: 'var(--dark-bg-subtle-20)',
+                          border: '1px solid var(--dark-border-default)'
+                        }}
+                      >
+                        <div className="w-12 h-12 rounded-xl text-white flex items-center justify-center shadow-lg shadow-[var(--dark-status-confirmed-border)]"
+                          style={{ background: 'var(--dark-btn-success-bg)' }}
+                        >
+                          <CheckCircle size={24} />
+                        </div>
+                        <div className="text-center">
+                          <div className="font-bold text-white text-sm">Pagar no Local</div>
+                          <div className="text-[10px] font-bold uppercase mt-0.5 tracking-wider" style={{ color: 'var(--dark-text-subtle)' }}>Manual / POS</div>
+                        </div>
+                      </button>
+                    </div>
+
+                    {!stripeConfigured && (
+                      <div
+                        className="p-3 rounded-xl flex gap-3"
+                        style={{
+                          background: 'var(--dark-brand-5)',
+                          border: '1px solid var(--dark-brand-20)'
+                        }}
+                      >
+                        <AlertTriangle size={16} className="shrink-0 mt-0.5" style={{ color: 'var(--dark-brand-primary)' }} />
+                        <p className="text-[11px] font-medium" style={{ color: 'var(--dark-brand-primary)', opacity: 0.7 }}>
+                          Stripe não configurado. Ative em <strong style={{ color: 'var(--dark-brand-primary)' }}>Finanças</strong> para gerar links de pagamento.
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 )}
 
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    onClick={() => setPaymentMethod('online')}
-                    disabled={!stripeConfigured}
-                    className={`group p-3 rounded-lg border-2 transition-all flex flex-col items-center gap-1.5 ${stripeConfigured
-                      ? 'bg-[var(--surface-app)]/50 border-[var(--border-default)] hover:border-amber-500/50'
-                      : 'bg-gray-900/20 border-gray-800 opacity-40 cursor-not-allowed'
-                      }`}
-                  >
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${stripeConfigured ? 'bg-[var(--brand-primary)]/10 text-[var(--brand-primary)]' : 'bg-gray-800 text-[var(--text-subtle)]'}`}>
-                      <LinkIcon size={18} />
+                {/* Booking Link Result */}
+                {paymentMethod === 'online' && bookingLink && (
+                  <div className="space-y-4 animate-in zoom-in-95 duration-500">
+                    <div
+                      className="p-4 rounded-xl flex items-center justify-between gap-3"
+                      style={{ background: 'var(--dark-badge-success-bg)', border: '1px solid var(--dark-badge-success-border)' }}
+                    >
+                      <div className="truncate flex-1">
+                        <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: 'var(--dark-status-confirmed)' }}>Link Gerado com Sucesso</p>
+                        <p className="text-sm font-mono truncate" style={{ color: 'var(--dark-text-secondary)' }}>{bookingLink}</p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          copyToClipboard(bookingLink);
+                          setShowToast(true);
+                        }}
+                        className="w-10 h-10 rounded-lg flex items-center justify-center transition-all shadow-lg shadow-green-500/20"
+                        style={{ background: 'var(--dark-btn-success-bg)', color: 'white' }}
+                      >
+                        <Copy size={18} />
+                      </button>
                     </div>
-                    <div className="text-center">
-                      <div className="font-bold text-[var(--text-primary)] text-sm">Gerar Link</div>
-                      <div className="text-[9px] font-bold text-[var(--text-subtle)] uppercase">Stripe</div>
-                    </div>
-                  </button>
 
-                  <button
-                    onClick={() => setPaymentMethod('presential')}
-                    className="group p-3 rounded-lg border-2 border-[var(--border-default)] bg-[var(--surface-app)]/50 hover:border-success-500/50 transition-all flex flex-col items-center gap-1.5"
-                  >
-                    <div className="w-8 h-8 rounded-lg bg-success-500/10 flex items-center justify-center text-success-500">
-                      <Banknote size={18} />
-                    </div>
-                    <div className="text-center">
-                      <div className="font-bold text-[var(--text-primary)] text-sm">No Local</div>
-                      <div className="text-[9px] font-bold text-[var(--text-subtle)] uppercase">Manual</div>
-                    </div>
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Link Generated Success */}
-            {paymentMethod === 'online' && bookingLink && (
-              <div className="space-y-4 animate-in zoom-in-95 duration-300">
-                <div className="text-center space-y-2">
-                  <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center text-[var(--status-success)] mx-auto border border-green-500/20">
-                    <Check size={32} />
+                    <button
+                      onClick={() => { onSuccess(); onClose(); }}
+                      className="w-full py-3.5 rounded-xl text-white font-bold text-sm transition-all"
+                      style={{
+                        background: 'var(--dark-bg-subtle-20)',
+                        border: '1px solid var(--dark-border-default)'
+                      }}
+                    >
+                      Concluir e Fechar
+                    </button>
                   </div>
-                  <h3 className="text-lg font-bold text-[var(--text-primary)]">Link Gerado!</h3>
-                  <p className="text-[var(--text-muted)] text-xs">Copie e envie para o cliente</p>
-                </div>
-
-                <div className="bg-[var(--surface-subtle)] border border-[var(--border-default)] p-3 rounded-xl flex items-center gap-2">
-                  <div className="flex-1 truncate text-xs text-[var(--brand-primary)] font-mono bg-[var(--surface-card)]/50 p-2 rounded-lg">
-                    {bookingLink}
-                  </div>
-                  <button
-                    onClick={() => {
-                      copyToClipboard(bookingLink);
-                      setShowToast(true);
-                    }}
-                    className="w-10 h-10 rounded-lg bg-[var(--brand-primary)] text-black flex items-center justify-center hover:bg-[var(--brand-hover)] transition-all"
-                    title="Copiar link"
-                  >
-                    <Copy size={18} />
-                  </button>
-                </div>
+                )}
               </div>
             )}
           </div>
+
+          {/* Footer - Final Actions */}
+          {((currentStep === 2) || (currentStep === 3 && paymentMethod)) && !bookingLink && (
+            <div className="p-6 border-t" style={{ background: 'var(--dark-modal-footer-bg)', borderTop: '1px solid var(--dark-modal-border)' }}>
+              <div className="flex gap-4">
+                {currentStep === 2 && (
+                  <button
+                    onClick={handleContinueToPayment}
+                    className="w-full py-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all transition-all"
+                    style={{
+                      background: 'var(--dark-brand-primary)',
+                      color: 'var(--dark-text-inverted)'
+                    }}
+                  >
+                    CONTINUAR PARA PAGAMENTO <ArrowRight size={18} />
+                  </button>
+                )}
+                {currentStep === 3 && paymentMethod === 'online' && !bookingLink && (
+                  <button
+                    onClick={handleCreateAppointment}
+                    disabled={isLoading}
+                    className="w-full py-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                    style={{
+                      background: 'var(--dark-brand-primary)',
+                      color: 'var(--dark-text-inverted)'
+                    }}
+                  >
+                    {isLoading ? (
+                      <div className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                    ) : (
+                      <><CreditCard size={18} /> GERAR LINK DE PAGAMENTO</>
+                    )}
+                  </button>
+                )}
+                {currentStep === 3 && paymentMethod === 'presential' && (
+                  <button
+                    onClick={handleCreateAppointment}
+                    disabled={isLoading}
+                    className="w-full py-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                    style={{
+                      background: 'var(--dark-btn-success-bg)',
+                      color: 'var(--dark-btn-success-text)'
+                    }}
+                  >
+                    {isLoading ? (
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    ) : (
+                      <><CheckCircle size={18} /> CONFIRMAR AGENDAMENTO</>
+                    )}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Toast Notification */}
+        {showToast && (
+          <Toast
+            message="Link copiado!"
+            type="success"
+            onClose={() => setShowToast(false)}
+          />
         )}
       </div>
-
-      {/* Toast */}
-      {showToast && (
-        <Toast
-          message="Link copiado!"
-          type="success"
-          onClose={() => setShowToast(false)}
-        />
-      )}
-    </Modal>
+    </>
   );
 };
 

@@ -266,44 +266,48 @@ const Calendar: React.FC<CalendarProps> = ({ initialDate, isFocusMode = false, s
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isFocusMode, setFocusMode]);
 
-  // Auto-scroll to current time when data is ready or component mounts
-  const hasScrolledOnMount = useRef(false);
-  useEffect(() => {
-    // Reset on mount
-    hasScrolledOnMount.current = false;
-  }, []);
-
+  // ===== AUTO-SCROLL TO CURRENT TIME =====
+  // Scrolls smoothly to position red line at top with upcoming appointments visible
   useEffect(() => {
     if (isLoadingBusinessHours || !businessHoursForDay) return;
     if (!scrollRef.current) return;
     if (!isSameDay(currentDate, new Date())) return;
-    if (hasScrolledOnMount.current) return; // Only scroll once per component mount
 
-    const [openHour] = businessHoursForDay.open.split(':').map(Number);
+    const [openHour, openMin = 0] = businessHoursForDay.open.split(':').map(Number);
     const now = new Date();
     const currentHour = now.getHours();
     const currentMinutes = now.getMinutes();
 
-    if (currentHour < openHour) return;
+    // If before opening, don't scroll
+    const openTotalMinutes = openHour * 60 + openMin;
+    const nowTotalMinutes = currentHour * 60 + currentMinutes;
+    if (nowTotalMinutes < openTotalMinutes) return;
 
+    // Calculate red line position
     const slotHeight = 120;
-    const minutesSinceOpen = (currentHour - openHour) * 60 + currentMinutes;
+    const minutesSinceOpen = nowTotalMinutes - openTotalMinutes;
     const redLinePosition = (minutesSinceOpen / 60) * slotHeight;
-    const scrollPosition = Math.max(0, redLinePosition - slotHeight);
 
-    setTimeout(() => {
+    // Scroll AFTER the red line - add offset to scroll past it
+    // This positions the line near the top, showing upcoming slots below
+    const scrollPosition = Math.max(0, redLinePosition + 50);
+
+    // Delay to ensure DOM is ready, then smooth scroll
+    const timer = setTimeout(() => {
       if (scrollRef.current) {
         // Reset horizontal scroll to show time column
         scrollRef.current.scrollLeft = 0;
-        // Scroll to current time vertically
+        // Scroll to current time with smooth animation
         scrollRef.current.scrollTo({
           top: scrollPosition,
           behavior: 'smooth'
         });
       }
-      hasScrolledOnMount.current = true;
-    }, 500);
+    }, 400);
+
+    return () => clearTimeout(timer);
   }, [isLoadingBusinessHours, businessHoursForDay, currentDate]);
+  // ===== END AUTO-SCROLL =====
 
   // === BACKEND DATA LOADING (from Agenda.tsx) ===
 
@@ -1985,7 +1989,7 @@ const Calendar: React.FC<CalendarProps> = ({ initialDate, isFocusMode = false, s
               {/* Uses calculated width to span full scrollable grid content */}
               {isSameDay(currentDate, getNowInBrazil()) && timeIndicator && (
                 <div
-                  className="absolute z-50 pointer-events-none flex items-center"
+                  className="absolute z-30 pointer-events-none flex items-center"
                   style={{
                     // Position already includes header offset from getCurrentTimePosition
                     top: `${timeIndicator.position}px`,
