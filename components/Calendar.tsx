@@ -1808,6 +1808,11 @@ const Calendar: React.FC<CalendarProps> = ({ initialDate, isFocusMode = false, s
                                       };
                                       const borderColor = borderColors[activeApt.status] || 'border-l-zinc-500';
 
+                                      // Time badge styles for split slot
+                                      const timeBadge = activeApt.status === 'confirmed'
+                                        ? { bg: 'bg-[#0d3320]', text: 'text-emerald-400', icon: 'check' as const }
+                                        : { bg: 'bg-[#422006]', text: 'text-amber-400', icon: 'clock' as const };
+
                                       return (
                                         <div
                                           className={`w-1/2 rounded-lg ${bgColor} border-l-4 ${borderColor} p-2 cursor-pointer hover:brightness-110 transition-all overflow-hidden flex flex-col`}
@@ -1819,9 +1824,17 @@ const Calendar: React.FC<CalendarProps> = ({ initialDate, isFocusMode = false, s
                                           <div className="text-[9px] text-zinc-400 truncate mb-auto">
                                             {service?.name || 'Serviço'}
                                           </div>
-                                          <div className="flex items-center gap-1 text-zinc-500 mt-1">
-                                            <Clock size={9} />
-                                            <span className="text-[8px] font-medium">{aptTime}</span>
+                                          <div className="mt-1">
+                                            <div className={`inline-flex items-center gap-0.5 ${timeBadge.bg} px-1 py-0.5 rounded`}>
+                                              {timeBadge.icon === 'check' ? (
+                                                <CheckCircle2 size={8} className={timeBadge.text} />
+                                              ) : (
+                                                <Clock size={8} className={timeBadge.text} />
+                                              )}
+                                              <span className={`text-[7px] font-bold ${timeBadge.text}`}>
+                                                {aptTime}
+                                              </span>
+                                            </div>
                                           </div>
                                         </div>
                                       );
@@ -1882,6 +1895,16 @@ const Calendar: React.FC<CalendarProps> = ({ initialDate, isFocusMode = false, s
                                 };
                                 const avatarColor = avatarColors[activeApt.status] || 'bg-zinc-600 text-zinc-300';
 
+                                // Time badge styles based on status (matching reference images)
+                                const timeBadgeStyles: Record<string, { bg: string; text: string; icon: 'check' | 'clock' }> = {
+                                  confirmed: { bg: 'bg-[#0d3320]', text: 'text-emerald-400', icon: 'check' },
+                                  pending: { bg: 'bg-[#422006]', text: 'text-amber-400', icon: 'clock' },
+                                  completed: { bg: 'bg-zinc-800', text: 'text-zinc-400', icon: 'check' },
+                                  awaiting_payment: { bg: 'bg-[#422006]', text: 'text-amber-400', icon: 'clock' },
+                                  cancelled: { bg: 'bg-red-900/50', text: 'text-red-400', icon: 'clock' },
+                                };
+                                const timeBadge = timeBadgeStyles[activeApt.status] || { bg: 'bg-zinc-800', text: 'text-zinc-400', icon: 'clock' };
+
                                 return (
                                   <div
                                     className={`absolute inset-1 rounded-lg ${bgColor} border-l-4 ${borderColor} p-1.5 sm:p-2 cursor-grab active:cursor-grabbing hover:brightness-110 transition-all overflow-hidden flex flex-col`}
@@ -1907,10 +1930,18 @@ const Calendar: React.FC<CalendarProps> = ({ initialDate, isFocusMode = false, s
                                       </div>
                                     )}
 
-                                    {/* Footer: Time range - simplified */}
-                                    <div className="flex items-center gap-0.5 text-zinc-400 mt-auto pt-0.5">
-                                      <Clock size={8} className="shrink-0" />
-                                      <span className="text-[8px] sm:text-[9px] font-medium truncate">{aptTime}</span>
+                                    {/* Footer: New Time Badge with status icon (matching reference design) */}
+                                    <div className="mt-auto pt-0.5">
+                                      <div className={`inline-flex items-center gap-1 ${timeBadge.bg} px-1.5 py-0.5 rounded`}>
+                                        {timeBadge.icon === 'check' ? (
+                                          <CheckCircle2 size={10} className={timeBadge.text} />
+                                        ) : (
+                                          <Clock size={10} className={timeBadge.text} />
+                                        )}
+                                        <span className={`text-[9px] font-bold ${timeBadge.text}`}>
+                                          {aptTime} até {aptEndTime}
+                                        </span>
+                                      </div>
                                     </div>
                                   </div>
                                 );
