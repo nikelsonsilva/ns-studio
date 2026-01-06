@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
@@ -7,10 +8,6 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
     containerClassName?: string;
 }
 
-/**
- * Input Component - NS Studio Dark Theme
- * Uses dark-theme-colors.css variables
- */
 const Input: React.FC<InputProps> = ({
     label,
     icon,
@@ -22,38 +19,26 @@ const Input: React.FC<InputProps> = ({
     return (
         <div className={`space-y-1 ${containerClassName}`}>
             {label && (
-                <label className="block text-xs font-semibold text-[var(--dark-text-muted)] uppercase mb-1.5 ml-0.5 tracking-wide">
+                <label className="block text-xs font-bold text-muted uppercase mb-1 ml-1 tracking-wide">
                     {label}
                 </label>
             )}
-            <div className="relative group flex items-center">
+            <div className="relative group">
                 {icon && (
-                    <div className="absolute left-3 flex items-center justify-center text-[var(--dark-text-subtle)] group-focus-within:text-[var(--dark-brand-primary)] transition-colors duration-150 pointer-events-none">
+                    <div className="absolute left-3 top-0 bottom-0 flex items-center text-muted group-focus-within:text-barber-gold transition-colors duration-200 pointer-events-none">
                         {icon}
                     </div>
                 )}
                 <input
-                    className={`
-                        w-full h-11 
-                        bg-[var(--dark-input-bg)] 
-                        border border-[var(--dark-input-border)] 
-                        text-[var(--dark-input-text)] 
-                        rounded-xl text-sm 
-                        outline-none 
-                        hover:border-[var(--dark-border-strong)]
-                        focus:border-[var(--dark-input-border-focus)] 
-                        focus:ring-4 focus:ring-[var(--dark-checkbox-focus-ring)]
-                        transition-all duration-150 ease-[cubic-bezier(0.2,0.8,0.2,1)]
-                        placeholder:text-[var(--dark-input-placeholder)]
-                        ${icon ? 'pl-10 pr-4' : 'px-4'} 
-                        ${error ? 'border-[var(--dark-input-border-error)] focus:border-[var(--dark-input-border-error)] focus:ring-[var(--dark-toast-error-bg)]' : ''}
-                        ${className}
-                    `.replace(/\s+/g, ' ').trim()}
+                    className={`w-full bg-input-bg border border-barber-800 text-main rounded-xl py-3 text-sm outline-none focus:border-barber-gold transition-all duration-200 ease-in-out placeholder:text-muted/50
+          ${icon ? 'pl-10 pr-4' : 'px-4'} 
+          ${error ? 'border-red-500 focus:border-red-500' : ''}
+          ${className}`}
                     {...props}
                 />
             </div>
             {error && (
-                <span className="text-xs text-[var(--dark-toast-error-icon)] ml-1 font-medium animate-fade-in">{error}</span>
+                <span className="text-xs text-red-500 ml-1 font-medium animate-fade-in">{error}</span>
             )}
         </div>
     );

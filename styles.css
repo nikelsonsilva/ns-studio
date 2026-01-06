@@ -25,6 +25,14 @@
   --color-barber-goldlight: #fbbf24;
   --color-barber-golddark: #b45309;
 
+  /* Semantic Text Colors */
+  --color-main: #ffffff;
+  --color-muted: #a1a1aa;
+  --color-inverted: #000000;
+
+  /* Input Background */
+  --color-input-bg: #0a0a0a;
+
   /* Animation */
   --animate-fade-in: fade-in 200ms ease-out;
 }
@@ -455,4 +463,38 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 
 .animate-slide-up {
   animation: slideUp 0.2s ease-out;
+}
+
+/* Subtle pulse animation for CTA buttons */
+@keyframes pulse-subtle {
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4);
+  }
+
+  50% {
+    box-shadow: 0 0 0 6px rgba(245, 158, 11, 0);
+  }
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 2s infinite;
+}
+
+/* Tab transition animation */
+.animate-tab-content {
+  animation: tabFadeIn 0.2s ease-out;
+}
+
+@keyframes tabFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }

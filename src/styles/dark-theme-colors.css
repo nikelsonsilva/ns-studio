@@ -1122,6 +1122,52 @@
     /* Encaixe Badge (Purple) */
     --calendar-encaixe-bg: rgba(168, 85, 247, 0.3);
     --calendar-encaixe-text: #d8b4fe;
+
+    /* =========================================
+       44. TEAM COMPONENT (Podium, Skeleton, Avatar)
+       ========================================= */
+
+    /* --- PODIUM RANKING COLORS --- */
+
+    /* 1st Place - Gold */
+    --dark-podium-gold: #facc15;
+    /* yellow-400 */
+    --dark-podium-gold-glow: 0 0 25px rgba(250, 204, 21, 0.4);
+    --dark-podium-gold-border: rgba(234, 179, 8, 0.5);
+    /* yellow-500/50 */
+    --dark-podium-1st-gradient: linear-gradient(to bottom, #facc15, #d97706);
+
+    /* 2nd Place - Silver */
+    --dark-podium-silver: #d1d5db;
+    /* gray-300 */
+    --dark-podium-silver-glow: 0 0 15px rgba(200, 200, 200, 0.3);
+    --dark-podium-silver-border: rgba(156, 163, 175, 0.5);
+    /* gray-400/50 */
+    --dark-podium-2nd-gradient: linear-gradient(to bottom, #d1d5db, #6b7280);
+
+    /* 3rd Place - Bronze */
+    --dark-podium-bronze: #d97706;
+    /* amber-600 */
+    --dark-podium-bronze-glow: 0 0 15px rgba(217, 119, 6, 0.4);
+    --dark-podium-bronze-border: rgba(217, 119, 6, 0.5);
+    /* amber-600/50 */
+    --dark-podium-3rd-gradient: linear-gradient(to bottom, #d97706, #c2410c);
+
+    /* Podium Shared */
+    --dark-podium-number-overlay: rgba(255, 255, 255, 0.2);
+    --dark-podium-specialty: rgba(255, 255, 255, 0.7);
+
+    /* --- SKELETON LOADING --- */
+    --dark-skeleton-bg: #27272a;
+    /* zinc-800 */
+    --dark-skeleton-bg-muted: rgba(39, 39, 42, 0.5);
+    /* zinc-800/50 */
+
+    /* --- AVATAR FALLBACK --- */
+    --dark-avatar-fallback-gradient: linear-gradient(to bottom right, #3f3f46, #18181b);
+
+    /* --- CARD HEADER GRADIENT --- */
+    --dark-card-header-gradient: linear-gradient(to right, #27272a, #18181b);
 }
 
 /* =========================================
@@ -1186,4 +1232,309 @@
 
 .dark-brand-border {
     border-color: var(--dark-brand-primary);
+}
+
+/* =========================================
+   TAILWIND-COMPATIBLE UTILITY CLASSES
+   For ns-studio Team.tsx compatibility
+   ========================================= */
+
+/* Text Colors - Semantic */
+.text-main {
+    color: #ffffff !important;
+}
+
+.text-muted {
+    color: #a1a1aa !important;
+}
+
+.text-inverted {
+    color: #000000 !important;
+}
+
+/* Barber Brand Colors */
+.text-barber-gold {
+    color: #f59e0b !important;
+}
+
+.bg-barber-gold {
+    background-color: #f59e0b !important;
+}
+
+.border-barber-gold {
+    border-color: #f59e0b !important;
+}
+
+.border-l-barber-gold {
+    border-left-color: #f59e0b !important;
+}
+
+/* Barber Background Scale */
+.bg-barber-950 {
+    background-color: #0a0a0a !important;
+}
+
+.bg-barber-900 {
+    background-color: #18181b !important;
+}
+
+.bg-barber-800 {
+    background-color: #27272a !important;
+}
+
+.bg-barber-700 {
+    background-color: #3f3f46 !important;
+}
+
+.bg-barber-600 {
+    background-color: #52525b !important;
+}
+
+/* Barber Border Scale */
+.border-barber-950 {
+    border-color: #0a0a0a !important;
+}
+
+.border-barber-900 {
+    border-color: #18181b !important;
+}
+
+.border-barber-800 {
+    border-color: #27272a !important;
+}
+
+.border-barber-700 {
+    border-color: #3f3f46 !important;
+}
+
+/* Input Background */
+.bg-input-bg {
+    background-color: #0a0a0a !important;
+}
+
+/* Hover States */
+.hover\:bg-barber-goldhover:hover {
+    background-color: #d97706 !important;
+}
+
+.hover\:bg-barber-700:hover {
+    background-color: #3f3f46 !important;
+}
+
+.hover\:bg-barber-800:hover {
+    background-color: #27272a !important;
+}
+
+.hover\:border-barber-gold:hover {
+    border-color: #f59e0b !important;
+}
+
+.hover\:border-barber-gold\/50:hover {
+    border-color: rgba(245, 158, 11, 0.5) !important;
+}
+
+.hover\:text-main:hover {
+    color: #ffffff !important;
+}
+
+.hover\:text-barber-gold:hover {
+    color: #f59e0b !important;
+}
+
+/* Focus States */
+.focus\:border-barber-gold:focus {
+    border-color: #f59e0b !important;
+}
+
+.group-focus-within\:text-barber-gold:focus-within {
+    color: #f59e0b !important;
+}
+
+/* Gold Opacity Variants */
+.bg-barber-gold\/5 {
+    background-color: rgba(245, 158, 11, 0.05) !important;
+}
+
+.bg-barber-gold\/10 {
+    background-color: rgba(245, 158, 11, 0.1) !important;
+}
+
+.bg-barber-gold\/20 {
+    background-color: rgba(245, 158, 11, 0.2) !important;
+}
+
+.from-barber-gold\/5 {
+    --tw-gradient-from: rgba(245, 158, 11, 0.05);
+}
+
+/* Gradient Backgrounds for Podium */
+.from-yellow-400 {
+    --tw-gradient-from: #facc15;
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, transparent);
+}
+
+.to-amber-600 {
+    --tw-gradient-to: #d97706;
+}
+
+.from-gray-300 {
+    --tw-gradient-from: #d4d4d8;
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, transparent);
+}
+
+.to-gray-500 {
+    --tw-gradient-to: #6b7280;
+}
+
+.from-orange-400 {
+    --tw-gradient-from: #fb923c;
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, transparent);
+}
+
+.to-red-700 {
+    --tw-gradient-to: #b91c1c;
+}
+
+.from-barber-800 {
+    --tw-gradient-from: #27272a;
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, transparent);
+}
+
+.to-barber-900 {
+    --tw-gradient-to: #18181b;
+}
+
+.from-barber-gold {
+    --tw-gradient-from: #f59e0b;
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, transparent);
+}
+
+.to-yellow-300 {
+    --tw-gradient-to: #fde047;
+}
+
+/* Gradient Directions */
+.bg-gradient-to-b {
+    background-image: linear-gradient(to bottom, var(--tw-gradient-stops));
+}
+
+.bg-gradient-to-r {
+    background-image: linear-gradient(to right, var(--tw-gradient-stops));
+}
+
+.bg-gradient-to-br {
+    background-image: linear-gradient(to bottom right, var(--tw-gradient-stops));
+}
+
+/* Header Card Gradients */
+.from-zinc-800 {
+    --tw-gradient-from: #27272a;
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, transparent);
+}
+
+.to-zinc-900 {
+    --tw-gradient-to: #18181b;
+}
+
+.from-zinc-900 {
+    --tw-gradient-from: #18181b;
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, transparent);
+}
+
+.to-zinc-950 {
+    --tw-gradient-to: #09090b;
+}
+
+.to-transparent {
+    --tw-gradient-to: transparent;
+}
+
+/* Border Left Accents */
+.border-l-emerald-500 {
+    border-left-color: #10b981 !important;
+}
+
+.border-l-sky-500 {
+    border-left-color: #0ea5e9 !important;
+}
+
+/* Status Colors */
+.text-emerald-500 {
+    color: #10b981 !important;
+}
+
+.text-sky-500 {
+    color: #0ea5e9 !important;
+}
+
+.text-yellow-500 {
+    color: #eab308 !important;
+}
+
+.text-yellow-400 {
+    color: #facc15 !important;
+}
+
+.fill-yellow-400 {
+    fill: #facc15 !important;
+}
+
+.border-yellow-400 {
+    border-color: #facc15 !important;
+}
+
+.bg-emerald-500\/10 {
+    background-color: rgba(16, 185, 129, 0.1) !important;
+}
+
+.border-emerald-500\/20 {
+    border-color: rgba(16, 185, 129, 0.2) !important;
+}
+
+/* Zinc Border Scale */
+.border-zinc-700 {
+    border-color: #3f3f46 !important;
+}
+
+.border-zinc-800 {
+    border-color: #27272a !important;
+}
+
+/* Animation */
+@keyframes fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fade-in {
+    animation: fade-in 200ms ease-out;
+}
+
+/* Order Classes for Podium */
+.order-0 {
+    order: 0;
+}
+
+.order-1 {
+    order: 1;
+}
+
+.order-2 {
+    order: 2;
+}
+
+/* Shadow for Cards */
+.shadow-card-gold {
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.15);
+}
+
+.shadow-\[0_0_25px_rgba\(250\,204\,21\,0\.4\)\] {
+    box-shadow: 0 0 25px rgba(250, 204, 21, 0.4);
 }

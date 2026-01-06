@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { DollarSign, CreditCard, Wallet, ArrowUpRight, ArrowDownRight, PieChart, Sparkles, Download, Lock, Settings, Key, ShieldCheck, Eye, EyeOff, X, CheckCircle2, PiggyBank, Receipt, Printer, FileText, Sheet, Target, Save, TrendingUp, Edit2, Plus, FlaskConical, Rocket, Trophy } from 'lucide-react';
 import { PieChart as RePieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { Barber, RecurringExpense, Role } from '../types';
+import CashClosingTab from './finance/CashClosingTab';
 
 import { useSupabaseQuery } from '../lib/hooks';
 import { fetchProfessionals, fetchFinancialRecords, fetchRecurringExpenses, getCurrentBusinessId, createRecurringExpense } from '../lib/database';
@@ -50,8 +51,13 @@ const Finance: React.FC<FinanceProps> = ({ paymentConfig, onSaveConfig, userRole
   const [stripePaymentDetails, setStripePaymentDetails] = useState<Map<string, any>>(new Map());
   const [loadingStripeDetails, setLoadingStripeDetails] = useState(false);
 
+  // Business ID for CashClosingTab
+  const [businessId, setBusinessId] = useState<string>('');
+
   useEffect(() => {
     loadPaidAppointments();
+    // Load business ID
+    getCurrentBusinessId().then(id => setBusinessId(id || ''));
   }, []);
 
   // Load Stripe payment details when appointments are loaded
@@ -135,7 +141,7 @@ const Finance: React.FC<FinanceProps> = ({ paymentConfig, onSaveConfig, userRole
   // ✅ SALDO LÍQUIDO REAL
   const netBalance = totalRevenue - totalExpenses;
 
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'commissions' | 'expenses' | 'goals' | 'nfse'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'caixa' | 'commissions' | 'expenses' | 'goals' | 'nfse'>('dashboard');
 
   // Goals state
   const [goalsEditing, setGoalsEditing] = useState(false);
@@ -489,7 +495,6 @@ const Finance: React.FC<FinanceProps> = ({ paymentConfig, onSaveConfig, userRole
         setIsConfigured(true);
         const lastFour = await getKeyLastFour();
         setKeyLastFour(lastFour || '****');
-        console.log('✅ [Finance] Stripe is configured (key not loaded for security)');
       }
 
       // Also load payment_provider setting from database
@@ -508,7 +513,6 @@ const Finance: React.FC<FinanceProps> = ({ paymentConfig, onSaveConfig, userRole
           setIsAbacateConfigured(true);
           setAbacateKeyLastFour(data.abacatepay_api_key.slice(-4));
         }
-        // Carregar configuração NFS-e
         if (data?.nfse_config) {
           setNfseConfig(data.nfse_config);
           // Definir step inicial baseado no status
@@ -518,8 +522,6 @@ const Finance: React.FC<FinanceProps> = ({ paymentConfig, onSaveConfig, userRole
             setNfseConfigStep('certificado');
           }
         }
-        console.log('✅ [Finance] Payment provider loaded:', data?.payment_provider);
-        console.log('✅ [Finance] NFS-e config loaded:', data?.nfse_config);
       } catch (err) {
         console.error('Error loading payment provider:', err);
       }
@@ -536,7 +538,7 @@ const Finance: React.FC<FinanceProps> = ({ paymentConfig, onSaveConfig, userRole
     return acc;
   }, {} as Record<string, number>);
 
-  console.log('💳 [Finance] Payment Methods breakdown:', paymentMethodsCount);
+
 
   const paymentData = Object.entries(paymentMethodsCount).map(([name, value], index) => ({
     name,
@@ -552,7 +554,6 @@ const Finance: React.FC<FinanceProps> = ({ paymentConfig, onSaveConfig, userRole
     const commission = gross * (commissionRate / 100);
     const net = gross - commission; // Lucro líquido para o estabelecimento
 
-    console.log(`📊 [Finance] Barber ${barber.name}: ${barberAppointments.length} appointments, gross=${gross}, commission=${commission}`);
 
     return {
       id: barber.id,
@@ -566,7 +567,6 @@ const Finance: React.FC<FinanceProps> = ({ paymentConfig, onSaveConfig, userRole
     };
   }).filter(b => b.gross > 0); // Só mostrar quem teve faturamento
 
-  console.log('👤 [Finance] Barber Profits calculated:', barberProfits);
 
   const handleSaveKey = async () => {
     if (!stripePublishableKey || !stripeSecretKey) {
@@ -897,6 +897,13 @@ const Finance: React.FC<FinanceProps> = ({ paymentConfig, onSaveConfig, userRole
               <FileText size={14} />
               Fiscal
             </button>
+            <button
+              onClick={() => setActiveTab('caixa')}
+              className={`flex-1 sm:flex-none px-4 py-2 rounded-md text-sm font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${activeTab === 'caixa' ? 'bg-emerald-500/10 text-emerald-500 shadow-sm border border-emerald-500/30' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-subtle)]'}`}
+            >
+              <Receipt size={14} />
+              Caixa
+            </button>
           </div>
 
           <div className="flex gap-2 w-full sm:w-auto">
@@ -909,13 +916,14 @@ const Finance: React.FC<FinanceProps> = ({ paymentConfig, onSaveConfig, userRole
                 {isConfigured ? 'Ativo' : 'Configurar'}
               </button>
             )}
-            <button disabled className="flex-1 sm:flex-none bg-[var(--surface-subtle)] text-[var(--text-subtle)] px-3 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2 border border-[var(--border-strong)] whitespace-nowrap cursor-not-allowed opacity-60">
-              <Lock size={14} /> Fechar Caixa
-              <span className="text-[10px] bg-[var(--brand)]/20 text-[var(--brand-primary)] px-1.5 py-0.5 rounded-full">Em breve</span>
-            </button>
           </div>
         </div>
       </div>
+
+      {/* Caixa Tab */}
+      {activeTab === 'caixa' && businessId && (
+        <CashClosingTab businessId={businessId} />
+      )}
 
       {activeTab === 'dashboard' && (
         <div className="space-y-6 animate-fade-in">

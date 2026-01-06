@@ -1,9 +1,17 @@
+/**
+ * AppointmentDetailsModal.tsx - Modal de Detalhes do Agendamento
+ * Design premium seguindo o padrão do Finance tab
+ */
+
 import React, { useState, useEffect } from 'react';
-import { X, Clock, User, Scissors, Calendar, Check, XCircle, AlertCircle, Edit2, Save, CreditCard, Phone, Mail } from 'lucide-react';
+import {
+    X, Clock, User, Scissors, Calendar, Check, XCircle, AlertCircle,
+    Edit2, Save, CreditCard, Phone, Receipt, Loader2
+} from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { supabase } from '../lib/supabase';
-import type { Client, Service, Professional } from '../types';
+import type { Service, Professional } from '../types';
 
 interface Appointment {
     id: string;
@@ -18,7 +26,7 @@ interface Appointment {
     service_id?: string;
     service?: { id: string; name: string; duration_minutes: number; price: number };
     professional_id: string;
-    professional?: { id: string; name: string };
+    professional?: { id: string; name: string; commission_rate?: number };
     notes?: string;
 }
 
@@ -30,7 +38,23 @@ interface AppointmentDetailsModalProps {
     professionals: Professional[];
     services: Service[];
     onReschedule?: (appointment: Appointment) => void;
+    onOpenComanda?: (appointmentId: string) => void;
 }
+
+const STATUS_CONFIG = {
+    pending: { label: 'Pendente', bgClass: 'bg-amber-500/15', textClass: 'text-amber-500' },
+    confirmed: { label: 'Confirmado', bgClass: 'bg-blue-500/15', textClass: 'text-blue-500' },
+    completed: { label: 'Concluído', bgClass: 'bg-emerald-500/15', textClass: 'text-emerald-500' },
+    cancelled: { label: 'Cancelado', bgClass: 'bg-red-500/15', textClass: 'text-red-500' },
+    no_show: { label: 'Faltou', bgClass: 'bg-zinc-500/15', textClass: 'text-zinc-500' }
+};
+
+const PAYMENT_CONFIG = {
+    pending: { label: 'Pagamento Pendente', bgClass: 'bg-amber-500/15', textClass: 'text-amber-500' },
+    awaiting_payment: { label: 'Aguardando Pagamento', bgClass: 'bg-orange-500/15', textClass: 'text-orange-500' },
+    paid: { label: 'Pago', bgClass: 'bg-emerald-500/15', textClass: 'text-emerald-500' },
+    refunded: { label: 'Reembolsado', bgClass: 'bg-zinc-500/15', textClass: 'text-zinc-500' }
+};
 
 const AppointmentDetailsModal: React.FC<AppointmentDetailsModalProps> = ({
     isOpen,
@@ -39,13 +63,13 @@ const AppointmentDetailsModal: React.FC<AppointmentDetailsModalProps> = ({
     appointment,
     professionals,
     services,
-    onReschedule
+    onReschedule,
+    onOpenComanda
 }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
 
-    // Editable fields
     const [selectedProfessionalId, setSelectedProfessionalId] = useState('');
     const [selectedServiceId, setSelectedServiceId] = useState('');
     const [notes, setNotes] = useState('');
@@ -77,87 +101,38 @@ const AppointmentDetailsModal: React.FC<AppointmentDetailsModalProps> = ({
                 .eq('id', appointment.id);
 
             if (updateError) throw updateError;
-
-            console.log('✅ Appointment updated');
             setIsEditing(false);
             onUpdate();
         } catch (err: any) {
-            console.error('❌ Error updating appointment:', err);
             setError(err.message || 'Erro ao atualizar');
         }
-
         setIsLoading(false);
     };
 
     const handleStatusChange = async (newStatus: string) => {
-        console.log('🔄 handleStatusChange called with:', newStatus);
-        console.log('📋 Appointment ID:', appointment?.id);
         setIsLoading(true);
         setError('');
 
         try {
             const updateData: any = { status: newStatus };
-
-            // If completing, also mark as paid if it was awaiting payment
             if (newStatus === 'completed' && appointment.payment_status === 'awaiting_payment') {
                 updateData.payment_status = 'paid';
             }
 
-            console.log('📝 Updating with data:', updateData);
-
-            const { data, error: updateError } = await supabase
+            const { error: updateError } = await supabase
                 .from('appointments')
                 .update(updateData)
-                .eq('id', appointment.id)
-                .select();
-
-            console.log('📊 Supabase response - data:', data, 'error:', updateError);
+                .eq('id', appointment.id);
 
             if (updateError) throw updateError;
-
-            console.log('✅ Status updated to:', newStatus);
             onUpdate();
             onClose();
         } catch (err: any) {
-            console.error('❌ Error updating status:', err);
             setError(err.message || 'Erro ao atualizar status');
         }
-
         setIsLoading(false);
     };
 
-    const getStatusBadge = (status: string) => {
-        const badges: Record<string, { bg: string; text: string; label: string }> = {
-            pending: { bg: 'bg-orange-500/20', text: 'text-orange-500', label: 'Pendente' },
-            confirmed: { bg: 'bg-blue-500/20', text: 'text-[var(--status-info)]', label: 'Agendado' },
-            completed: { bg: 'bg-emerald-500/20', text: 'text-emerald-500', label: 'Concluído' },
-            cancelled: { bg: 'bg-red-500/20', text: 'text-red-500', label: 'Cancelado' },
-            no_show: { bg: 'bg-[var(--surface-subtle)]0/20', text: 'text-[var(--text-subtle)]', label: 'Não Compareceu' }
-        };
-        const badge = badges[status] || badges.pending;
-        return (
-            <span className={`px-2 py-1 rounded-full text-xs font-bold ${badge.bg} ${badge.text}`}>
-                {badge.label}
-            </span>
-        );
-    };
-
-    const getPaymentBadge = (status?: string) => {
-        const badges: Record<string, { bg: string; text: string; label: string }> = {
-            pending: { bg: 'bg-yellow-500/20', text: 'text-yellow-500', label: 'Pendente' },
-            awaiting_payment: { bg: 'bg-orange-500/20', text: 'text-orange-500', label: 'Aguardando' },
-            paid: { bg: 'bg-green-500/20', text: 'text-[var(--status-success)]', label: 'Pago' },
-            refunded: { bg: 'bg-[var(--surface-subtle)]0/20', text: 'text-[var(--text-subtle)]', label: 'Reembolsado' }
-        };
-        const badge = badges[status || 'pending'] || badges.pending;
-        return (
-            <span className={`px-2 py-1 rounded-full text-xs font-bold ${badge.bg} ${badge.text}`}>
-                {badge.label}
-            </span>
-        );
-    };
-
-    // Resolve service and professional from props (más reliable than embedded data)
     const resolvedService = services.find(s => s.id === appointment.service_id) || appointment.service;
     const resolvedProfessional = professionals.find(p => p.id === appointment.professional_id) || appointment.professional;
 
@@ -166,62 +141,100 @@ const AppointmentDetailsModal: React.FC<AppointmentDetailsModalProps> = ({
     const servicePrice = resolvedService?.price || 0;
     const serviceDuration = resolvedService?.duration_minutes || 60;
     const professionalName = resolvedProfessional?.name || 'Profissional';
+    const commissionRate = resolvedProfessional?.commission_rate || 50;
+    const commissionAmount = servicePrice * (commissionRate / 100);
     const startTime = parseISO(appointment.start_datetime);
 
+    const statusConfig = STATUS_CONFIG[appointment.status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.pending;
+    const paymentConfig = PAYMENT_CONFIG[appointment.payment_status as keyof typeof PAYMENT_CONFIG] || PAYMENT_CONFIG.pending;
+
+    const canModify = appointment.status !== 'completed' && appointment.status !== 'cancelled';
+
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-            <div className="bg-[var(--surface-card)] w-full max-w-md rounded-xl border border-[var(--border-default)] shadow-2xl max-h-[90vh] overflow-y-auto">
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ backgroundColor: 'rgba(0, 0, 0, 0.85)', backdropFilter: 'blur(8px)' }}
+            onClick={onClose}
+        >
+            <div
+                className="w-full max-w-md max-h-[90vh] overflow-hidden rounded-2xl flex flex-col"
+                style={{
+                    background: 'linear-gradient(180deg, #1c1c1e 0%, #121214 100%)',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+                }}
+                onClick={e => e.stopPropagation()}
+            >
                 {/* Header */}
-                <div className="p-4 border-b border-[var(--border-default)] flex justify-between items-center sticky top-0 bg-[var(--surface-card)]">
+                <div
+                    className="p-4 border-b flex items-center justify-between"
+                    style={{ borderColor: 'rgba(255, 255, 255, 0.06)' }}
+                >
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-[var(--brand-primary)]/20 border border-barber-gold/30 flex items-center justify-center text-[var(--brand-primary)]">
-                            <Calendar size={20} />
+                        <div
+                            className="w-10 h-10 rounded-xl flex items-center justify-center"
+                            style={{ background: 'rgba(212, 175, 55, 0.15)', border: '1px solid rgba(212, 175, 55, 0.3)' }}
+                        >
+                            <Calendar size={18} className="text-amber-500" />
                         </div>
                         <div>
-                            <h3 className="text-lg font-bold text-[var(--text-primary)]">Detalhes do Agendamento</h3>
-                            <p className="text-xs text-[var(--text-muted)]">{format(startTime, 'HH:mm')} • {serviceName}</p>
+                            <h3 className="font-bold text-white">Detalhes do Agendamento</h3>
+                            <p className="text-xs text-zinc-500">{format(startTime, 'HH:mm')} • {serviceName}</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
-                        {!isEditing && appointment.status !== 'completed' && appointment.status !== 'cancelled' && (
+                        {canModify && !isEditing && (
                             <button
                                 onClick={() => setIsEditing(true)}
-                                className="p-2 text-[var(--brand-primary)] hover:bg-[var(--surface-subtle)] rounded-lg"
-                                title="Editar"
+                                className="p-2 rounded-lg text-zinc-500 hover:text-amber-500 hover:bg-white/5 transition-all"
                             >
-                                <Edit2 size={18} />
+                                <Edit2 size={16} />
                             </button>
                         )}
-                        <button onClick={onClose} className="text-[var(--text-subtle)] hover:text-[var(--text-primary)]">
-                            <X size={20} />
+                        <button
+                            onClick={onClose}
+                            className="p-2 rounded-lg text-zinc-500 hover:text-white hover:bg-white/5 transition-all"
+                        >
+                            <X size={18} />
                         </button>
                     </div>
                 </div>
 
                 {/* Content */}
-                <div className="p-4 space-y-4">
+                <div className="flex-1 overflow-y-auto p-4 space-y-3">
                     {error && (
-                        <div className="bg-red-500/10 border border-red-500/20 text-red-500 text-sm p-2 rounded">
-                            {error}
+                        <div
+                            className="flex items-center gap-2 p-3 rounded-xl text-sm"
+                            style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)' }}
+                        >
+                            <AlertCircle size={16} className="text-red-500" />
+                            <span className="text-red-400">{error}</span>
                         </div>
                     )}
 
                     {/* Status Badges */}
                     <div className="flex items-center gap-2">
-                        {getStatusBadge(appointment.status)}
-                        {getPaymentBadge(appointment.payment_status)}
+                        <span className={`px-2.5 py-1 rounded-full text-[11px] font-semibold ${statusConfig.bgClass} ${statusConfig.textClass}`}>
+                            {statusConfig.label}
+                        </span>
+                        <span className={`px-2.5 py-1 rounded-full text-[11px] font-semibold ${paymentConfig.bgClass} ${paymentConfig.textClass}`}>
+                            {paymentConfig.label}
+                        </span>
                     </div>
 
-                    {/* Client Info */}
-                    <div className="bg-[var(--surface-app)] rounded-lg p-4">
-                        <div className="flex items-center gap-3 mb-3">
-                            <div className="w-10 h-10 bg-[var(--surface-subtle)] rounded-full flex items-center justify-center">
-                                <User className="text-[var(--brand-primary)]" size={20} />
+                    {/* Client Card */}
+                    <div
+                        className="p-3 rounded-xl"
+                        style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.05)' }}
+                    >
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center">
+                                <User size={18} className="text-amber-500" />
                             </div>
                             <div>
-                                <div className="font-bold text-[var(--text-primary)]">{clientName}</div>
+                                <div className="font-semibold text-white">{clientName}</div>
                                 {appointment.client?.phone && (
-                                    <div className="text-xs text-[var(--text-muted)] flex items-center gap-1">
+                                    <div className="text-xs text-zinc-500 flex items-center gap-1">
                                         <Phone size={10} /> {appointment.client.phone}
                                     </div>
                                 )}
@@ -229,28 +242,35 @@ const AppointmentDetailsModal: React.FC<AppointmentDetailsModalProps> = ({
                         </div>
                     </div>
 
-                    {/* Date & Time */}
-                    <div className="bg-[var(--surface-app)] rounded-lg p-4 flex items-center gap-3">
-                        <Calendar className="text-[var(--brand-primary)]" size={20} />
+                    {/* Date & Time Card */}
+                    <div
+                        className="p-3 rounded-xl flex items-center gap-3"
+                        style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.05)' }}
+                    >
+                        <Calendar size={18} className="text-amber-500" />
                         <div>
-                            <div className="text-[var(--text-primary)] font-bold">
+                            <div className="text-white font-medium text-sm">
                                 {format(startTime, "EEEE, d 'de' MMMM", { locale: ptBR })}
                             </div>
-                            <div className="text-sm text-[var(--text-muted)] flex items-center gap-1">
-                                <Clock size={12} />
-                                {format(startTime, 'HH:mm')} • {serviceDuration} min
+                            <div className="text-xs text-zinc-500 flex items-center gap-1">
+                                <Clock size={10} /> {format(startTime, 'HH:mm')} • {serviceDuration} min
                             </div>
                         </div>
                     </div>
 
-                    {/* Service - Editable */}
-                    <div className="bg-[var(--surface-app)] rounded-lg p-4">
-                        <label className="block text-[10px] uppercase tracking-wider text-[var(--text-subtle)] mb-2">Serviço</label>
+                    {/* Service Card */}
+                    <div
+                        className="p-3 rounded-xl"
+                        style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.05)' }}
+                    >
+                        <label className="text-[10px] font-semibold tracking-wider text-zinc-600 uppercase mb-2 block">
+                            Serviço
+                        </label>
                         {isEditing ? (
                             <select
                                 value={selectedServiceId}
                                 onChange={(e) => setSelectedServiceId(e.target.value)}
-                                className="w-full bg-[var(--surface-card)] border border-[var(--border-default)] text-[var(--text-primary)] p-2 rounded-lg text-sm"
+                                className="w-full bg-zinc-900 border border-zinc-700 text-white p-2 rounded-lg text-sm outline-none focus:border-amber-500 transition-colors"
                             >
                                 {services.map(s => (
                                     <option key={s.id} value={s.id}>{s.name} - R$ {s.price.toFixed(2)}</option>
@@ -259,61 +279,79 @@ const AppointmentDetailsModal: React.FC<AppointmentDetailsModalProps> = ({
                         ) : (
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
-                                    <Scissors className="text-[var(--brand-primary)]" size={16} />
-                                    <span className="text-[var(--text-primary)] font-bold">{serviceName}</span>
+                                    <Scissors size={14} className="text-amber-500" />
+                                    <span className="text-white font-medium text-sm">{serviceName}</span>
                                 </div>
-                                <span className="text-[var(--brand-primary)] font-bold">R$ {servicePrice.toFixed(2)}</span>
+                                <span className="text-emerald-500 font-bold">R$ {servicePrice.toFixed(2)}</span>
                             </div>
                         )}
                     </div>
 
-                    {/* Professional - Editable */}
-                    <div className="bg-[var(--surface-app)] rounded-lg p-4">
-                        <label className="block text-[10px] uppercase tracking-wider text-[var(--text-subtle)] mb-2">Profissional</label>
+                    {/* Professional Card */}
+                    <div
+                        className="p-3 rounded-xl"
+                        style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.05)' }}
+                    >
+                        <label className="text-[10px] font-semibold tracking-wider text-zinc-600 uppercase mb-2 block">
+                            Profissional
+                        </label>
                         {isEditing ? (
                             <select
                                 value={selectedProfessionalId}
                                 onChange={(e) => setSelectedProfessionalId(e.target.value)}
-                                className="w-full bg-[var(--surface-card)] border border-[var(--border-default)] text-[var(--text-primary)] p-2 rounded-lg text-sm"
+                                className="w-full bg-zinc-900 border border-zinc-700 text-white p-2 rounded-lg text-sm outline-none focus:border-amber-500 transition-colors"
                             >
                                 {professionals.map(p => (
                                     <option key={p.id} value={p.id}>{p.name}</option>
                                 ))}
                             </select>
                         ) : (
-                            <div className="flex items-center gap-2">
-                                <User className="text-[var(--text-muted)]" size={16} />
-                                <span className="text-[var(--text-primary)]">{professionalName}</span>
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <User size={14} className="text-zinc-500" />
+                                    <span className="text-white text-sm">{professionalName}</span>
+                                </div>
+                                <span className="text-xs text-zinc-500">
+                                    Comissão: <span className="text-emerald-500">R$ {commissionAmount.toFixed(2)}</span>
+                                </span>
                             </div>
                         )}
                     </div>
 
-                    {/* Notes - Editable */}
+                    {/* Notes */}
                     {(isEditing || notes) && (
-                        <div className="bg-[var(--surface-app)] rounded-lg p-4">
-                            <label className="block text-[10px] uppercase tracking-wider text-[var(--text-subtle)] mb-2">Observações</label>
+                        <div
+                            className="p-3 rounded-xl"
+                            style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.05)' }}
+                        >
+                            <label className="text-[10px] font-semibold tracking-wider text-zinc-600 uppercase mb-2 block">
+                                Observações
+                            </label>
                             {isEditing ? (
                                 <textarea
                                     value={notes}
                                     onChange={(e) => setNotes(e.target.value)}
-                                    className="w-full bg-[var(--surface-card)] border border-[var(--border-default)] text-[var(--text-primary)] p-2 rounded-lg text-sm resize-none"
-                                    rows={3}
+                                    className="w-full bg-zinc-900 border border-zinc-700 text-white p-2 rounded-lg text-sm resize-none outline-none focus:border-amber-500 transition-colors"
+                                    rows={2}
                                     placeholder="Adicionar observações..."
                                 />
                             ) : (
-                                <p className="text-[var(--text-muted)] text-sm">{notes}</p>
+                                <p className="text-zinc-400 text-sm">{notes}</p>
                             )}
                         </div>
                     )}
 
-                    {/* ID - Read Only */}
-                    <div className="text-xs text-[var(--text-subtle)] font-mono">
+                    {/* ID */}
+                    <div className="text-[10px] text-zinc-600 font-mono">
                         ID: {appointment.id.slice(0, 8)}...
                     </div>
                 </div>
 
-                {/* Actions Footer */}
-                <div className="p-4 border-t border-[var(--border-default)] space-y-2">
+                {/* Footer Actions */}
+                <div
+                    className="p-4 border-t"
+                    style={{ borderColor: 'rgba(255, 255, 255, 0.06)', background: 'rgba(0, 0, 0, 0.3)' }}
+                >
                     {isEditing ? (
                         <div className="flex gap-2">
                             <button
@@ -323,7 +361,7 @@ const AppointmentDetailsModal: React.FC<AppointmentDetailsModalProps> = ({
                                     setSelectedServiceId(appointment.service_id || '');
                                     setNotes(appointment.notes || '');
                                 }}
-                                className="flex-1 bg-[var(--surface-subtle)] hover:bg-[var(--surface-hover)] text-[var(--text-primary)] py-2 rounded-lg font-bold text-sm"
+                                className="flex-1 py-2.5 rounded-lg text-sm font-medium text-zinc-400 hover:text-white bg-zinc-800 hover:bg-zinc-700 transition-all"
                                 disabled={isLoading}
                             >
                                 Cancelar
@@ -331,67 +369,69 @@ const AppointmentDetailsModal: React.FC<AppointmentDetailsModalProps> = ({
                             <button
                                 onClick={handleSave}
                                 disabled={isLoading}
-                                className="flex-1 bg-[var(--brand-primary)] hover:bg-[var(--brand-primary)]hover text-black py-2 rounded-lg font-bold text-sm flex items-center justify-center gap-2"
+                                className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-black bg-amber-500 hover:bg-amber-400 transition-all flex items-center justify-center gap-2"
                             >
-                                {isLoading ? 'Salvando...' : <><Save size={16} /> Salvar</>}
+                                {isLoading ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                                <span>Salvar</span>
                             </button>
                         </div>
-                    ) : appointment.status !== 'completed' && appointment.status !== 'cancelled' ? (
+                    ) : canModify ? (
                         <div className="flex gap-2">
                             <button
                                 onClick={() => handleStatusChange('cancelled')}
                                 disabled={isLoading}
-                                className="flex-1 bg-red-500/20 hover:bg-red-500/30 text-red-500 py-2 rounded-lg font-bold text-sm flex items-center justify-center gap-2"
+                                className="px-4 py-2.5 rounded-lg text-sm font-medium text-red-500 bg-red-500/10 hover:bg-red-500/20 transition-all flex items-center gap-1.5"
                             >
-                                <XCircle size={16} /> Cancelar
+                                <XCircle size={14} />
+                                <span>Cancelar</span>
                             </button>
-                            <button
-                                onClick={() => handleStatusChange('completed')}
-                                disabled={isLoading}
-                                className="flex-1 bg-green-500 hover:bg-green-600 text-[var(--text-primary)] py-2 rounded-lg font-bold text-sm flex items-center justify-center gap-2"
-                            >
-                                <Check size={16} /> Concluir
-                            </button>
+                            {onOpenComanda && (
+                                <button
+                                    onClick={() => {
+                                        onOpenComanda(appointment.id);
+                                        onClose();
+                                    }}
+                                    className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-black bg-emerald-500 hover:bg-emerald-400 transition-all flex items-center justify-center gap-1.5"
+                                >
+                                    <Receipt size={14} />
+                                    <span>Fechar Conta</span>
+                                </button>
+                            )}
                         </div>
                     ) : appointment.status === 'cancelled' ? (
-                        /* Cancelled - Show Reschedule option */
-                        <div className="space-y-2">
-                            <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-center">
-                                <p className="text-[var(--status-error)] text-sm font-bold">Este agendamento foi cancelado</p>
+                        <div className="space-y-3">
+                            <div
+                                className="p-3 rounded-xl text-center"
+                                style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)' }}
+                            >
+                                <p className="text-red-500 text-sm font-medium">Agendamento cancelado</p>
                                 {appointment.payment_status === 'paid' && (
-                                    <p className="text-[var(--status-success)] text-xs mt-1 flex items-center justify-center gap-1">
-                                        <CreditCard size={12} /> Pagamento já realizado - será mantido ao reagendar
+                                    <p className="text-emerald-500 text-xs mt-1 flex items-center justify-center gap-1">
+                                        <CreditCard size={10} /> Pagamento mantido
                                     </p>
                                 )}
                             </div>
                             <div className="flex gap-2">
                                 <button
                                     onClick={onClose}
-                                    className="flex-1 bg-[var(--surface-subtle)] hover:bg-[var(--surface-hover)] text-[var(--text-primary)] py-2 rounded-lg font-bold text-sm"
+                                    className="flex-1 py-2.5 rounded-lg text-sm font-medium text-zinc-400 bg-zinc-800 hover:bg-zinc-700 transition-all"
                                 >
                                     Fechar
                                 </button>
                                 <button
-                                    onClick={() => {
-                                        if (onReschedule && appointment) {
-                                            onReschedule(appointment);
-                                            onClose();
-                                        } else {
-                                            handleStatusChange('confirmed');
-                                        }
-                                    }}
+                                    onClick={() => onReschedule ? (onReschedule(appointment), onClose()) : handleStatusChange('confirmed')}
                                     disabled={isLoading}
-                                    className="flex-1 bg-[var(--brand-primary)] hover:bg-[var(--brand-primary)]hover text-black py-2 rounded-lg font-bold text-sm flex items-center justify-center gap-2"
+                                    className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-black bg-amber-500 hover:bg-amber-400 transition-all flex items-center justify-center gap-1.5"
                                 >
-                                    <Calendar size={16} /> Reagendar
+                                    <Calendar size={14} />
+                                    <span>Reagendar</span>
                                 </button>
                             </div>
                         </div>
                     ) : (
-                        /* Completed - Just close */
                         <button
                             onClick={onClose}
-                            className="w-full bg-[var(--surface-subtle)] hover:bg-[var(--surface-hover)] text-[var(--text-primary)] py-2 rounded-lg font-bold text-sm"
+                            className="w-full py-2.5 rounded-lg text-sm font-medium text-zinc-400 bg-zinc-800 hover:bg-zinc-700 transition-all"
                         >
                             Fechar
                         </button>

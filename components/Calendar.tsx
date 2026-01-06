@@ -64,7 +64,7 @@ import { useSupabaseQuery } from '../lib/hooks';
 import { fetchProfessionals, fetchServices, fetchProducts, fetchAppointments, getCurrentBusinessId, getBusinessHoursForDay, type DayHours } from '../lib/database';
 import ManualBookingModal from './ManualBookingModal';
 import QuickBookingModal from './QuickBookingModal';
-import AppointmentDetailsModal from './AppointmentDetailsModal';
+import AppointmentModal from './AppointmentModal';
 
 interface CalendarProps {
   initialDate?: Date;
@@ -2038,14 +2038,15 @@ const Calendar: React.FC<CalendarProps> = ({ initialDate, isFocusMode = false, s
         }
 
         {
-          isDetailsModalOpen && selectedAppointment && (
-            <AppointmentDetailsModal
+          isDetailsModalOpen && selectedAppointment && businessId && (
+            <AppointmentModal
               isOpen={isDetailsModalOpen}
               onClose={() => setIsDetailsModalOpen(false)}
               appointment={selectedAppointment}
               onUpdate={handleModalSuccess}
               professionals={barbers}
               services={services}
+              businessId={businessId}
               onReschedule={handleReschedule}
             />
           )

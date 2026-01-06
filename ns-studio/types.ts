@@ -82,6 +82,8 @@ export interface Barber {
   avatar: string;
   email?: string;
   phone?: string;
+  cpf?: string;
+  birthDate?: string;
   commissionRate: number;
   rating: number;
   goal?: number;
@@ -147,6 +149,7 @@ export interface Client {
   id: string;
   name: string;
   phone: string;
+  cpf?: string;
   lastVisit: string;
   totalVisits: number;
   loyaltyPoints?: number;
@@ -161,7 +164,7 @@ export interface Client {
   photos?: ClientPhoto[];
   loyaltyTier?: LoyaltyTier;
   activeMembership?: string;
-  origin?: 'public_link' | 'manual' | 'import'; // Origem do cadastro
+  origin?: 'public_link' | 'manual' | 'import' | 'whatsapp'; // Origem do cadastro
   createdAt?: string; // Data de cadastro
 }
 

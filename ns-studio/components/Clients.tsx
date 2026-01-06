@@ -1,6 +1,31 @@
 
 import React, { useState, useMemo } from 'react';
-import { Search, Filter, Calendar, Tag, Eye, Plus, X, Check, Hash, Megaphone, Clock, UserCheck, Globe, Users } from 'lucide-react';
+import { 
+  Search, 
+  Filter, 
+  Calendar, 
+  Tag, 
+  Eye, 
+  Plus, 
+  X, 
+  Check, 
+  Hash, 
+  Megaphone, 
+  Clock, 
+  UserCheck, 
+  Globe, 
+  Users, 
+  LayoutGrid, 
+  List, 
+  Phone, 
+  TrendingUp, 
+  DollarSign, 
+  ChevronRight, 
+  Star, 
+  MoreVertical,
+  MessageCircle,
+  Store
+} from 'lucide-react';
 import { Client } from '../types';
 import ClientDetailsModal from './ClientDetailsModal';
 import Input from './ui/Input';
@@ -14,14 +39,55 @@ interface ClientsProps {
   setClients: React.Dispatch<React.SetStateAction<Client[]>>;
 }
 
+// --- Sub-componente para Avatar Seguro ---
+const ClientAvatar = ({ client, size = 'md', className = '' }: { client: Partial<Client>, size?: 'sm'|'md'|'lg'|'xl', className?: string }) => {
+    const getInitials = (name: string) => {
+        const names = name.split(' ');
+        if (names.length >= 2) return `${names[0][0]}${names[1][0]}`.toUpperCase();
+        return name.slice(0, 2).toUpperCase();
+    };
+
+    const sizeClasses = {
+        sm: 'w-8 h-8 text-xs',
+        md: 'w-10 h-10 text-sm',
+        lg: 'w-12 h-12 text-sm',
+        xl: 'w-16 h-16 text-lg'
+    };
+
+    // Gera uma cor consistente baseada no nome
+    const getColor = (name: string) => {
+        const colors = [
+            'from-blue-600 to-blue-800',
+            'from-emerald-600 to-emerald-800',
+            'from-purple-600 to-purple-800',
+            'from-amber-600 to-amber-800',
+            'from-rose-600 to-rose-800',
+            'from-indigo-600 to-indigo-800'
+        ];
+        let hash = 0;
+        for (let i = 0; i < name.length; i++) {
+            hash = name.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        return colors[Math.abs(hash) % colors.length];
+    };
+
+    return (
+        <div className={`rounded-full flex items-center justify-center font-bold text-white shadow-inner bg-gradient-to-br ${getColor(client.name || '')} border border-white/10 ${sizeClasses[size]} ${className}`}>
+            {getInitials(client.name || '')}
+        </div>
+    );
+};
+
 const Clients: React.FC<ClientsProps> = ({ clients, setClients }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [selectedTagFilter, setSelectedTagFilter] = useState<string>('Todos');
-  const [sendingCampaign, setSendingCampaign] = useState<string | null>(null);
   
-  // New Filter Tab State
-  const [clientTypeFilter, setClientTypeFilter] = useState<'all' | 'new_public' | 'registered'>('all');
+  // View Mode State (Default List)
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
+  
+  // Filter Tab State
+  const [clientTypeFilter, setClientTypeFilter] = useState<'all' | 'new' | 'recurring'>('all');
 
   const toast = useToast();
   
@@ -29,11 +95,14 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients }) => {
   const [editingClientId, setEditingClientId] = useState<string | null>(null);
   const [newTagInput, setNewTagInput] = useState('');
 
-  // Add dummy clients if empty to demonstrate functionality
+  // Add dummy clients if empty
   const displayClients: Client[] = clients.length > 0 ? clients : [
-      { id: '1', name: 'Ana Silva', phone: '11999999999', lastVisit: '2023-10-25', totalVisits: 12, tags: ['VIP'], loyaltyTier: 'Ouro', origin: 'manual' },
-      { id: '2', name: 'Carlos Oliveira', phone: '11988888888', lastVisit: '2023-10-20', totalVisits: 1, tags: ['Novo'], loyaltyTier: 'Bronze', origin: 'public_link', createdAt: '2023-10-20' },
-      { id: '3', name: 'Marcos Santos', phone: '11977777777', lastVisit: '2023-10-15', totalVisits: 3, tags: [], loyaltyTier: 'Bronze', origin: 'manual' }
+      { id: '1', name: 'Ana Silva', phone: '11999999999', lastVisit: '2023-10-25', totalVisits: 12, tags: ['VIP'], loyaltyTier: 'Ouro', origin: 'manual', ltv: 1200 },
+      { id: '2', name: 'Carlos Oliveira', phone: '11988888888', lastVisit: '2023-10-20', totalVisits: 1, tags: ['Novo'], loyaltyTier: 'Bronze', origin: 'public_link', createdAt: '2023-10-20', ltv: 50 },
+      { id: '3', name: 'Marcos Santos', phone: '11977777777', lastVisit: '2023-10-15', totalVisits: 3, tags: [], loyaltyTier: 'Bronze', origin: 'whatsapp', ltv: 150 },
+      { id: '4', name: 'Felipe Neto', phone: '11966666666', lastVisit: '2023-09-30', totalVisits: 25, tags: ['VIP', 'Amigo'], loyaltyTier: 'Diamante', origin: 'manual', ltv: 3500 },
+      { id: '5', name: 'Juliana Paes', phone: '11955555555', lastVisit: '2023-10-28', totalVisits: 5, tags: [], loyaltyTier: 'Prata', origin: 'public_link', ltv: 400 },
+      { id: '6', name: 'Roberto Firmino', phone: '11944444444', lastVisit: '2023-10-29', totalVisits: 1, tags: ['Novo'], loyaltyTier: 'Bronze', origin: 'whatsapp', ltv: 80 }
   ];
 
   // Derive unique tags for filter
@@ -49,14 +118,23 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients }) => {
     const matchesTag = selectedTagFilter === 'Todos' || c.tags.includes(selectedTagFilter);
     
     let matchesType = true;
-    if (clientTypeFilter === 'new_public') {
-        matchesType = c.origin === 'public_link';
-    } else if (clientTypeFilter === 'registered') {
-        matchesType = c.origin !== 'public_link';
+    if (clientTypeFilter === 'new') {
+        // Mostra TODOS os novos (Online, Whats, Manual) se tiver a tag Novo ou poucas visitas
+        matchesType = c.tags.includes('Novo') || c.totalVisits <= 1;
+    } else if (clientTypeFilter === 'recurring') {
+        matchesType = !c.tags.includes('Novo') && c.totalVisits > 1;
     }
 
     return matchesSearch && matchesTag && matchesType;
   });
+
+  // Stats
+  const clientStats = useMemo(() => {
+      const total = displayClients.length;
+      const newThisMonth = displayClients.filter(c => c.tags.includes('Novo') || c.totalVisits <= 1).length;
+      const avgLtv = total > 0 ? displayClients.reduce((acc, c) => acc + (c.ltv || 0), 0) / total : 0;
+      return { total, newThisMonth, avgLtv };
+  }, [displayClients]);
 
   // Tag Handlers
   const handleAddTag = (clientId: string) => {
@@ -83,255 +161,293 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients }) => {
     }));
   };
 
-  const handleCampaign = (campaignName: string) => {
-     setSendingCampaign(campaignName);
-     setTimeout(() => {
-        setSendingCampaign(null);
-        toast.success(`Campanha "${campaignName}" enviada para o segmento selecionado!`);
-     }, 2000);
+  const handleUpdateClient = (updatedClient: Client) => {
+      setClients(prev => prev.map(c => c.id === updatedClient.id ? updatedClient : c));
+      setSelectedClient(updatedClient);
+      toast.success('Perfil do cliente atualizado!');
   };
 
   return (
     <div className="space-y-6 animate-fade-in pb-20">
       
-      {/* Smart Campaigns Bar */}
-      <Card className="relative overflow-hidden bg-gradient-to-r from-barber-900 to-barber-950 border-barber-800" noPadding>
-         <div className="p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative z-10">
-            <div className="flex items-center gap-3">
-               <div className="bg-barber-gold p-2 rounded-lg text-black shrink-0">
-                  <Megaphone size={20} />
-               </div>
-               <div>
-                  <h3 className="text-main font-bold text-sm">Marketing Inteligente</h3>
-                  <p className="text-muted text-xs">Envie campanhas via WhatsApp.</p>
-               </div>
-            </div>
-            
-            <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-1 scrollbar-hide">
-               <Button 
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => handleCampaign('Recuperar Inativos')}
-                  disabled={!!sendingCampaign}
-                  leftIcon={sendingCampaign === 'Recuperar Inativos' ? <Clock className="animate-spin" size={14} /> : <Clock size={14} className="text-red-500" />}
-               >
-                  Recuperar Inativos
-               </Button>
-               <Button 
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => handleCampaign('Promo Aniversário')}
-                  disabled={!!sendingCampaign}
-                  leftIcon={sendingCampaign === 'Promo Aniversário' ? <Clock className="animate-spin" size={14} /> : <Tag size={14} className="text-purple-500" />}
-               >
-                  Aniversariantes
-               </Button>
-               <Button 
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => handleCampaign('Oferta VIP')}
-                  disabled={!!sendingCampaign}
-                  leftIcon={sendingCampaign === 'Oferta VIP' ? <Clock className="animate-spin" size={14} /> : <UserCheck size={14} className="text-barber-gold" />}
-               >
-                  Oferta VIP
-               </Button>
-            </div>
-         </div>
-      </Card>
+      {/* Header Dashboard Responsive Grid */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Card noPadding className="col-span-2 p-5 bg-gradient-to-r from-zinc-900 to-zinc-950 border-l-4 border-l-indigo-500 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="text-center sm:text-left w-full">
+                  <h2 className="text-xl font-bold text-white">Base de Clientes</h2>
+                  <p className="text-sm text-muted mt-1">Gerencie perfis, fidelidade e LTV.</p>
+              </div>
+              <div className="flex gap-2 w-full sm:w-auto">
+                  <Button onClick={() => {}} leftIcon={<Plus size={18} />} className="w-full sm:w-auto justify-center">
+                    Novo Cliente
+                  </Button>
+              </div>
+          </Card>
+          
+          <Card noPadding className="col-span-1 p-4 flex flex-col justify-center border-l-4 border-l-barber-gold">
+              <span className="text-[10px] sm:text-xs font-bold uppercase text-muted tracking-wider truncate">Total Ativos</span>
+              <div className="text-xl sm:text-2xl font-bold text-white mt-1">{clientStats.total}</div>
+              <div className="text-[9px] sm:text-[10px] text-barber-gold font-bold mt-1 flex items-center gap-1 truncate">
+                  <TrendingUp size={12} /> +{clientStats.newThisMonth} novos
+              </div>
+          </Card>
 
-      {/* Header & Search */}
-      <Card className="border-l-4 border-l-indigo-500 bg-gradient-to-r from-indigo-500/5 via-barber-900 to-barber-900">
-        <div className="flex flex-col justify-between items-start gap-4 mb-4">
-            <h2 className="text-xl font-bold text-main flex items-center gap-2">
-              <span className="bg-barber-800 p-2 rounded-lg text-indigo-400"><Tag size={20}/></span>
-              Base de Clientes
-            </h2>
-            <div className="w-full">
+          <Card noPadding className="col-span-1 p-4 flex flex-col justify-center border-l-4 border-l-emerald-500">
+              <span className="text-[10px] sm:text-xs font-bold uppercase text-muted tracking-wider truncate">LTV Médio</span>
+              <div className="text-xl sm:text-2xl font-bold text-white mt-1">R$ {clientStats.avgLtv.toFixed(0)}</div>
+              <div className="text-[9px] sm:text-[10px] text-emerald-500 font-bold mt-1 truncate">
+                  Ticket Médio OK
+              </div>
+          </Card>
+      </div>
+
+      {/* Main List Controls */}
+      <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-zinc-900/50 p-2 rounded-xl border border-zinc-800">
+          <div className="w-full flex flex-col lg:flex-row gap-4">
+            <div className="w-full lg:w-80">
                 <Input 
-                    placeholder="Buscar por nome ou telefone..."
-                    icon={<Search size={18}/>}
+                    placeholder="Buscar por nome ou telefone..." 
                     value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onChange={e => setSearchTerm(e.target.value)}
+                    containerClassName="mb-0"
+                    className="bg-zinc-950 border-zinc-800"
+                    icon={<Search size={16}/>}
                 />
             </div>
-        </div>
+            
+            {/* Filter Tabs - Horizontal Scroll on Mobile */}
+            <div className="flex bg-zinc-950 p-1 rounded-lg border border-zinc-800 overflow-x-auto scrollbar-hide w-full lg:w-auto">
+                <button 
+                    onClick={() => setClientTypeFilter('all')}
+                    className={`flex-1 lg:flex-none px-4 py-2 rounded-md text-xs font-bold whitespace-nowrap transition-all ${clientTypeFilter === 'all' ? 'bg-zinc-800 text-white shadow' : 'text-muted hover:text-white'}`}
+                >
+                    Todos
+                </button>
+                <button 
+                    onClick={() => setClientTypeFilter('new')}
+                    className={`flex-1 lg:flex-none px-4 py-2 rounded-md text-xs font-bold whitespace-nowrap transition-all ${clientTypeFilter === 'new' ? 'bg-blue-600/20 text-blue-400 border border-blue-600/30' : 'text-muted hover:text-white'}`}
+                >
+                    Novos
+                </button>
+                <button 
+                    onClick={() => setClientTypeFilter('recurring')}
+                    className={`flex-1 lg:flex-none px-4 py-2 rounded-md text-xs font-bold whitespace-nowrap transition-all ${clientTypeFilter === 'recurring' ? 'bg-zinc-800 text-white shadow' : 'text-muted hover:text-white'}`}
+                >
+                    Recorrentes
+                </button>
+            </div>
+          </div>
 
-        {/* Client Type Filter Tabs */}
-        <div className="flex bg-barber-950 p-1 rounded-lg w-full md:w-auto mb-4 border border-barber-800">
-            <button 
-                onClick={() => setClientTypeFilter('all')}
-                className={`flex-1 px-4 py-2 rounded-md text-xs font-bold transition-all flex items-center justify-center gap-2 ${clientTypeFilter === 'all' ? 'bg-barber-800 text-white shadow' : 'text-muted hover:text-white'}`}
-            >
-                <Users size={14} /> Todos
-            </button>
-            <button 
-                onClick={() => setClientTypeFilter('new_public')}
-                className={`flex-1 px-4 py-2 rounded-md text-xs font-bold transition-all flex items-center justify-center gap-2 ${clientTypeFilter === 'new_public' ? 'bg-blue-600 text-white shadow' : 'text-muted hover:text-white'}`}
-            >
-                <Globe size={14} /> Novos (Online)
-            </button>
-            <button 
-                onClick={() => setClientTypeFilter('registered')}
-                className={`flex-1 px-4 py-2 rounded-md text-xs font-bold transition-all flex items-center justify-center gap-2 ${clientTypeFilter === 'registered' ? 'bg-barber-800 text-white shadow' : 'text-muted hover:text-white'}`}
-            >
-                <UserCheck size={14} /> Base Cadastrada
-            </button>
-        </div>
+          <div className="flex bg-zinc-950 rounded-lg p-1 border border-zinc-800 shrink-0 self-end md:self-auto">
+              <button 
+                onClick={() => setViewMode('grid')}
+                className={`p-2 rounded-md transition-colors ${viewMode === 'grid' ? 'bg-zinc-800 text-white' : 'text-muted hover:text-white'}`}
+              >
+                  <LayoutGrid size={18} />
+              </button>
+              <button 
+                onClick={() => setViewMode('list')}
+                className={`p-2 rounded-md transition-colors ${viewMode === 'list' ? 'bg-zinc-800 text-white' : 'text-muted hover:text-white'}`}
+              >
+                  <List size={18} />
+              </button>
+          </div>
+      </div>
 
-        {/* Tag Filters */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide border-t border-barber-800 pt-4 w-full">
-            <span className="text-xs text-muted font-bold uppercase mr-2 flex items-center gap-1 shrink-0">
-                <Filter size={12} /> Filtros:
+      {/* Tag Filters */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-2 px-2">
+            <span className="text-[10px] text-muted font-bold uppercase mr-2 flex items-center gap-1 shrink-0">
+                <Filter size={10} /> Filtros:
             </span>
             {allTags.map(tag => (
                 <button
                     key={tag}
                     onClick={() => setSelectedTagFilter(tag)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all border shrink-0 ${
+                    className={`px-3 py-1 rounded-full text-[10px] font-bold whitespace-nowrap transition-all border shrink-0 ${
                         selectedTagFilter === tag 
-                        ? 'bg-barber-gold text-inverted border-barber-gold' 
-                        : 'bg-barber-950 text-muted border-barber-800 hover:border-barber-700 hover:text-main'
+                        ? 'bg-barber-gold text-black border-barber-gold' 
+                        : 'bg-zinc-950 text-muted border-zinc-800 hover:border-zinc-700 hover:text-white'
                     }`}
                 >
                     {tag === 'Todos' ? 'Todos' : `#${tag}`}
                 </button>
             ))}
         </div>
-      </Card>
 
-      {/* Clients Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredClients.map(client => (
-          <Card 
-            key={client.id} 
-            className="hover:border-barber-gold/50 flex flex-col h-full relative group transition-all duration-300"
-            onClick={() => setSelectedClient(client)}
-            noPadding
-          >
-             {/* Origin Badge */}
-             {client.origin === 'public_link' && (
-                 <div className="absolute top-0 left-0 bg-blue-600 text-white text-[9px] uppercase font-bold px-2 py-0.5 rounded-br-lg z-10">
-                     Novo via Link
-                 </div>
-             )}
+      {/* === LIST VIEW (DEFAULT) === */}
+      {viewMode === 'list' && (
+          <div className="flex flex-col gap-3">
+              {/* Desktop Header */}
+              <div className="hidden md:grid grid-cols-12 gap-4 px-4 py-2 text-xs font-bold text-muted uppercase tracking-wider bg-zinc-900/50 rounded-lg border border-transparent">
+                  <div className="col-span-4">Cliente</div>
+                  <div className="col-span-2">Contato</div>
+                  <div className="col-span-2">Tags & Status</div>
+                  <div className="col-span-2">Última Visita</div>
+                  <div className="col-span-2 text-right">Ações</div>
+              </div>
 
-             <div className="p-6 pb-0">
-                <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <span className="text-xs text-barber-gold font-bold flex items-center gap-1 cursor-pointer hover:underline">
-                    <Eye size={14} /> Ver Ficha
-                    </span>
-                </div>
-
-                <div className="flex justify-between items-start mb-4 mt-2">
-                <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-barber-800 to-barber-950 flex items-center justify-center text-xl font-bold text-barber-gold border border-barber-700 shrink-0">
-                    {client.name.charAt(0)}
-                    </div>
-                    <div>
-                    <h3 className="font-bold text-main leading-tight flex items-center gap-2">
-                        {client.name}
-                        {client.loyaltyTier === 'Ouro' && <span className="w-2 h-2 rounded-full bg-yellow-500" title="Cliente Ouro"></span>}
-                        {client.loyaltyTier === 'Diamante' && <span className="w-2 h-2 rounded-full bg-cyan-500" title="Cliente Diamante"></span>}
-                    </h3>
-                    <div className="flex items-center gap-1 text-xs text-muted mt-1">
-                        <Calendar size={12} /> Última: {new Date(client.lastVisit).toLocaleDateString('pt-BR')}
-                    </div>
-                    </div>
-                </div>
-                </div>
-
-                <div className="space-y-4 flex-1 flex flex-col">
-                {/* Interactive Tags Area */}
-                <div 
-                    className="flex flex-wrap gap-2 min-h-[32px] content-start" 
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    {client.tags.map(tag => (
-                    <Badge 
-                        key={tag} 
-                        variant={tag === 'VIP' ? 'vip' : 'default'}
-                        className="group/tag pr-1"
+              {filteredClients.map(client => {
+                  return (
+                    <div 
+                        key={client.id} 
+                        className="group bg-zinc-900 border border-zinc-800 hover:border-barber-gold/30 rounded-xl p-4 flex flex-col md:grid md:grid-cols-12 gap-4 items-center transition-all duration-200 hover:shadow-lg cursor-pointer"
+                        onClick={() => setSelectedClient(client)}
                     >
-                        {tag}
-                        <button 
-                            onClick={() => handleRemoveTag(client.id, tag)}
-                            className="opacity-0 group-hover/tag:opacity-100 hover:text-red-400 transition-opacity ml-1"
-                            title="Remover tag"
-                        >
-                            <X size={10} />
-                        </button>
-                    </Badge>
-                    ))}
-                    
-                    {/* Add Tag Input */}
-                    {editingClientId === client.id ? (
-                        <div className="flex items-center bg-barber-950 rounded-full border border-barber-700 px-2 py-0.5 animate-fade-in">
-                            <input 
-                                autoFocus
-                                type="text"
-                                value={newTagInput}
-                                onChange={(e) => setNewTagInput(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handleAddTag(client.id)}
-                                onBlur={() => handleAddTag(client.id)}
-                                className="w-20 bg-transparent text-xs text-main outline-none"
-                                placeholder="Nova tag..."
-                            />
-                            <button onMouseDown={() => handleAddTag(client.id)} className="text-green-500 hover:text-green-400 ml-1">
-                                <Check size={12} />
-                            </button>
+                        {/* Name & Avatar */}
+                        <div className="w-full md:col-span-4 flex items-center gap-3">
+                            <ClientAvatar client={client} size="md" />
+                            <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                    <h4 className="font-bold text-main text-sm truncate">{client.name}</h4>
+                                </div>
+                                <div className="text-[10px] flex items-center gap-2 mt-0.5 text-muted truncate">
+                                    {client.loyaltyTier === 'Diamante' && <span className="text-cyan-400 flex items-center gap-1 font-bold"><Users size={10}/> Diamante</span>}
+                                    {client.loyaltyTier === 'Ouro' && <span className="text-yellow-500 flex items-center gap-1 font-bold"><Users size={10}/> Ouro</span>}
+                                    {client.loyaltyTier === 'Prata' && <span className="text-gray-400 flex items-center gap-1 font-bold"><Users size={10}/> Prata</span>}
+                                    {client.loyaltyTier === 'Bronze' && <span className="text-orange-700 flex items-center gap-1 font-bold"><Users size={10}/> Bronze</span>}
+                                    <span className="hidden sm:inline">•</span>
+                                    <span>{client.totalVisits} visitas</span>
+                                </div>
+                            </div>
                         </div>
-                    ) : (
-                        <button 
-                            onClick={() => setEditingClientId(client.id)}
-                            className="text-xs bg-barber-800/50 hover:bg-barber-800 text-muted hover:text-main px-2 py-1 rounded-full border border-barber-800 hover:border-barber-700 border-dashed flex items-center gap-1 transition-all"
-                        >
-                            <Plus size={10} />
-                        </button>
-                    )}
-                </div>
 
-                <div className="bg-barber-950 p-3 rounded-lg text-sm text-muted border border-barber-800/50 flex-1">
-                    <span className="text-barber-gold font-bold block text-xs mb-1 uppercase tracking-wide">Preferências</span>
-                    {client.preferences || 'Sem preferências registradas.'}
-                </div>
-                </div>
-            </div>
+                        {/* Mobile Row: Contact & Tags */}
+                        <div className="w-full md:col-span-4 flex md:contents flex-col sm:flex-row gap-2 sm:gap-6 justify-between md:justify-start">
+                            {/* Contact */}
+                            <div className="text-sm text-muted flex items-center gap-2 md:col-span-2 shrink-0">
+                                <Phone size={14} className="text-zinc-600" /> {client.phone}
+                            </div>
 
-            <div className="flex items-center justify-between p-4 border-t border-barber-800 mt-4 bg-barber-950/30">
-                <div className="text-center">
-                    <div className="text-lg font-bold text-main">{client.totalVisits}</div>
-                    <div className="text-xs text-muted uppercase">Visitas</div>
-                </div>
-                <Button 
-                    size="sm" 
-                    variant="secondary" 
-                    onClick={(e) => { e.stopPropagation(); /* Logic to open Calendar */ }}
-                    leftIcon={<Calendar size={14} />}
-                >
-                    Agendar
-                </Button>
-            </div>
-          </Card>
-        ))}
+                            {/* Tags */}
+                            <div className="flex flex-wrap gap-1 md:col-span-2 items-center">
+                                {client.tags.slice(0, 3).map(tag => (
+                                    <Badge key={tag} size="sm" variant={tag === 'VIP' ? 'vip' : 'default'} className="text-[9px]">
+                                        {tag}
+                                    </Badge>
+                                ))}
+                                {client.tags.length > 3 && <span className="text-[9px] text-muted">+{client.tags.length - 3}</span>}
+                            </div>
+                        </div>
+
+                        {/* Mobile Row: Date & Actions */}
+                        <div className="w-full md:col-span-4 flex md:contents items-center justify-between mt-2 md:mt-0 pt-3 md:pt-0 border-t border-zinc-800 md:border-0">
+                            {/* Last Visit */}
+                            <div className="text-xs text-muted flex flex-col md:col-span-2">
+                                <span className="flex items-center gap-1 font-medium"><Calendar size={12}/> {new Date(client.lastVisit).toLocaleDateString('pt-BR')}</span>
+                                <span className="text-[9px] text-zinc-600 mt-0.5">Há {Math.floor((new Date().getTime() - new Date(client.lastVisit).getTime()) / (1000 * 3600 * 24))} dias</span>
+                            </div>
+
+                            {/* Actions */}
+                            <div className="flex items-center justify-end gap-2 md:col-span-2">
+                                <Button size="icon" variant="ghost" className="h-8 w-8 hover:bg-zinc-800 text-muted hover:text-white" onClick={(e) => { e.stopPropagation(); setSelectedClient(client); }}>
+                                    <Eye size={16} />
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                  );
+              })}
+          </div>
+      )}
+
+      {/* === GRID VIEW === */}
+      {viewMode === 'grid' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredClients.map(client => {
+                return (
+                    <Card 
+                        key={client.id} 
+                        className="hover:border-barber-gold/50 flex flex-col h-full relative group transition-all duration-300"
+                        onClick={() => setSelectedClient(client)}
+                        noPadding
+                    >
+                        <div className="p-6 pb-0">
+                            <div className="flex justify-between items-start mb-4 mt-3">
+                                <div className="flex items-center gap-3 w-full">
+                                    <ClientAvatar client={client} size="lg" />
+                                    <div className="min-w-0 flex-1">
+                                        <h3 className="font-bold text-main leading-tight flex items-center gap-2 truncate">
+                                            {client.name}
+                                        </h3>
+                                        <div className="flex items-center gap-1 text-xs text-muted mt-1">
+                                            <span className={`w-2 h-2 rounded-full ${client.loyaltyTier === 'Diamante' ? 'bg-cyan-500' : client.loyaltyTier === 'Ouro' ? 'bg-yellow-500' : 'bg-zinc-600'}`}></span>
+                                            {client.loyaltyTier}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="space-y-4 flex-1 flex flex-col">
+                                {/* Interactive Tags Area */}
+                                <div 
+                                    className="flex flex-wrap gap-2 min-h-[32px] content-start" 
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                    {client.tags.slice(0, 3).map(tag => (
+                                        <Badge key={tag} variant={tag === 'VIP' ? 'vip' : 'default'} className="pr-1 text-[10px]">
+                                            {tag}
+                                        </Badge>
+                                    ))}
+                                    <button 
+                                        onClick={() => setEditingClientId(client.id)}
+                                        className="text-[10px] bg-zinc-900 hover:bg-zinc-800 text-muted hover:text-main px-2 py-0.5 rounded-full border border-zinc-800 hover:border-zinc-700 border-dashed flex items-center gap-1 transition-all"
+                                    >
+                                        <Plus size={10} /> Tag
+                                    </button>
+                                </div>
+
+                                {/* Stats Row */}
+                                <div className="grid grid-cols-2 gap-2 border-t border-zinc-800 pt-3">
+                                    <div className="text-center p-2 bg-zinc-950 rounded-lg">
+                                        <div className="text-[10px] text-muted uppercase font-bold">LTV</div>
+                                        <div className="text-sm font-bold text-emerald-500">R$ {client.ltv || 0}</div>
+                                    </div>
+                                    <div className="text-center p-2 bg-zinc-950 rounded-lg">
+                                        <div className="text-[10px] text-muted uppercase font-bold">Visitas</div>
+                                        <div className="text-sm font-bold text-white">{client.totalVisits}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center justify-between p-4 border-t border-barber-800 mt-4 bg-zinc-950/30">
+                            <div className="text-xs text-muted flex items-center gap-1">
+                                <Clock size={12} /> {new Date(client.lastVisit).toLocaleDateString('pt-BR')}
+                            </div>
+                            <Button 
+                                size="sm" 
+                                variant="secondary" 
+                                className="h-8 text-xs"
+                                onClick={(e) => { e.stopPropagation(); /* Logic to open Calendar */ }}
+                            >
+                                Agendar
+                            </Button>
+                        </div>
+                    </Card>
+                );
+            })}
+        </div>
+      )}
         
-        {filteredClients.length === 0 && (
-            <div className="col-span-full py-10 text-center text-muted border-2 border-dashed border-barber-800 rounded-xl bg-barber-950/20">
-                <Hash size={40} className="mx-auto mb-2 opacity-20" />
-                <p>Nenhum cliente encontrado com os filtros atuais.</p>
+      {filteredClients.length === 0 && (
+            <div className="col-span-full py-16 text-center text-muted border-2 border-dashed border-zinc-800 rounded-2xl bg-zinc-900/50">
+                <Hash size={48} className="mx-auto mb-4 opacity-20" />
+                <h3 className="text-lg font-bold text-white mb-2">Nenhum cliente encontrado</h3>
+                <p className="text-sm mb-6">Tente ajustar os filtros ou busque por outro nome.</p>
                 <button 
                     onClick={() => {setSearchTerm(''); setSelectedTagFilter('Todos'); setClientTypeFilter('all');}}
-                    className="mt-4 text-barber-gold hover:underline text-sm"
+                    className="text-barber-gold hover:underline text-sm font-bold"
                 >
-                    Limpar filtros
+                    Limpar todos os filtros
                 </button>
             </div>
-        )}
-      </div>
+      )}
 
       {selectedClient && (
         <ClientDetailsModal 
           client={selectedClient} 
           onClose={() => setSelectedClient(null)} 
+          onUpdate={handleUpdateClient}
         />
       )}
     </div>

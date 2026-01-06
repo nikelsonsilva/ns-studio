@@ -13,7 +13,8 @@ import {
   Globe,
   Activity,
   Sun,
-  Moon
+  Moon,
+  ExternalLink
 } from 'lucide-react';
 import { SystemSettings, Role } from '../types';
 
@@ -43,6 +44,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, isOpen, to
     { id: 'clients', label: 'Clientes', icon: Users, visible: true, activeClass: 'bg-indigo-500 text-white shadow-indigo-500/20' },
     { id: 'finance', label: 'Financeiro', icon: WalletCards, visible: settings?.modules.finance !== false && userRole !== 'Barber', activeClass: 'bg-emerald-500 text-white shadow-emerald-500/20' },
     { id: 'team', label: 'Equipe', icon: ScissorsLineDashed, visible: userRole !== 'Barber', activeClass: 'bg-orange-500 text-white shadow-orange-500/20' },
+    { id: 'public_booking', label: 'Link Público', icon: ExternalLink, visible: settings?.modules.publicBooking !== false, activeClass: 'bg-fuchsia-500 text-white shadow-fuchsia-500/20' },
     { id: 'settings', label: 'Configurações', icon: Settings, visible: userRole === 'Admin' || isSuper, activeClass: 'bg-zinc-700 text-white shadow-zinc-700/20' },
   ];
 
