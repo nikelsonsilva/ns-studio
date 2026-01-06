@@ -223,3 +223,150 @@ export const getDaysSinceLastVisit = (lastVisitDate: string | null): number => {
 
     return diffDays;
 };
+
+// =====================================================
+// CLIENT PHOTOS - Galeria de Cortes
+// =====================================================
+
+export interface ClientPhotoRecord {
+    id: string;
+    business_id: string;
+    client_id: string;
+    url: string;
+    date: string;
+    type: 'before' | 'after';
+    notes?: string;
+    created_at: string;
+}
+
+/**
+ * Buscar fotos de um cliente
+ */
+export const fetchClientPhotos = async (clientId: string): Promise<ClientPhotoRecord[]> => {
+    try {
+        const { data, error } = await supabase
+            .from('client_photos')
+            .select('*')
+            .eq('client_id', clientId)
+            .order('date', { ascending: false });
+
+        if (error) {
+            console.error('Error fetching client photos:', error);
+            return [];
+        }
+
+        return data || [];
+    } catch (error) {
+        console.error('Unexpected error fetching client photos:', error);
+        return [];
+    }
+};
+
+/**
+ * Upload e salvar foto do cliente
+ */
+export const uploadClientPhoto = async (
+    businessId: string,
+    clientId: string,
+    file: File,
+    notes?: string
+): Promise<ClientPhotoRecord | null> => {
+    console.log('📸 [uploadClientPhoto] Iniciando upload...', { businessId, clientId, fileName: file.name, fileSize: file.size });
+
+    try {
+        // 1. Upload para o Storage
+        const fileName = `${clientId}/${Date.now()}_${file.name}`;
+        console.log('📸 [uploadClientPhoto] Uploading to storage:', fileName);
+
+        const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('client-photos')
+            .upload(fileName, file, {
+                cacheControl: '3600',
+                upsert: false
+            });
+
+        if (uploadError) {
+            console.error('❌ [uploadClientPhoto] Storage upload error:', uploadError);
+            return null;
+        }
+
+        console.log('✅ [uploadClientPhoto] Storage upload success:', uploadData);
+
+        // 2. Obter URL pública
+        const { data: urlData } = supabase.storage
+            .from('client-photos')
+            .getPublicUrl(fileName);
+
+        const publicUrl = urlData.publicUrl;
+        console.log('📸 [uploadClientPhoto] Public URL:', publicUrl);
+
+        // 3. Salvar metadados no banco
+        console.log('📸 [uploadClientPhoto] Saving to database...');
+        const { data, error } = await supabase
+            .from('client_photos')
+            .insert({
+                business_id: businessId,
+                client_id: clientId,
+                url: publicUrl,
+                date: new Date().toISOString().split('T')[0],
+                type: 'after',
+                notes: notes || null
+            })
+            .select()
+            .single();
+
+        if (error) {
+            console.error('❌ [uploadClientPhoto] Database save error:', error);
+            return null;
+        }
+
+        console.log('✅ [uploadClientPhoto] Success! Photo saved:', data);
+        return data;
+    } catch (error) {
+        console.error('❌ [uploadClientPhoto] Unexpected error:', error);
+        return null;
+    }
+};
+
+/**
+ * Salvar múltiplas fotos de uma vez
+ */
+export const saveClientPhotos = async (
+    businessId: string,
+    clientId: string,
+    files: File[],
+    notes?: string
+): Promise<ClientPhotoRecord[]> => {
+    const results: ClientPhotoRecord[] = [];
+
+    for (const file of files) {
+        const result = await uploadClientPhoto(businessId, clientId, file, notes);
+        if (result) {
+            results.push(result);
+        }
+    }
+
+    return results;
+};
+
+/**
+ * Deletar foto do cliente
+ */
+export const deleteClientPhoto = async (photoId: string): Promise<boolean> => {
+    try {
+        const { error } = await supabase
+            .from('client_photos')
+            .delete()
+            .eq('id', photoId);
+
+        if (error) {
+            console.error('Error deleting photo:', error);
+            return false;
+        }
+
+        return true;
+    } catch (error) {
+        console.error('Unexpected error deleting photo:', error);
+        return false;
+    }
+};

@@ -18,6 +18,7 @@ import {
   LayoutGrid,
   List,
   Trash2,
+  UserMinus,
   Zap,
   Wallet,
   AlertCircle,
@@ -99,6 +100,7 @@ const Team: React.FC<TeamProps> = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [activeTab, setActiveTab] = useState<ModalTab>('profile');
   const [searchTerm, setSearchTerm] = useState('');
+  const [showInactive, setShowInactive] = useState(false);
   const [viewingAgenda, setViewingAgenda] = useState<Barber | null>(null);
 
   useEffect(() => {
@@ -642,23 +644,26 @@ const Team: React.FC<TeamProps> = () => {
     }
   };
 
-  const handleDeactivateBarber = async (barberId: string) => {
-    if (!confirm('Tem certeza que deseja desativar este profissional?')) return;
+  const handleDeactivateBarber = (barberId: string) => {
+    toast.confirm(
+      'Tem certeza que deseja desativar este profissional?',
+      async () => {
+        try {
+          const { error } = await supabase
+            .from('professionals')
+            .update({ is_active: false })
+            .eq('id', barberId);
 
-    try {
-      const { error } = await supabase
-        .from('professionals')
-        .update({ is_active: false })
-        .eq('id', barberId);
+          if (error) throw error;
 
-      if (error) throw error;
-
-      setBarbers(prev => prev.map(b => b.id === barberId ? { ...b, is_active: false } : b));
-      setEditingBarber(null);
-      toast.success('Profissional desativado');
-    } catch (error) {
-      toast.error('Erro ao desativar');
-    }
+          setBarbers(prev => prev.map(b => b.id === barberId ? { ...b, is_active: false } : b));
+          setEditingBarber(null);
+          toast.success('Profissional desativado com sucesso');
+        } catch (error) {
+          toast.error('Erro ao desativar profissional');
+        }
+      }
+    );
   };
 
   const updateSchedule = (dayIndex: number, field: keyof WorkDay, value: any) => {
@@ -711,7 +716,8 @@ const Team: React.FC<TeamProps> = () => {
   };
 
   const filteredBarbers = barbers.filter(barber => {
-    if (barber.is_active === false) return false;
+    // Filter by active status (unless showInactive is true)
+    if (!showInactive && barber.is_active === false) return false;
     if (searchTerm.trim()) {
       const query = searchTerm.toLowerCase();
       return barber.name?.toLowerCase().includes(query) || barber.specialty?.toLowerCase().includes(query);
@@ -1040,13 +1046,22 @@ const Team: React.FC<TeamProps> = () => {
         <div className="w-full md:w-96">
           <Input placeholder="Buscar profissional..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} containerClassName="mb-0" className="bg-zinc-950 border-zinc-800" />
         </div>
-        <div className="flex bg-zinc-950 rounded-lg p-1 border border-zinc-800 shrink-0">
-          <button onClick={() => setViewMode('grid')} className={`p-2 rounded-md transition-colors ${viewMode === 'grid' ? 'bg-zinc-800 text-white' : 'text-muted hover:text-white'}`}>
-            <LayoutGrid size={18} />
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowInactive(!showInactive)}
+            className={`px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors border ${showInactive ? 'bg-zinc-800 text-white border-zinc-700' : 'bg-transparent text-zinc-500 border-zinc-800 hover:text-white hover:border-zinc-700'}`}
+          >
+            <UserMinus size={14} />
+            Inativos {showInactive && `(${barbers.filter(b => b.is_active === false).length})`}
           </button>
-          <button onClick={() => setViewMode('list')} className={`p-2 rounded-md transition-colors ${viewMode === 'list' ? 'bg-zinc-800 text-white' : 'text-muted hover:text-white'}`}>
-            <List size={18} />
-          </button>
+          <div className="flex bg-zinc-950 rounded-lg p-1 border border-zinc-800 shrink-0">
+            <button onClick={() => setViewMode('grid')} className={`p-2 rounded-md transition-colors ${viewMode === 'grid' ? 'bg-zinc-800 text-white' : 'text-muted hover:text-white'}`}>
+              <LayoutGrid size={18} />
+            </button>
+            <button onClick={() => setViewMode('list')} className={`p-2 rounded-md transition-colors ${viewMode === 'list' ? 'bg-zinc-800 text-white' : 'text-muted hover:text-white'}`}>
+              <List size={18} />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -1287,7 +1302,15 @@ const Team: React.FC<TeamProps> = () => {
         footer={
           <div className="flex justify-between w-full">
             {editingBarber?.id ? (
-              <Button variant="danger" size="icon" onClick={() => handleDeactivateBarber(editingBarber.id)} disabled={savingBarber}><Trash2 size={18} /></Button>
+              <Button
+                variant="ghost"
+                onClick={() => handleDeactivateBarber(editingBarber.id)}
+                disabled={savingBarber}
+                className="text-zinc-400 hover:text-red-400 hover:bg-red-500/10 gap-2"
+              >
+                <UserMinus size={16} />
+                Desativar
+              </Button>
             ) : <div />}
 
             <div className="flex gap-2">

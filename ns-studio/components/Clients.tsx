@@ -22,7 +22,7 @@ import {
   DollarSign, 
   ChevronRight, 
   Star, 
-  MoreVertical,
+  MoreVertical, 
   MessageCircle,
   Store
 } from 'lucide-react';
@@ -97,12 +97,49 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients }) => {
 
   // Add dummy clients if empty
   const displayClients: Client[] = clients.length > 0 ? clients : [
-      { id: '1', name: 'Ana Silva', phone: '11999999999', lastVisit: '2023-10-25', totalVisits: 12, tags: ['VIP'], loyaltyTier: 'Ouro', origin: 'manual', ltv: 1200 },
-      { id: '2', name: 'Carlos Oliveira', phone: '11988888888', lastVisit: '2023-10-20', totalVisits: 1, tags: ['Novo'], loyaltyTier: 'Bronze', origin: 'public_link', createdAt: '2023-10-20', ltv: 50 },
-      { id: '3', name: 'Marcos Santos', phone: '11977777777', lastVisit: '2023-10-15', totalVisits: 3, tags: [], loyaltyTier: 'Bronze', origin: 'whatsapp', ltv: 150 },
-      { id: '4', name: 'Felipe Neto', phone: '11966666666', lastVisit: '2023-09-30', totalVisits: 25, tags: ['VIP', 'Amigo'], loyaltyTier: 'Diamante', origin: 'manual', ltv: 3500 },
-      { id: '5', name: 'Juliana Paes', phone: '11955555555', lastVisit: '2023-10-28', totalVisits: 5, tags: [], loyaltyTier: 'Prata', origin: 'public_link', ltv: 400 },
-      { id: '6', name: 'Roberto Firmino', phone: '11944444444', lastVisit: '2023-10-29', totalVisits: 1, tags: ['Novo'], loyaltyTier: 'Bronze', origin: 'whatsapp', ltv: 80 }
+      { 
+          id: '1', 
+          name: 'Ana Silva', 
+          phone: '11999999999',
+          email: 'ana.silva@email.com',
+          instagram: '@ana.silva',
+          lastVisit: '2023-10-24', 
+          totalVisits: 12, 
+          tags: ['VIP'], 
+          loyaltyTier: 'Ouro', 
+          origin: 'manual', 
+          ltv: 1200, 
+          lastService: 'Corte Degradê + Hidratação + Manicure', 
+          lastAppointmentDetails: {
+              services: ['Corte Degradê', 'Hidratação', 'Manicure'],
+              professionals: ['João Barber', 'Maria Silva'],
+              date: '2023-10-24'
+          }
+      },
+      { 
+          id: '2', 
+          name: 'Carlos Oliveira', 
+          phone: '11988888888',
+          email: 'carlos.o@email.com',
+          instagram: '@carlos.barberlife',
+          lastVisit: '2023-10-20', 
+          totalVisits: 1, 
+          tags: ['Novo'], 
+          loyaltyTier: 'Bronze', 
+          origin: 'public_link', 
+          createdAt: '2023-10-20', 
+          ltv: 50, 
+          lastService: 'Barba Terapia',
+          lastAppointmentDetails: {
+              services: ['Barba Terapia'],
+              professionals: ['Pedro Cortes'],
+              date: '2023-10-20'
+          }
+      },
+      { id: '3', name: 'Marcos Santos', phone: '11977777777', email: 'marcos@gmail.com', lastVisit: '2023-10-15', totalVisits: 3, tags: [], loyaltyTier: 'Bronze', origin: 'whatsapp', ltv: 150, lastService: 'Corte Social' },
+      { id: '4', name: 'Felipe Neto', phone: '11966666666', instagram: '@felipeneto', lastVisit: '2023-09-30', totalVisits: 25, tags: ['VIP', 'Amigo'], loyaltyTier: 'Diamante', origin: 'manual', ltv: 3500, lastService: 'Platinado + Barba' },
+      { id: '5', name: 'Juliana Paes', phone: '11955555555', lastVisit: '2023-10-28', totalVisits: 5, tags: [], loyaltyTier: 'Prata', origin: 'public_link', ltv: 400, lastService: 'Corte Feminino' },
+      { id: '6', name: 'Roberto Firmino', phone: '11944444444', lastVisit: '2023-10-29', totalVisits: 1, tags: ['Novo'], loyaltyTier: 'Bronze', origin: 'whatsapp', ltv: 80, lastService: 'Corte Degradê' }
   ];
 
   // Derive unique tags for filter

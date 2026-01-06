@@ -1,47 +1,95 @@
 
-import React, { useState, useEffect } from 'react';
-import { Menu, User, Globe } from 'lucide-react';
+import React, { useState, useEffect, Suspense, startTransition } from 'react';
+import { Menu, User, Globe, Loader2 } from 'lucide-react';
 import Sidebar from './components/Sidebar';
-import Dashboard from './components/Dashboard';
-import Calendar from './components/Calendar';
-import Clients from './components/Clients';
-import Finance from './components/Finance';
-import Team from './components/Team';
-import Services from './components/Services';
-import PublicBooking from './components/PublicBooking';
-import Settings from './components/Settings';
 import Auth from './components/Auth';
 import UserProfileModal from './components/UserProfile';
-import SuperAdminDashboard from './components/SuperAdminDashboard';
 import { ToastProvider } from './components/ui/Toast';
-import { Barber, Service, Notification, Product, SystemSettings, BusinessType, Client, UserProfile } from './types';
+import { Barber, Service, Notification, Product, SystemSettings, BusinessType, Client, UserProfile, WorkDay } from './types';
 
-// Mock Data Global
-const initialBarbers: Barber[] = [
-  { id: '1', name: 'João Barber', specialty: 'Fade Master', avatar: 'https://images.unsplash.com/photo-1580273916550-e323be2eb5fa?auto=format&fit=crop&q=80&w=200', commissionRate: 50, rating: 4.9, goal: 5000, currentSales: 4200, services: ['1', '2', '3', '4'], workSchedule: [] },
-  { id: '2', name: 'Pedro Cortes', specialty: 'Barba & Navalha', avatar: 'https://images.unsplash.com/photo-1618077360395-f3068be8e001?auto=format&fit=crop&q=80&w=200', commissionRate: 45, rating: 4.7, goal: 4000, currentSales: 3800, services: ['1', '2', '3'], workSchedule: [] },
-];
+// Skeletons
+import { 
+  DashboardSkeleton, 
+  CalendarSkeleton, 
+  ClientsSkeleton, 
+  FinanceSkeleton, 
+  GenericListSkeleton 
+} from './components/ViewSkeletons';
 
-const initialServices: Service[] = [
-  { id: '1', name: 'Corte Degradê', price: 50, duration: 45, category: 'Corte', active: true },
-];
+// --- LAZY LOAD COMPONENTS ---
+// This splits the bundle. Components are loaded only when requested.
+const Dashboard = React.lazy(() => import('./components/Dashboard'));
+const Calendar = React.lazy(() => import('./components/Calendar'));
+const Clients = React.lazy(() => import('./components/Clients'));
+const Finance = React.lazy(() => import('./components/Finance'));
+const Team = React.lazy(() => import('./components/Team'));
+const Services = React.lazy(() => import('./components/Services'));
+const PublicBooking = React.lazy(() => import('./components/PublicBooking'));
+const Settings = React.lazy(() => import('./components/Settings'));
+const SuperAdminDashboard = React.lazy(() => import('./components/SuperAdminDashboard'));
 
-const initialProducts: Product[] = [];
-const initialClients: Client[] = [];
-const membershipPlans: any[] = []; // Placeholder
-const initialNotifications: Notification[] = [];
-const initialSettings: SystemSettings = {
-  businessName: 'NS Studio',
-  businessAddress: 'Av. Paulista, 1000 - SP',
-  businessPhone: '(11) 99999-0000',
-  businessEmail: 'contato@nsstudio.com',
-  businessHours: [],
-  modules: { products: true, finance: true, aiChatbot: true, publicBooking: true, loyaltyProgram: true },
-  aiConfig: { enableInsights: true, insightTypes: { financial: true, churn: true, operational: true }, notificationFrequency: 'medium', tone: 'professional' }
+// Helper para gerar escala padrão
+const defaultSchedule: WorkDay[] = [0, 1, 2, 3, 4, 5, 6].map(day => ({
+  dayOfWeek: day,
+  startTime: '09:00',
+  endTime: '19:00',
+  breakStart: '12:00',
+  breakEnd: '13:00',
+  active: day !== 0 
+}));
+
+// --- INITIAL MOCK DATA (Simulating DB Response) ---
+const dbData = {
+    barbers: [
+        { 
+            id: '1', 
+            name: 'João Barber', 
+            specialty: 'Fade Master', 
+            avatar: 'https://images.unsplash.com/photo-1580273916550-e323be2eb5fa?auto=format&fit=crop&q=80&w=200', 
+            commissionRate: 50, 
+            rating: 4.9, 
+            goal: 5000, 
+            currentSales: 4200, 
+            services: ['1', '2', '3', '4'], 
+            workSchedule: defaultSchedule 
+        },
+        { 
+            id: '2', 
+            name: 'Pedro Cortes', 
+            specialty: 'Barba & Navalha', 
+            avatar: 'https://images.unsplash.com/photo-1618077360395-f3068be8e001?auto=format&fit=crop&q=80&w=200', 
+            commissionRate: 45, 
+            rating: 4.7, 
+            goal: 4000, 
+            currentSales: 3800, 
+            services: ['1', '2', '3'], 
+            workSchedule: defaultSchedule 
+        },
+    ] as Barber[],
+    services: [
+        { id: '1', name: 'Corte Degradê', price: 50, duration: 45, category: 'Corte', active: true },
+        { id: '2', name: 'Barba Terapia', price: 40, duration: 30, category: 'Barba', active: true },
+        { id: '3', name: 'Combo (Corte + Barba)', price: 80, duration: 75, category: 'Combo', active: true },
+        { id: '4', name: 'Platinado', price: 150, duration: 120, category: 'Química', active: true },
+    ] as Service[],
+    products: [] as Product[],
+    clients: [] as Client[],
+    membershipPlans: [] as any[],
+    settings: {
+        businessName: 'NS Studio',
+        businessAddress: 'Av. Paulista, 1000 - SP',
+        businessPhone: '(11) 99999-0000',
+        businessEmail: 'contato@nsstudio.com',
+        businessHours: [],
+        appointmentInterval: 30,
+        modules: { products: true, finance: true, aiChatbot: true, publicBooking: true, loyaltyProgram: true },
+        aiConfig: { enableInsights: true, insightTypes: { financial: true, churn: true, operational: true }, notificationFrequency: 'medium', tone: 'professional' }
+    } as SystemSettings
 };
 
 const AppContent: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoadingData, setIsLoadingData] = useState(false); // Global Loading State
   
   // Theme & Business State
   const [themeMode, setThemeMode] = useState<'dark' | 'light'>('dark');
@@ -49,7 +97,6 @@ const AppContent: React.FC = () => {
   
   const [currentView, setCurrentView] = useState('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [notifications, setNotifications] = useState<Notification[]>(initialNotifications);
   
   // User Profile State
   const [currentUser, setCurrentUser] = useState<UserProfile>({
@@ -60,34 +107,52 @@ const AppContent: React.FC = () => {
   });
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   
-  // Settings State
-  const [settings, setSettings] = useState<SystemSettings>(initialSettings);
-  
-  // Data States
-  const [barbers, setBarbers] = useState<Barber[]>(initialBarbers);
-  const [services, setServices] = useState<Service[]>(initialServices);
-  const [products, setProducts] = useState<Product[]>(initialProducts);
-  const [clients, setClients] = useState<Client[]>(initialClients);
+  // Data States (In Memory)
+  const [settings, setSettings] = useState<SystemSettings>(dbData.settings);
+  const [barbers, setBarbers] = useState<Barber[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
 
   // Payment Config State
   const [paymentConfig, setPaymentConfig] = useState({ isConnected: false, stripeKey: '' });
 
-  // Update view when role changes to SuperAdmin
+  // --- OPTIMIZATION: SINGLE QUERY PATTERN ---
+  // When user authenticates, we fetch ALL needed data at once and keep it in memory.
+  // This makes subsequent navigation instant (except for React lazy loading chunk fetch).
+  const fetchAllData = async () => {
+      setIsLoadingData(true);
+      // Simulate Network Delay (e.g., fetching from Firebase/Supabase)
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Load data into state
+      setBarbers(dbData.barbers);
+      setServices(dbData.services);
+      setProducts(dbData.products);
+      setClients(dbData.clients);
+      setSettings(dbData.settings);
+      
+      setIsLoadingData(false);
+  };
+
+  useEffect(() => {
+    if (isAuthenticated) {
+        fetchAllData();
+    }
+  }, [isAuthenticated]);
+
   useEffect(() => {
     if (currentUser.role === 'SuperAdmin') {
-        setCurrentView('platform_dashboard');
+        startTransition(() => setCurrentView('platform_dashboard'));
     } else if (currentView === 'platform_dashboard') {
-        setCurrentView('dashboard');
+        startTransition(() => setCurrentView('dashboard'));
     }
   }, [currentUser.role]);
 
-  // Apply Theme & Business Attributes to DOM
+  // Apply Theme
   useEffect(() => {
-    // Set data attributes for CSS variables (styles.css)
     document.body.setAttribute('data-mode', themeMode);
     document.body.setAttribute('data-business', businessType);
-
-    // Toggle 'dark' class on HTML element for Tailwind dark mode modifier support
     if (themeMode === 'dark') {
       document.documentElement.classList.add('dark');
     } else {
@@ -110,39 +175,81 @@ const AppContent: React.FC = () => {
       setIsAuthenticated(false);
       setIsProfileOpen(false);
       setCurrentView('dashboard');
+      // Clear data on logout
+      setBarbers([]);
+      setServices([]);
+  };
+
+  const handleViewChange = (view: string) => {
+      // Use startTransition to allow the UI to remain responsive while the new view chunk loads
+      startTransition(() => {
+          setCurrentView(view);
+      });
+  };
+
+  // --- SKELETON SELECTION LOGIC ---
+  const renderSkeleton = () => {
+      switch (currentView) {
+          case 'dashboard': return <DashboardSkeleton />;
+          case 'calendar': return <CalendarSkeleton />;
+          case 'clients': return <ClientsSkeleton />;
+          case 'finance': return <FinanceSkeleton />;
+          case 'services':
+          case 'team':
+          case 'settings':
+              return <GenericListSkeleton />;
+          default: return <div className="flex items-center justify-center h-full"><Loader2 className="animate-spin text-barber-gold" size={40} /></div>;
+      }
   };
 
   const renderContent = () => {
-    if (currentUser.role === 'SuperAdmin' && currentView === 'platform_dashboard') {
-        return <SuperAdminDashboard />;
+    // If we are performing the initial "Single Query", show skeleton
+    if (isLoadingData) {
+        return renderSkeleton();
     }
 
-    switch (currentView) {
-      case 'dashboard': return <Dashboard settings={settings} onGoToSettings={() => setCurrentView('settings')} onGoToCalendar={() => setCurrentView('calendar')} />;
-      case 'calendar': return <Calendar barbers={barbers} services={services} products={products} clients={clients} settings={settings} />;
-      case 'services': return <Services services={services} products={products} setServices={setServices} setProducts={setProducts} />;
-      case 'clients': return <Clients clients={clients} setClients={setClients} />;
-      case 'finance': return <Finance paymentConfig={paymentConfig} onSaveConfig={setPaymentConfig} barbers={barbers} userRole={currentUser.role} />;
-      case 'team': return <Team barbers={barbers} services={services} />;
-      case 'settings': return <Settings settings={settings} onUpdateSettings={setSettings} />;
-      case 'platform_dashboard': return <SuperAdminDashboard />;
-      default: return <Dashboard settings={settings} onGoToSettings={() => setCurrentView('settings')} onGoToCalendar={() => setCurrentView('calendar')} />;
-    }
+    // Wrap Lazy Components in Suspense
+    return (
+      <Suspense fallback={renderSkeleton()}>
+        {(() => {
+            if (currentUser.role === 'SuperAdmin' && currentView === 'platform_dashboard') {
+                return <SuperAdminDashboard />;
+            }
+
+            switch (currentView) {
+            case 'dashboard': return <Dashboard settings={settings} onGoToSettings={() => handleViewChange('settings')} onGoToCalendar={() => handleViewChange('calendar')} />;
+            case 'calendar': return <Calendar barbers={barbers} services={services} products={products} clients={clients} settings={settings} />;
+            case 'services': return <Services services={services} products={products} setServices={setServices} setProducts={setProducts} />;
+            case 'clients': return <Clients clients={clients} setClients={setClients} />;
+            case 'finance': return <Finance paymentConfig={paymentConfig} onSaveConfig={setPaymentConfig} barbers={barbers} userRole={currentUser.role} />;
+            case 'team': return <Team barbers={barbers} services={services} />;
+            case 'settings': return <Settings settings={settings} onUpdateSettings={setSettings} />;
+            case 'platform_dashboard': return <SuperAdminDashboard />;
+            default: return <Dashboard settings={settings} onGoToSettings={() => handleViewChange('settings')} onGoToCalendar={() => handleViewChange('calendar')} />;
+            }
+        })()}
+      </Suspense>
+    );
   };
 
   if (!isAuthenticated) {
     return <Auth onLogin={handleLogin} />;
   }
 
+  // Public booking is typically outside the authenticated shell, but handling here for mock simplicity
   if (currentView === 'public_booking') {
-    return <PublicBooking services={services} barbers={barbers} membershipPlans={membershipPlans} onBack={() => setCurrentView('dashboard')} />;
+    return (
+      <Suspense fallback={<div className="min-h-screen bg-black flex items-center justify-center"><Loader2 className="animate-spin text-white" /></div>}>
+         <PublicBooking services={services} barbers={barbers} membershipPlans={dbData.membershipPlans} onBack={() => setCurrentView('dashboard')} />
+      </Suspense>
+    );
   }
 
   return (
     <div className="flex h-screen bg-barber-950 text-main overflow-hidden font-sans transition-colors duration-300">
       <Sidebar 
         currentView={currentView} 
-        onChangeView={setCurrentView} 
+        onChangeView={handleViewChange} 
         isOpen={isSidebarOpen}
         toggleSidebar={toggleSidebar}
         userRole={currentUser.role}

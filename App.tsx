@@ -106,6 +106,10 @@ const App: React.FC = () => {
     if (currentView === 'settings' && newView !== 'settings') {
       setCalendarRefreshKey(prev => prev + 1);
     }
+    // If navigating to calendar from sidebar (not from Dashboard's "Ver na Agenda"), reset to today
+    if (newView === 'calendar' && currentView !== 'dashboard') {
+      setCalendarDate(undefined);
+    }
     setCurrentView(newView);
   };
 

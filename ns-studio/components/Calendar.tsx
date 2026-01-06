@@ -34,7 +34,14 @@ import {
   Percent,
   Coins,
   CreditCard,
-  Wallet
+  Wallet,
+  Utensils,
+  PauseCircle,
+  StickyNote,
+  Tag,
+  AlertTriangle,
+  Smile,
+  Sparkles
 } from 'lucide-react';
 import { 
   format, 
@@ -50,9 +57,10 @@ import {
   startOfMonth, 
   endOfMonth, 
   isSameMonth,
-  addWeeks,
-  subWeeks,
-  isBefore
+  addWeeks, 
+  subWeeks, 
+  isBefore, 
+  getDay
 } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Barber, Service, Product, Client, SystemSettings, Appointment, Status, ConsumptionItem } from '../types';
@@ -520,6 +528,50 @@ const Calendar: React.FC<CalendarProps> = ({ barbers, services, products, client
       );
   };
 
+  // Helper: Render Lunch Break Visuals
+  const renderLunchBreak = (barberId: string, date: Date) => {
+      const barber = barbers.find(b => b.id === barberId);
+      if (!barber?.workSchedule) return null;
+
+      const dayOfWeek = getDay(date);
+      const schedule = barber.workSchedule.find(d => d.dayOfWeek === dayOfWeek);
+
+      if (schedule && schedule.active && schedule.breakStart && schedule.breakEnd) {
+          const [startH, startM] = schedule.breakStart.split(':').map(Number);
+          const [endH, endM] = schedule.breakEnd.split(':').map(Number);
+
+          const startDecimal = startH + startM / 60;
+          const endDecimal = endH + endM / 60;
+          
+          // Calculate relative position based on Calendar constants
+          const top = (startDecimal - startHour) * SLOT_HEIGHT;
+          const height = (endDecimal - startDecimal) * SLOT_HEIGHT;
+
+          // Ensure it falls within the visible calendar range
+          if (startDecimal >= startHour && endDecimal <= endHour + 1) {
+              return (
+                  <div 
+                      className="absolute inset-x-0 mx-1 z-10 rounded-md flex items-center justify-center pointer-events-none overflow-hidden group"
+                      style={{ top: `${top}px`, height: `${height}px` }}
+                  >
+                      {/* Striped Background Pattern - Dark/Black Style */}
+                      <div className="absolute inset-0 opacity-25 bg-[repeating-linear-gradient(45deg,#000,#000_10px,#27272a_10px,#27272a_20px)]"></div>
+                      
+                      {/* Interactive Hover Overlay (Optional hint) */}
+                      <div className="absolute inset-0 bg-black/10 group-hover:bg-black/30 transition-colors"></div>
+
+                      {/* Content Badge */}
+                      <div className="relative z-20 bg-zinc-900/90 backdrop-blur-md border border-zinc-700/50 px-3 py-1.5 rounded-full shadow-xl flex items-center gap-2 transform group-hover:scale-105 transition-transform">
+                          <PauseCircle size={14} className="text-amber-500" />
+                          <span className="text-[10px] font-bold text-zinc-300 uppercase tracking-widest">PAUSA</span>
+                      </div>
+                  </div>
+              );
+          }
+      }
+      return null;
+  };
+
 
   // --- Grid Helpers ---
   const timeSlots = Array.from({ length: endHour - startHour + 1 }, (_, i) => startHour + i);
@@ -559,7 +611,7 @@ const Calendar: React.FC<CalendarProps> = ({ barbers, services, products, client
               icon: <X size={12} className="text-rose-500" />
           };
           case Status.NOSHOW: return {
-              className: `${base} border-red-800 bg-red-950/80 text-red-200 opacity-75`,
+              className: `${base} border-red-600 bg-red-950 text-red-100`, // Redesign No-Show to be clearer
               icon: <UserX size={12} className="text-red-500" />
           };
           case Status.BLOCKED: return { 
@@ -817,6 +869,7 @@ const Calendar: React.FC<CalendarProps> = ({ barbers, services, products, client
                     <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-sm bg-amber-500"></div> Pendente</div>
                     <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-sm bg-zinc-600"></div> Concluído</div>
                     <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-sm bg-rose-500/50 border border-rose-500"></div> Cancelado</div>
+                    <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-sm bg-red-900 border border-red-700"></div> Faltou</div>
                     <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-sm bg-zinc-900 border border-zinc-600 pattern-diagonal-lines"></div> Bloqueado</div>
                 </div>
             </div>
@@ -898,6 +951,9 @@ const Calendar: React.FC<CalendarProps> = ({ barbers, services, products, client
                           {viewMode === 'day' ? (
                               visibleBarbers.map(barber => (
                                   <div key={barber.id} className="relative border-r border-zinc-800">
+                                      {/* RENDER LUNCH BREAK VISUALS */}
+                                      {renderLunchBreak(barber.id, currentDate)}
+
                                       {timeSlots.map(hour => {
                                           const isPast = isSlotPast(hour);
                                           const timeString = `${hour}:00`;
@@ -987,6 +1043,9 @@ const Calendar: React.FC<CalendarProps> = ({ barbers, services, products, client
                           ) : (
                               currentWeekDays.map((day, i) => (
                                   <div key={i} className="relative border-r border-zinc-800">
+                                      {/* RENDER LUNCH BREAK VISUALS (Week View) */}
+                                      {renderLunchBreak(selectedBarberId === 'all' ? barbers[0]?.id : selectedBarberId, day)}
+
                                       {timeSlots.map(hour => {
                                          const isPast = isBefore(day, new Date()) && !isSameDay(day, new Date()) || (isSameDay(day, new Date()) && hour < currentTime.getHours());
                                          const timeString = `${hour}:00`;
@@ -1180,7 +1239,7 @@ const Calendar: React.FC<CalendarProps> = ({ barbers, services, products, client
             </div>
         </Modal>
 
-        {/* Modal: Appointment Details */}
+        {/* Modal: Appointment Details (REDESIGNED PREMIUM) */}
         {selectedAppointment && !isCheckoutOpen && (
             <Modal
                 isOpen={!!selectedAppointment}
@@ -1215,69 +1274,167 @@ const Calendar: React.FC<CalendarProps> = ({ barbers, services, products, client
                     </div>
                 ) : (
                     <div className="space-y-6">
-                        {/* Header Info */}
-                        <div className="flex items-center gap-4 bg-zinc-950 p-4 rounded-xl border border-zinc-800">
-                            <div className="w-12 h-12 rounded-full bg-zinc-800 flex items-center justify-center text-xl font-bold text-white border border-zinc-700">
-                                {selectedAppointment.clientName.charAt(0)}
-                            </div>
-                            <div>
-                                <h3 className="text-lg font-bold text-white">{selectedAppointment.clientName}</h3>
-                                <div className="text-sm text-muted flex items-center gap-2">
-                                    <Clock size={14} /> {selectedAppointment.date} às {selectedAppointment.time}
+                        {/* 1. Header Premium */}
+                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-zinc-950 p-5 rounded-2xl border border-zinc-800 shadow-lg">
+                            <div className="flex items-center gap-4">
+                                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-zinc-800 to-black border border-zinc-700 flex items-center justify-center text-xl font-bold text-white shadow-inner">
+                                    {selectedAppointment.clientName.charAt(0)}
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-bold text-white leading-tight">{selectedAppointment.clientName}</h3>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        <Badge variant={selectedAppointment.status === Status.CONFIRMED ? 'success' : selectedAppointment.status === Status.PENDING ? 'warning' : selectedAppointment.status === Status.NOSHOW ? 'danger' : 'default'} size="sm">
+                                            {selectedAppointment.status}
+                                        </Badge>
+                                        <span className="text-xs text-muted flex items-center gap-1"><Clock size={10} /> {selectedAppointment.time}</span>
+                                    </div>
                                 </div>
                             </div>
-                            <div className="ml-auto">
-                                <Badge variant={selectedAppointment.status === Status.CONFIRMED ? 'success' : selectedAppointment.status === Status.PENDING ? 'warning' : 'default'}>
-                                    {selectedAppointment.status}
-                                </Badge>
+                            
+                            <div className="flex gap-4 md:border-l md:border-zinc-800 md:pl-6">
+                                <div>
+                                    <span className="text-[10px] uppercase font-bold text-muted block mb-0.5">Profissional</span>
+                                    <div className="text-sm font-bold text-white flex items-center gap-1.5">
+                                        <User size={14} className="text-barber-gold" />
+                                        {barbers.find(b => b.id === selectedAppointment.barberId)?.name || 'N/A'}
+                                    </div>
+                                </div>
+                                <div>
+                                    <span className="text-[10px] uppercase font-bold text-muted block mb-0.5">Data</span>
+                                    <div className="text-sm font-bold text-white">
+                                        {format(parseLocal(selectedAppointment.date), "dd/MM/yyyy")}
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        {/* Status Actions */}
+                        {/* 2. Client Preferences & CRM (Inspired by Clients.tsx) */}
+                        {(() => {
+                            // Find matching client to get details
+                            const clientDetails = clients.find(c => c.name.toLowerCase() === selectedAppointment.clientName.toLowerCase());
+                            
+                            return (
+                                <div className="bg-barber-900 border-l-4 border-barber-gold rounded-xl p-4 shadow-md bg-opacity-50">
+                                    <h4 className="text-xs font-bold text-barber-gold uppercase tracking-widest mb-3 flex items-center gap-2">
+                                        <Sparkles size={14} /> Preferências de Atendimento
+                                    </h4>
+                                    
+                                    {clientDetails ? (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            {/* Tags & Traits */}
+                                            <div className="space-y-2">
+                                                <div className="flex flex-wrap gap-2">
+                                                    {clientDetails.tags && clientDetails.tags.length > 0 ? (
+                                                        clientDetails.tags.map(tag => (
+                                                            <Badge key={tag} variant={tag === 'VIP' ? 'vip' : 'default'} className="text-[10px]">
+                                                                {tag}
+                                                            </Badge>
+                                                        ))
+                                                    ) : (
+                                                        <span className="text-xs text-zinc-500 italic">Sem tags definidas</span>
+                                                    )}
+                                                </div>
+                                                
+                                                <div className="flex gap-4 text-xs text-zinc-300 mt-2">
+                                                    {clientDetails.drinkPreference && (
+                                                        <span className="flex items-center gap-1.5 bg-zinc-950 px-2 py-1 rounded border border-zinc-800">
+                                                            <Coffee size={12} className="text-amber-600" /> {clientDetails.drinkPreference}
+                                                        </span>
+                                                    )}
+                                                    {clientDetails.conversationStyle && (
+                                                        <span className="flex items-center gap-1.5 bg-zinc-950 px-2 py-1 rounded border border-zinc-800">
+                                                            <MessageCircle size={12} className="text-blue-400" /> {clientDetails.conversationStyle}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {/* Notes */}
+                                            <div className="bg-zinc-950/50 p-2 rounded-lg border border-zinc-800/50">
+                                                <div className="flex items-center gap-1 text-[10px] text-muted font-bold uppercase mb-1">
+                                                    <StickyNote size={10} /> Notas Internas
+                                                </div>
+                                                <p className="text-xs text-zinc-400 italic line-clamp-2">
+                                                    {clientDetails.internalNotes || "Nenhuma observação registrada."}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="text-xs text-zinc-500 flex items-center gap-2">
+                                            <Info size={14} /> Cliente não cadastrado ou nome não corresponde exatamente à base.
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })()}
+
+                        {/* 3. Status Actions */}
                         <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
                             {[Status.PENDING, Status.CONFIRMED, Status.COMPLETED, Status.NOSHOW, Status.CANCELED].map(status => {
                                 let icon = <Info size={14} />;
-                                let colorClass = "text-muted";
+                                let activeClass = "";
                                 
-                                if(status === Status.PENDING) { icon = <Clock size={14} />; colorClass = "text-amber-500"; }
-                                if(status === Status.CONFIRMED) { icon = <CheckCircle2 size={14} />; colorClass = "text-emerald-500"; }
-                                if(status === Status.COMPLETED) { icon = <CheckCircle2 size={14} />; colorClass = "text-zinc-400"; }
-                                if(status === Status.NOSHOW) { icon = <UserX size={14} />; colorClass = "text-red-600"; }
-                                if(status === Status.CANCELED) { icon = <X size={14} />; colorClass = "text-rose-500"; }
+                                switch(status) {
+                                    case Status.PENDING: 
+                                        icon = <Clock size={14} />;
+                                        activeClass = "bg-amber-900/50 text-amber-100 border-amber-600 shadow-inner shadow-amber-900/20";
+                                        break;
+                                    case Status.CONFIRMED: 
+                                        icon = <CheckCircle2 size={14} />; 
+                                        activeClass = "bg-emerald-900/50 text-emerald-100 border-emerald-600 shadow-inner shadow-emerald-900/20";
+                                        break;
+                                    case Status.COMPLETED: 
+                                        icon = <CheckCircle2 size={14} />; 
+                                        activeClass = "bg-zinc-700 text-zinc-100 border-zinc-500 shadow-inner";
+                                        break;
+                                    case Status.NOSHOW: 
+                                        icon = <UserX size={14} />; 
+                                        activeClass = "bg-red-900/50 text-red-100 border-red-600 shadow-inner shadow-red-900/20";
+                                        break;
+                                    case Status.CANCELED: 
+                                        icon = <X size={14} />; 
+                                        activeClass = "bg-rose-900/50 text-rose-100 border-rose-600 shadow-inner shadow-rose-900/20";
+                                        break;
+                                }
+
+                                const isSelected = selectedAppointment.status === status;
 
                                 return (
                                     <button
                                         key={status}
                                         onClick={() => handleUpdateStatus(selectedAppointment.id, status)}
-                                        className={`px-1 py-2 rounded-lg text-[10px] font-bold uppercase border transition-all flex flex-col items-center gap-1 ${
-                                            selectedAppointment.status === status 
-                                            ? 'bg-zinc-800 text-white border-zinc-600 shadow-inner' 
-                                            : 'bg-zinc-950 text-muted border-zinc-800 hover:border-zinc-700 hover:bg-zinc-900'
+                                        className={`px-1 py-3 rounded-xl text-[10px] font-bold uppercase border transition-all flex flex-col items-center gap-1.5 ${
+                                            isSelected ? activeClass : 'bg-zinc-950 text-muted border-zinc-800 hover:border-zinc-700 hover:bg-zinc-900'
                                         }`}
                                     >
-                                        <div className={colorClass}>{icon}</div>
+                                        <div className={isSelected ? 'text-inherit' : 'text-muted'}>{icon}</div>
                                         {status}
                                     </button>
                                 );
                             })}
                         </div>
 
+                        {/* 4. Details Grid (Service & Consumption) */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {/* Left: Service Details */}
                             <div className="space-y-4">
                                 <h4 className="text-xs font-bold text-muted uppercase tracking-wider flex items-center gap-2">
                                     <Scissors size={14} /> Serviço Principal
                                 </h4>
-                                <div className="bg-zinc-900 p-4 rounded-xl border border-zinc-800">
-                                    <div className="flex justify-between items-start">
+                                <div className="bg-zinc-900 p-5 rounded-xl border border-zinc-800 relative overflow-hidden">
+                                    <div className="flex justify-between items-start relative z-10">
                                         <div>
-                                            <div className="font-bold text-white text-sm">{services.find(s => s.id === selectedAppointment.serviceId)?.name || 'Serviço'}</div>
-                                            <div className="text-xs text-muted mt-1">{barbers.find(b => b.id === selectedAppointment.barberId)?.name}</div>
+                                            <div className="font-bold text-white text-base">{services.find(s => s.id === selectedAppointment.serviceId)?.name || 'Serviço'}</div>
+                                            <div className="text-xs text-muted mt-1 bg-zinc-950 px-2 py-1 rounded inline-block border border-zinc-800">
+                                                Duração: {services.find(s => s.id === selectedAppointment.serviceId)?.duration || 60} min
+                                            </div>
                                         </div>
-                                        <div className="font-bold text-emerald-500">
+                                        <div className="font-bold text-emerald-500 text-lg">
                                             R$ {services.find(s => s.id === selectedAppointment.serviceId)?.price.toFixed(2)}
                                         </div>
                                     </div>
+                                    {/* Decorative Background Icon */}
+                                    <Scissors className="absolute -bottom-4 -right-4 text-zinc-800/50 w-24 h-24 -rotate-12 pointer-events-none" />
                                 </div>
                             </div>
 
@@ -1290,16 +1447,18 @@ const Calendar: React.FC<CalendarProps> = ({ barbers, services, products, client
                                     <div className="space-y-2 flex-1 mb-4">
                                         {selectedAppointment.consumption && selectedAppointment.consumption.length > 0 ? (
                                             selectedAppointment.consumption.map((item) => (
-                                                <div key={item.id} className="flex justify-between items-center text-xs bg-zinc-950 p-2 rounded border border-zinc-800">
-                                                    <span className="text-gray-300">{item.quantity}x {item.name}</span>
+                                                <div key={item.id} className="flex justify-between items-center text-xs bg-zinc-950 p-3 rounded-lg border border-zinc-800">
+                                                    <span className="text-gray-300 font-medium">{item.quantity}x {item.name}</span>
                                                     <div className="flex items-center gap-3">
                                                         <span className="text-white font-bold">R$ {item.price.toFixed(2)}</span>
-                                                        <button onClick={() => handleRemoveConsumption(item.id)} className="text-red-500 hover:text-red-400"><X size={12} /></button>
+                                                        <button onClick={() => handleRemoveConsumption(item.id)} className="text-red-500 hover:bg-red-500/10 p-1 rounded transition-colors"><X size={14} /></button>
                                                     </div>
                                                 </div>
                                             ))
                                         ) : (
-                                            <div className="text-center text-zinc-600 text-xs py-2 italic">Nenhum extra adicionado.</div>
+                                            <div className="text-center text-zinc-600 text-xs py-4 italic border-2 border-dashed border-zinc-800 rounded-lg">
+                                                Nenhum extra adicionado.
+                                            </div>
                                         )}
                                     </div>
                                     
@@ -1308,7 +1467,7 @@ const Calendar: React.FC<CalendarProps> = ({ barbers, services, products, client
                                             <select 
                                                 value={newItemId}
                                                 onChange={(e) => setNewItemId(e.target.value)}
-                                                className="w-full bg-zinc-950 border border-zinc-700 text-white text-xs rounded-lg px-2 py-2 outline-none"
+                                                className="w-full bg-zinc-950 border border-zinc-700 text-white text-xs rounded-lg px-3 py-2.5 outline-none hover:border-zinc-600 transition-colors cursor-pointer appearance-none"
                                             >
                                                 <option value="">Adicionar item...</option>
                                                 <optgroup label="Produtos">
@@ -1319,8 +1478,8 @@ const Calendar: React.FC<CalendarProps> = ({ barbers, services, products, client
                                                 </optgroup>
                                             </select>
                                         </div>
-                                        <button onClick={handleAddConsumption} className="bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg px-3 py-2 border border-zinc-700">
-                                            <Plus size={14} />
+                                        <button onClick={handleAddConsumption} className="bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg px-4 py-2 border border-zinc-700 transition-colors shadow-sm">
+                                            <Plus size={16} />
                                         </button>
                                     </div>
                                 </div>
@@ -1331,7 +1490,7 @@ const Calendar: React.FC<CalendarProps> = ({ barbers, services, products, client
             </Modal>
         )}
 
-        {/* Modal: CHECKOUT (Comanda Unificada Redesenhada) */}
+        {/* Modal: CHECKOUT (Comanda Unificada Redesenhada - Estilo Premium & Neutral) */}
         {isCheckoutOpen && selectedAppointment && (
             <Modal
                 isOpen={isCheckoutOpen}
@@ -1340,13 +1499,18 @@ const Calendar: React.FC<CalendarProps> = ({ barbers, services, products, client
                 size="lg"
             >
                 <div className="relative">
-                    {/* Header Vermelho Personalizado */}
-                    <div className="-mx-6 -mt-6 bg-red-600 p-3 text-center text-white font-bold uppercase tracking-widest mb-6 shadow-md flex items-center justify-between px-6">
-                        <span>Comanda</span>
-                        <div className="flex gap-2 text-xs font-bold opacity-80">
-                            <span className={checkoutStep === 1 ? 'text-white' : 'text-red-200'}>1. Itens</span>
-                            <span>&rarr;</span>
-                            <span className={checkoutStep === 2 ? 'text-white' : 'text-red-200'}>2. Pagamento</span>
+                    {/* Header Premium Personalizado - Dark/Gold */}
+                    <div className="-mx-6 -mt-6 bg-zinc-950 border-b border-zinc-800 p-4 flex justify-between items-center shadow-lg relative z-10 mb-6">
+                        <div className="flex items-center gap-3">
+                            <div className="bg-barber-gold/20 p-1.5 rounded-lg text-barber-gold">
+                                <Receipt size={20} />
+                            </div>
+                            <span className="text-white font-black uppercase tracking-widest text-lg">Comanda</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs font-bold bg-zinc-900 px-3 py-1.5 rounded-full border border-zinc-800">
+                            <span className={checkoutStep === 1 ? 'text-barber-gold' : 'text-zinc-600'}>1. ITENS</span>
+                            <span className="text-zinc-700">&rarr;</span>
+                            <span className={checkoutStep === 2 ? 'text-barber-gold' : 'text-zinc-600'}>2. PAGAMENTO</span>
                         </div>
                     </div>
 
@@ -1361,35 +1525,35 @@ const Calendar: React.FC<CalendarProps> = ({ barbers, services, products, client
                             <>
                                 {/* STEP 1: REVIEW ITEMS */}
                                 {checkoutStep === 1 && (
-                                    <div className="animate-fade-in">
-                                        <div className="flex justify-between items-start mb-4 px-2">
-                                            <div>
-                                                <div className="flex items-center gap-3">
-                                                    <div className="bg-zinc-800 p-2 rounded-lg border border-zinc-700">
-                                                        <User size={24} className="text-zinc-300" />
-                                                    </div>
-                                                    <div>
-                                                        <h2 className="text-xl font-bold text-white leading-none">{selectedAppointment.clientName}</h2>
-                                                        <div className="mt-2">
-                                                            <span className="bg-green-600 text-white text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1.5 w-fit shadow-sm shadow-green-900/20">
-                                                                (11) 97487-0717 <MessageCircle size={12} fill="white" />
-                                                            </span>
-                                                        </div>
+                                    <div className="animate-fade-in space-y-6">
+                                        {/* Client Info Card */}
+                                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-zinc-950 p-5 rounded-2xl border border-zinc-800 shadow-lg">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-zinc-800 to-black border border-zinc-700 flex items-center justify-center text-xl font-bold text-white shadow-inner">
+                                                    <User size={24} />
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-xl font-bold text-white leading-tight">{selectedAppointment.clientName}</h3>
+                                                    <div className="flex items-center gap-2 mt-2">
+                                                        <span className="bg-green-600 text-white text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1.5 shadow-sm shadow-green-900/20">
+                                                            (11) 97487-0717 <MessageCircle size={10} fill="white" />
+                                                        </span>
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div className="bg-zinc-800 px-4 py-2 rounded-lg text-right border border-zinc-700 shadow-sm">
-                                                <span className="text-zinc-400 text-[10px] font-bold uppercase block">Total</span>
+                                            
+                                            <div className="bg-zinc-900 px-5 py-3 rounded-xl border border-zinc-800 text-right min-w-[140px]">
+                                                <span className="text-zinc-500 text-[10px] font-bold uppercase block tracking-wider mb-0.5">Total Atual</span>
                                                 <span className="text-2xl font-black text-white">R$ {total.toFixed(2)}</span>
                                             </div>
                                         </div>
 
-                                        <div className="flex justify-between items-center text-xs text-zinc-400 border-b border-zinc-800 pb-3 mb-5 px-2">
-                                            <span className="font-medium">Hoje, {format(parseLocal(selectedAppointment.date), "d MMM yyyy", { locale: ptBR })}</span>
-                                            <span className="font-bold">{clientDailyApps.length} agendamentos</span>
+                                        <div className="flex justify-between items-end px-2 border-b border-zinc-800 pb-2">
+                                            <span className="text-xs text-zinc-500 font-medium">Hoje, {format(parseLocal(selectedAppointment.date), "d MMM yyyy", { locale: ptBR })}</span>
+                                            <span className="text-xs text-white font-bold bg-zinc-900 px-2 py-1 rounded border border-zinc-800">{clientDailyApps.length} agendamentos</span>
                                         </div>
 
-                                        <div className="space-y-3 pb-6">
+                                        <div className="space-y-3 pb-2">
                                             {clientDailyApps.map((appt) => {
                                                 const s = services.find(srv => srv.id === appt.serviceId);
                                                 const b = barbers.find(bar => bar.id === appt.barberId);
@@ -1403,61 +1567,66 @@ const Calendar: React.FC<CalendarProps> = ({ barbers, services, products, client
                                                 const endTime = format(endDate, 'HH:mm');
 
                                                 return (
-                                                    <div key={appt.id} className={`border rounded-lg p-3 relative ${isCanceled ? 'bg-zinc-950/50 border-zinc-800 opacity-60' : 'bg-zinc-900 border-zinc-700 shadow-sm'}`}>
-                                                        <div className="flex justify-between items-center mb-2">
-                                                            <div>
-                                                                {isPending ? (
-                                                                    <span className="bg-yellow-500 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-sm">Em espera ▼</span>
-                                                                ) : isCanceled ? (
-                                                                    <span className="text-zinc-500 text-xs font-bold px-2">Cancelado</span>
-                                                                ) : (
-                                                                    <span className="bg-zinc-700 text-zinc-300 text-[10px] font-bold px-2 py-0.5 rounded">{appt.status}</span>
-                                                                )}
-                                                            </div>
-                                                            <div className="font-bold text-sm text-white absolute left-1/2 -translate-x-1/2 flex items-center gap-2">
-                                                                {appt.time} <span className="text-zinc-500 text-[10px]">➜</span> {endTime}
-                                                            </div>
-                                                            <div className="text-[10px] text-zinc-500 font-mono flex items-center gap-1">
-                                                                ID: {appt.id.substring(0,4)}
-                                                            </div>
+                                                    <div key={appt.id} className={`bg-zinc-900 border border-zinc-800 rounded-xl p-4 relative overflow-hidden group hover:border-zinc-700 transition-all ${isCanceled ? 'opacity-60 grayscale' : ''}`}>
+                                                        {/* Status Badge */}
+                                                        <div className="absolute top-4 left-4">
+                                                            {isPending ? (
+                                                                <span className="bg-amber-500 text-black text-[10px] font-bold px-2 py-0.5 rounded shadow-sm flex items-center gap-1">Em espera ▼</span>
+                                                            ) : isCanceled ? (
+                                                                <span className="bg-zinc-800 text-zinc-500 text-[10px] font-bold px-2 py-0.5 rounded">Cancelado</span>
+                                                            ) : (
+                                                                <span className="bg-zinc-800 text-zinc-300 text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">{appt.status}</span>
+                                                            )}
                                                         </div>
 
-                                                        <div className="flex justify-between items-center mb-2 border-t border-zinc-800/50 pt-2 mt-1">
-                                                            <div className="flex items-center gap-2 font-bold text-white text-sm">
-                                                                <Scissors size={14} className="text-zinc-500" /> {s?.name}
+                                                        {/* Time & ID */}
+                                                        <div className="flex justify-center items-center text-white font-bold text-sm mb-4 mt-1">
+                                                            <span>{appt.time}</span>
+                                                            <span className="mx-2 text-zinc-600 text-xs">➜</span>
+                                                            <span>{endTime}</span>
+                                                        </div>
+                                                        <div className="absolute top-4 right-4 text-[10px] text-zinc-600 font-mono">ID: {appt.id.substring(0,4)}</div>
+
+                                                        {/* Service Name & Price */}
+                                                        <div className="flex justify-between items-center border-t border-zinc-800 pt-3 mt-1">
+                                                            <div className="flex items-center gap-2 font-bold text-white text-base">
+                                                                <Scissors size={16} className="text-zinc-500" /> {s?.name}
                                                             </div>
-                                                            <div className="font-bold text-white">R$ {totalItem.toFixed(2)}</div>
+                                                            <div className="font-bold text-white text-lg">R$ {totalItem.toFixed(2)}</div>
                                                         </div>
 
-                                                        {appt.consumption?.map(extra => (
-                                                            <div key={extra.id} className="flex justify-between text-xs text-zinc-400 pl-6 mb-1">
-                                                                <span>+ {extra.quantity}x {extra.name}</span>
-                                                                <span>R$ {(extra.price * extra.quantity).toFixed(2)}</span>
+                                                        {/* Extras List */}
+                                                        {appt.consumption && appt.consumption.length > 0 && (
+                                                            <div className="mt-2 space-y-1 bg-zinc-950/50 p-2 rounded-lg border border-zinc-800/50">
+                                                                {appt.consumption.map(extra => (
+                                                                    <div key={extra.id} className="flex justify-between text-xs text-zinc-400 pl-2 border-l-2 border-zinc-800">
+                                                                        <span>+ {extra.quantity}x {extra.name}</span>
+                                                                        <span>R$ {(extra.price * extra.quantity).toFixed(2)}</span>
+                                                                    </div>
+                                                                ))}
                                                             </div>
-                                                        ))}
+                                                        )}
 
-                                                        <div className="flex items-center gap-2 text-xs text-zinc-400 mt-2">
-                                                            <User size={12} /> {b?.name} <Heart size={10} className="text-orange-500 fill-orange-500" />
+                                                        <div className="flex items-center gap-2 text-xs text-zinc-500 mt-3 font-medium">
+                                                            <User size={12} /> {b?.name}
                                                         </div>
                                                         
-                                                        {isCanceled && <Lock size={14} className="absolute bottom-3 right-3 text-zinc-600" />}
+                                                        {isCanceled && <Lock size={16} className="absolute bottom-4 right-4 text-zinc-700" />}
                                                     </div>
                                                 )
                                             })}
                                         </div>
 
-                                        <div className="mt-4 pt-4 border-t border-zinc-800">
-                                            <div className="flex gap-3">
-                                                <button className="flex-1 py-3 text-sm text-zinc-400 font-bold hover:text-white border border-zinc-700 rounded-xl hover:bg-zinc-800 transition-colors">
-                                                    + Adicionar Item
-                                                </button>
-                                                <button 
-                                                    onClick={() => setCheckoutStep(2)}
-                                                    className="flex-[2] bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
-                                                >
-                                                    Ir para Pagamento <ChevronRight size={18} />
-                                                </button>
-                                            </div>
+                                        <div className="grid grid-cols-3 gap-3 pt-2 border-t border-zinc-800">
+                                            <button className="col-span-1 py-4 text-xs text-zinc-400 font-bold hover:text-white border border-zinc-800 rounded-xl bg-zinc-900 hover:bg-zinc-800 transition-colors flex items-center justify-center gap-2">
+                                                <Plus size={14} /> Adicionar Item
+                                            </button>
+                                            <button 
+                                                onClick={() => setCheckoutStep(2)}
+                                                className="col-span-2 bg-barber-gold hover:bg-barber-goldhover text-black font-bold py-4 rounded-xl shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+                                            >
+                                                Ir para Pagamento <ChevronRight size={18} />
+                                            </button>
                                         </div>
                                     </div>
                                 )}
@@ -1466,106 +1635,120 @@ const Calendar: React.FC<CalendarProps> = ({ barbers, services, products, client
                                 {checkoutStep === 2 && (
                                     <div className="animate-slide-up flex flex-col md:flex-row gap-6">
                                         {/* Left: Summary Panel */}
-                                        <div className="w-full md:w-1/3 bg-zinc-950 p-4 rounded-xl border border-zinc-800 h-fit">
-                                            <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-4 border-b border-zinc-800 pb-2">Resumo da Conta</h4>
-                                            <div className="space-y-2 mb-4">
+                                        <div className="w-full md:w-1/3 bg-zinc-950 p-5 rounded-2xl border border-zinc-800 h-fit shadow-lg">
+                                            <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-4 border-b border-zinc-800 pb-3 flex items-center gap-2">
+                                                <FileText size={14} /> Resumo da Conta
+                                            </h4>
+                                            <div className="space-y-3 mb-6">
                                                 <div className="flex justify-between text-sm">
                                                     <span className="text-zinc-400">Subtotal</span>
-                                                    <span className="text-white">R$ {subtotal.toFixed(2)}</span>
+                                                    <span className="text-white font-medium">R$ {subtotal.toFixed(2)}</span>
                                                 </div>
-                                                <div className="flex justify-between text-sm">
-                                                    <span className="text-zinc-400 flex items-center gap-1"><Percent size={12} /> Desconto</span>
-                                                    <input 
-                                                        type="number" 
-                                                        value={discount} 
-                                                        onChange={(e) => setDiscount(Number(e.target.value))}
-                                                        className="w-16 bg-zinc-900 border border-zinc-700 text-right text-red-400 rounded px-1 text-xs outline-none focus:border-red-500"
-                                                    />
+                                                <div className="flex justify-between text-sm items-center">
+                                                    <span className="text-zinc-400 flex items-center gap-1"><Percent size={14} /> Desconto</span>
+                                                    <div className="relative w-20">
+                                                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-zinc-500">R$</span>
+                                                        <input 
+                                                            type="number" 
+                                                            value={discount} 
+                                                            onChange={(e) => setDiscount(Number(e.target.value))}
+                                                            className="w-full bg-zinc-900 border border-zinc-800 text-right text-red-400 rounded-lg pl-6 pr-2 py-1 text-xs outline-none focus:border-red-500/50 focus:bg-zinc-800 transition-all"
+                                                        />
+                                                    </div>
                                                 </div>
-                                                <div className="flex justify-between text-sm">
-                                                    <span className="text-zinc-400 flex items-center gap-1"><Coins size={12} /> Gorjeta/Taxa</span>
-                                                    <input 
-                                                        type="number" 
-                                                        value={tip} 
-                                                        onChange={(e) => setTip(Number(e.target.value))}
-                                                        className="w-16 bg-zinc-900 border border-zinc-700 text-right text-green-400 rounded px-1 text-xs outline-none focus:border-green-500"
-                                                    />
+                                                <div className="flex justify-between text-sm items-center">
+                                                    <span className="text-zinc-400 flex items-center gap-1"><Coins size={14} /> Gorjeta/Taxa</span>
+                                                    <div className="relative w-20">
+                                                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-zinc-500">R$</span>
+                                                        <input 
+                                                            type="number" 
+                                                            value={tip} 
+                                                            onChange={(e) => setTip(Number(e.target.value))}
+                                                            className="w-full bg-zinc-900 border border-zinc-800 text-right text-green-400 rounded-lg pl-6 pr-2 py-1 text-xs outline-none focus:border-green-500/50 focus:bg-zinc-800 transition-all"
+                                                        />
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <div className="border-t border-zinc-800 pt-3">
+                                            <div className="border-t border-zinc-800 pt-4">
                                                 <div className="flex justify-between items-end">
-                                                    <span className="text-sm font-bold text-white">Total Final</span>
-                                                    <span className="text-xl font-black text-emerald-500">R$ {total.toFixed(2)}</span>
+                                                    <span className="text-sm font-bold text-white uppercase tracking-wider">Total Final</span>
+                                                    <span className="text-2xl font-black text-emerald-500">R$ {total.toFixed(2)}</span>
                                                 </div>
                                             </div>
                                         </div>
 
                                         {/* Right: Payment Methods */}
                                         <div className="flex-1 space-y-4">
-                                            <div className="bg-zinc-900 p-4 rounded-xl border border-zinc-800">
-                                                <div className="flex justify-between items-center mb-4">
+                                            <div className="bg-zinc-900 p-5 rounded-2xl border border-zinc-800 shadow-md">
+                                                <div className="flex justify-between items-center mb-5">
                                                     <h4 className="text-sm font-bold text-white flex items-center gap-2">
-                                                        <Wallet size={16} className="text-blue-500" /> Pagamento
+                                                        <Wallet size={18} className="text-zinc-500" /> Pagamento
                                                     </h4>
-                                                    <div className="text-xs bg-zinc-800 px-2 py-1 rounded text-zinc-300">
-                                                        Restante: <span className={remaining > 0 ? 'text-red-400 font-bold' : 'text-green-500 font-bold'}>R$ {remaining.toFixed(2)}</span>
+                                                    <div className={`text-xs px-3 py-1.5 rounded-full font-bold border ${remaining > 0 ? 'bg-zinc-950 border-zinc-800 text-zinc-400' : 'bg-green-500/20 border-green-500/30 text-green-500'}`}>
+                                                        Restante: <span className={remaining > 0 ? 'text-red-400' : 'text-green-500'}>R$ {remaining.toFixed(2)}</span>
                                                     </div>
                                                 </div>
 
                                                 {/* Payment Parts List */}
-                                                <div className="space-y-2 mb-4">
+                                                <div className="space-y-2 mb-5">
                                                     {paymentParts.map(part => (
-                                                        <div key={part.id} className="flex justify-between items-center bg-zinc-950 p-3 rounded-lg border border-zinc-800">
-                                                            <div className="flex items-center gap-2">
-                                                                {part.method === 'Crédito' && <CreditCard size={14} className="text-blue-400" />}
-                                                                {part.method === 'Dinheiro' && <Banknote size={14} className="text-green-400" />}
-                                                                {part.method === 'Pix' && <Zap size={14} className="text-emerald-400" />}
+                                                        <div key={part.id} className="flex justify-between items-center bg-zinc-950 p-3 rounded-xl border border-zinc-800 animate-fade-in">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className={`p-2 rounded-lg ${
+                                                                    part.method === 'Crédito' ? 'bg-zinc-800 text-white' :
+                                                                    part.method === 'Débito' ? 'bg-zinc-800 text-white' :
+                                                                    part.method === 'Dinheiro' ? 'bg-green-500/10 text-green-500' :
+                                                                    'bg-emerald-500/10 text-emerald-500'
+                                                                }`}>
+                                                                    {part.method === 'Crédito' || part.method === 'Débito' ? <CreditCard size={16} /> : 
+                                                                     part.method === 'Dinheiro' ? <Banknote size={16} /> : <Zap size={16} />}
+                                                                </div>
                                                                 <span className="text-sm font-bold text-white">{part.method}</span>
                                                             </div>
-                                                            <div className="flex items-center gap-3">
-                                                                <span className="text-white font-mono">R$ {part.amount.toFixed(2)}</span>
-                                                                <button onClick={() => handleRemovePaymentPart(part.id)} className="text-red-500 hover:bg-red-500/10 p-1 rounded">
-                                                                    <Trash2 size={14} />
+                                                            <div className="flex items-center gap-4">
+                                                                <span className="text-white font-mono font-medium">R$ {part.amount.toFixed(2)}</span>
+                                                                <button onClick={() => handleRemovePaymentPart(part.id)} className="text-zinc-600 hover:text-red-500 hover:bg-red-500/10 p-1.5 rounded-lg transition-colors">
+                                                                    <Trash2 size={16} />
                                                                 </button>
                                                             </div>
                                                         </div>
                                                     ))}
                                                     {paymentParts.length === 0 && (
-                                                        <div className="text-center text-xs text-zinc-600 py-4 italic border border-dashed border-zinc-800 rounded-lg">
-                                                            Nenhum pagamento adicionado
+                                                        <div className="text-center text-xs text-zinc-600 py-6 border-2 border-dashed border-zinc-800 rounded-xl bg-zinc-950/30">
+                                                            Adicione um método de pagamento abaixo
                                                         </div>
                                                     )}
                                                 </div>
 
-                                                {/* Add Payment Controls */}
+                                                {/* Add Payment Controls - NEUTRALIZED COLORS */}
                                                 {remaining > 0 && (
-                                                    <div className="grid grid-cols-2 gap-2">
-                                                        <button onClick={() => handleAddPaymentPart('Crédito', remaining)} className="bg-blue-600/10 border border-blue-600/30 text-blue-400 hover:bg-blue-600 hover:text-white py-3 rounded-lg text-xs font-bold transition-all flex flex-col items-center gap-1">
-                                                            <CreditCard size={16} /> Crédito
+                                                    <div className="grid grid-cols-2 gap-3">
+                                                        <button onClick={() => handleAddPaymentPart('Crédito', remaining)} className="bg-zinc-950 border border-zinc-800 hover:border-barber-gold hover:text-white text-zinc-400 py-4 rounded-xl text-xs font-bold transition-all flex flex-col items-center justify-center gap-2 group">
+                                                            <CreditCard size={20} className="text-zinc-600 group-hover:text-barber-gold transition-colors" /> Crédito
                                                         </button>
-                                                        <button onClick={() => handleAddPaymentPart('Débito', remaining)} className="bg-cyan-600/10 border border-cyan-600/30 text-cyan-400 hover:bg-cyan-600 hover:text-white py-3 rounded-lg text-xs font-bold transition-all flex flex-col items-center gap-1">
-                                                            <CreditCard size={16} /> Débito
+                                                        <button onClick={() => handleAddPaymentPart('Débito', remaining)} className="bg-zinc-950 border border-zinc-800 hover:border-barber-gold hover:text-white text-zinc-400 py-4 rounded-xl text-xs font-bold transition-all flex flex-col items-center justify-center gap-2 group">
+                                                            <CreditCard size={20} className="text-zinc-600 group-hover:text-barber-gold transition-colors" /> Débito
                                                         </button>
-                                                        <button onClick={() => handleAddPaymentPart('Dinheiro', remaining)} className="bg-green-600/10 border border-green-600/30 text-green-400 hover:bg-green-600 hover:text-white py-3 rounded-lg text-xs font-bold transition-all flex flex-col items-center gap-1">
-                                                            <Banknote size={16} /> Dinheiro
+                                                        <button onClick={() => handleAddPaymentPart('Dinheiro', remaining)} className="bg-zinc-950 border border-zinc-800 hover:border-emerald-500 hover:bg-emerald-500/5 text-zinc-400 hover:text-emerald-500 py-4 rounded-xl text-xs font-bold transition-all flex flex-col items-center justify-center gap-2 group">
+                                                            <Banknote size={20} className="text-zinc-600 group-hover:text-emerald-500 transition-colors" /> Dinheiro
                                                         </button>
-                                                        <button onClick={() => handleAddPaymentPart('Pix', remaining)} className="bg-emerald-600/10 border border-emerald-600/30 text-emerald-400 hover:bg-emerald-600 hover:text-white py-3 rounded-lg text-xs font-bold transition-all flex flex-col items-center gap-1">
-                                                            <Zap size={16} /> Pix
+                                                        <button onClick={() => handleAddPaymentPart('Pix', remaining)} className="bg-zinc-950 border border-zinc-800 hover:border-emerald-500 hover:bg-emerald-500/5 text-zinc-400 hover:text-emerald-500 py-4 rounded-xl text-xs font-bold transition-all flex flex-col items-center justify-center gap-2 group">
+                                                            <Zap size={20} className="text-zinc-600 group-hover:text-emerald-500 transition-colors" /> Pix
                                                         </button>
                                                     </div>
                                                 )}
                                             </div>
 
-                                            <div className="flex gap-2 pt-4">
-                                                <button onClick={() => setCheckoutStep(1)} className="px-4 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl font-bold text-sm">
+                                            <div className="flex gap-3 pt-4">
+                                                <button onClick={() => setCheckoutStep(1)} className="px-6 py-4 bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 text-white rounded-xl font-bold text-sm transition-colors">
                                                     Voltar
                                                 </button>
                                                 <button 
                                                     onClick={handleFinalizeCheckout}
                                                     disabled={remaining > 0.01} // Floating point tolerance
-                                                    className="flex-1 bg-green-600 hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl shadow-lg shadow-green-900/20 flex items-center justify-center gap-2 transition-all"
+                                                    className="flex-1 bg-green-600 hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-zinc-800 disabled:text-zinc-500 text-white font-bold py-4 rounded-xl shadow-lg shadow-green-900/20 flex items-center justify-center gap-2 transition-all text-sm uppercase tracking-wide"
                                                 >
-                                                    <CheckCircle2 size={18} /> Confirmar (R$ {total.toFixed(2)})
+                                                    <CheckCircle2 size={20} /> {remaining > 0.01 ? `Faltam R$ ${remaining.toFixed(2)}` : 'Finalizar Conta'}
                                                 </button>
                                             </div>
                                         </div>

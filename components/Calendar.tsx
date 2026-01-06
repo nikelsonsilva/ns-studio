@@ -77,10 +77,13 @@ const Calendar: React.FC<CalendarProps> = ({ initialDate, isFocusMode = false, s
   // ║  SECTION: SUPABASE DATA FETCHING                                           ║
   // ║  Queries for professionals, services, products, and appointments           ║
   // ╚════════════════════════════════════════════════════════════════════════════╝
-  const { data: barbersData } = useSupabaseQuery(fetchProfessionals);
-  const { data: servicesData } = useSupabaseQuery(fetchServices);
-  const { data: productsData } = useSupabaseQuery(fetchProducts);
-  const { data: appointmentsData } = useSupabaseQuery(fetchAppointments);
+  const { data: barbersData, loading: loadingBarbers } = useSupabaseQuery(fetchProfessionals);
+  const { data: servicesData, loading: loadingServices } = useSupabaseQuery(fetchServices);
+  const { data: productsData, loading: loadingProducts } = useSupabaseQuery(fetchProducts);
+  const { data: appointmentsData, loading: loadingAppointments } = useSupabaseQuery(fetchAppointments);
+
+  // Combined loading state for skeleton
+  const isDataLoading = loadingBarbers || loadingServices || loadingAppointments;
 
   const barbers = barbersData || [];
   const services = servicesData || [];
@@ -1137,6 +1140,96 @@ const Calendar: React.FC<CalendarProps> = ({ initialDate, isFocusMode = false, s
   };
   const timeIndicator = getCurrentTimePosition();
 
+  // ========== SKELETON LOADER ==========
+  if (isDataLoading) {
+    return (
+      <div className="flex flex-col lg:flex-row h-full w-full overflow-hidden animate-fade-in bg-black">
+        {/* Left Sidebar Skeleton */}
+        <div className="hidden lg:flex w-[230px] bg-zinc-900 border-r border-zinc-700 p-3 flex-col gap-3 animate-pulse">
+          {/* Mini Calendar Skeleton */}
+          <div className="bg-zinc-800/50 rounded-xl p-3">
+            <div className="h-5 bg-zinc-700 rounded w-24 mx-auto mb-3" />
+            <div className="grid grid-cols-7 gap-1">
+              {[...Array(35)].map((_, i) => (
+                <div key={i} className="h-6 bg-zinc-700/50 rounded" />
+              ))}
+            </div>
+          </div>
+          {/* Available Now Skeleton */}
+          <div className="bg-zinc-800/50 rounded-xl p-3 flex-1">
+            <div className="h-4 bg-zinc-700 rounded w-28 mb-3" />
+            <div className="space-y-2">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="flex items-center gap-2 p-2 bg-zinc-700/30 rounded-lg">
+                  <div className="w-8 h-8 bg-zinc-700 rounded-full" />
+                  <div className="flex-1 space-y-1">
+                    <div className="h-3 bg-zinc-700 rounded w-20" />
+                    <div className="h-2 bg-zinc-700/50 rounded w-16" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content Skeleton */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Header Skeleton */}
+          <div className="bg-zinc-900/80 border-b border-zinc-800 p-3 flex items-center justify-between animate-pulse">
+            <div className="flex items-center gap-3">
+              <div className="flex gap-1">
+                <div className="w-8 h-8 bg-zinc-800 rounded-lg" />
+                <div className="w-8 h-8 bg-zinc-800 rounded-lg" />
+              </div>
+              <div className="h-5 bg-zinc-800 rounded w-40" />
+            </div>
+            <div className="flex gap-2">
+              <div className="h-8 bg-zinc-800/50 rounded-lg w-24" />
+              <div className="h-8 bg-zinc-800/50 rounded-lg w-32" />
+              <div className="h-8 bg-zinc-800 rounded-lg w-28" />
+            </div>
+          </div>
+
+          {/* Grid Header Skeleton */}
+          <div className="bg-zinc-900/50 border-b border-zinc-800 grid grid-cols-4 gap-px animate-pulse">
+            <div className="p-2">
+              <div className="h-4 bg-zinc-800/50 rounded w-10" />
+            </div>
+            {[1, 2, 3].map(i => (
+              <div key={i} className="p-2 flex items-center gap-2">
+                <div className="w-7 h-7 bg-zinc-800 rounded-full" />
+                <div className="h-4 bg-zinc-800 rounded w-20" />
+              </div>
+            ))}
+          </div>
+
+          {/* Time Grid Skeleton */}
+          <div className="flex-1 overflow-auto animate-pulse">
+            <div className="grid grid-cols-4 gap-px">
+              {[...Array(12)].map((_, rowIndex) => (
+                <React.Fragment key={rowIndex}>
+                  <div className="h-20 bg-zinc-900 border-b border-zinc-800/50 p-2">
+                    <div className="h-3 bg-zinc-800/50 rounded w-10" />
+                  </div>
+                  {[1, 2, 3].map(colIndex => (
+                    <div key={colIndex} className="h-20 bg-zinc-900/50 border-b border-zinc-800/30 p-1">
+                      {rowIndex % 3 === colIndex - 1 && (
+                        <div className="h-full bg-zinc-800/30 rounded-lg p-2">
+                          <div className="h-3 bg-zinc-700/50 rounded w-16 mb-1" />
+                          <div className="h-2 bg-zinc-700/30 rounded w-12" />
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col lg:flex-row h-full w-full overflow-hidden animate-fade-in relative bg-black">
 
@@ -1907,14 +2000,14 @@ const Calendar: React.FC<CalendarProps> = ({ initialDate, isFocusMode = false, s
 
                                 return (
                                   <div
-                                    className={`absolute inset-1 rounded-lg ${bgColor} border-l-4 ${borderColor} p-1.5 sm:p-2 cursor-grab active:cursor-grabbing hover:brightness-110 transition-all overflow-hidden flex flex-col`}
+                                    className={`absolute inset-1 rounded-lg ${bgColor} border-l-4 ${borderColor} p-1.5 sm:p-2 cursor-grab active:cursor-grabbing hover:brightness-110 transition-all overflow-hidden flex flex-col gap-0.5`}
                                     onClick={() => handleOpenDetails(activeApt)}
                                     draggable={activeApt.status !== 'completed'}
                                     onDragStart={(e) => handleAppointmentDragStart(e, activeApt)}
                                     onDragEnd={handleAppointmentDragEnd}
                                   >
                                     {/* Top: Client name + Payment icon */}
-                                    <div className="flex items-start justify-between gap-1">
+                                    <div className="flex items-start justify-between gap-1 shrink-0">
                                       <div className="font-bold text-[11px] sm:text-xs text-white truncate flex-1 leading-tight">
                                         {clientName}
                                       </div>
@@ -1923,15 +2016,13 @@ const Calendar: React.FC<CalendarProps> = ({ initialDate, isFocusMode = false, s
                                       </div>
                                     </div>
 
-                                    {/* Service name - only show if enough space (more than 6 professionals hide it) */}
-                                    {visibleBarbers.length <= 8 && (
-                                      <div className="text-[9px] sm:text-[10px] text-zinc-400 truncate">
-                                        {service?.name || 'Serviço'}
-                                      </div>
-                                    )}
+                                    {/* Service name - always show */}
+                                    <div className="text-[9px] sm:text-[10px] text-zinc-400 truncate flex-1 min-h-[12px]">
+                                      {service?.name || 'Serviço'}
+                                    </div>
 
-                                    {/* Footer: New Time Badge with status icon (matching reference design) */}
-                                    <div className="mt-auto pt-0.5">
+                                    {/* Footer: Time Badge - shrink-0 to not overlap */}
+                                    <div className="shrink-0">
                                       <div className={`inline-flex items-center gap-1 ${timeBadge.bg} px-1.5 py-0.5 rounded`}>
                                         {timeBadge.icon === 'check' ? (
                                           <CheckCircle2 size={10} className={timeBadge.text} />
@@ -1946,6 +2037,33 @@ const Calendar: React.FC<CalendarProps> = ({ initialDate, isFocusMode = false, s
                                   </div>
                                 );
                               })()}
+
+                              {/* Professional Break/Pause slot - Subtle diagonal stripes */}
+                              {isInBreak && !activeApt && !cancelledApt && !block && (
+                                <div className="absolute inset-0 overflow-hidden bg-zinc-800/40">
+                                  {/* Subtle diagonal stripes */}
+                                  <div
+                                    className="absolute inset-0 opacity-20"
+                                    style={{
+                                      background: 'repeating-linear-gradient(135deg, transparent, transparent 6px, rgba(63, 63, 70, 0.5) 6px, rgba(63, 63, 70, 0.5) 12px)',
+                                    }}
+                                  />
+
+                                  {/* Small centered PAUSA badge */}
+                                  <div className="absolute inset-0 flex items-center justify-center">
+                                    <div className="inline-flex items-center gap-1.5 bg-zinc-800/80 border border-zinc-600/50 rounded-full px-2.5 py-1">
+                                      {/* Pause icon */}
+                                      <div className="w-4 h-4 rounded-full border border-amber-500/70 flex items-center justify-center">
+                                        <div className="flex gap-[2px]">
+                                          <div className="w-[2px] h-1.5 bg-amber-500/80 rounded-sm" />
+                                          <div className="w-[2px] h-1.5 bg-amber-500/80 rounded-sm" />
+                                        </div>
+                                      </div>
+                                      <span className="text-zinc-400 text-[10px] font-medium uppercase tracking-wide">Pausa</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
 
                               {block && (() => {
                                 const professional = barbers.find(b => b.id === block.professional_id);

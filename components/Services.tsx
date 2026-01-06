@@ -18,7 +18,7 @@ interface ServicesProps { }
 
 const Services: React.FC<ServicesProps> = () => {
   const toast = useToast();
-  const { data: servicesData, refetch: refetchServices } = useSupabaseQuery(fetchServices);
+  const { data: servicesData, loading: isLoading, refetch: refetchServices } = useSupabaseQuery(fetchServices);
   const { data: productsData } = useSupabaseQuery(fetchProducts);
 
   const [services, setServices] = useState<Service[]>([]);
@@ -123,6 +123,64 @@ const Services: React.FC<ServicesProps> = () => {
   const handleServiceSuccess = () => {
     refetchServices();
   };
+
+  // ========== SKELETON LOADER ==========
+  if (isLoading) {
+    return (
+      <div className="space-y-6 animate-fade-in pb-20">
+        {/* Header Skeleton */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 animate-pulse">
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+            <div className="space-y-2">
+              <div className="h-7 bg-zinc-800 rounded w-56" />
+              <div className="h-4 bg-zinc-800/50 rounded w-80" />
+            </div>
+            <div className="flex gap-3">
+              <div className="h-10 bg-zinc-800/50 rounded-lg w-40" />
+              <div className="h-10 bg-zinc-800 rounded-lg w-32" />
+            </div>
+          </div>
+        </div>
+
+        {/* Search & Filters Skeleton */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 animate-pulse">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1 h-10 bg-zinc-800/50 rounded-lg" />
+            <div className="flex gap-2">
+              {[1, 2, 3, 4].map(i => (
+                <div key={i} className="h-8 bg-zinc-800/50 rounded-lg w-16" />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* List Skeleton */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden animate-pulse">
+          {[1, 2, 3, 4, 5, 6].map(i => (
+            <div key={i} className="p-4 flex items-center gap-4 border-b border-zinc-800/50">
+              <div className="flex-1 space-y-2">
+                <div className="flex items-center gap-3">
+                  <div className="h-5 bg-zinc-800 rounded w-40" />
+                  <div className="h-5 bg-zinc-800/50 rounded w-16" />
+                </div>
+                <div className="h-3 bg-zinc-800/30 rounded w-64" />
+              </div>
+              <div className="hidden sm:flex items-center gap-1.5 w-20">
+                <div className="h-4 bg-zinc-800/50 rounded w-full" />
+              </div>
+              <div className="flex items-center gap-1 w-28 justify-end">
+                <div className="h-6 bg-zinc-800 rounded w-20" />
+              </div>
+              <div className="flex gap-1">
+                <div className="w-8 h-8 bg-zinc-800/50 rounded-lg" />
+                <div className="w-8 h-8 bg-zinc-800/50 rounded-lg" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fade-in pb-20">

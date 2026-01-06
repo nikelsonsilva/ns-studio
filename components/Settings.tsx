@@ -81,6 +81,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings }) => {
    const [globalBuffer, setGlobalBuffer] = useState(15);
    const [saving, setSaving] = useState(false);
    const [savingBuffer, setSavingBuffer] = useState(false);
+   const [isLoading, setIsLoading] = useState(true);
    const bufferDebounceRef = useRef<NodeJS.Timeout | null>(null);
 
    // Auto-save buffer when slider changes
@@ -179,6 +180,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings }) => {
    }, []);
 
    const loadBusinessData = async () => {
+      setIsLoading(true);
       const business = await getCurrentBusiness();
       if (business) {
          if (business.business_hours) {
@@ -216,6 +218,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings }) => {
             setBusinessSettings(settings);
          }
       }
+      setIsLoading(false);
    };
 
    // Update a single business setting
@@ -495,6 +498,61 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings }) => {
       { key: 'saturday', label: 'Sábado' },
       { key: 'sunday', label: 'Domingo' },
    ];
+
+   // ========== SKELETON LOADER ==========
+   if (isLoading) {
+      return (
+         <div className="space-y-6 animate-fade-in pb-20">
+            {/* Header Skeleton */}
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 animate-pulse">
+               <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-zinc-800 rounded-lg" />
+                  <div className="h-6 bg-zinc-800 rounded w-36" />
+               </div>
+               <div className="h-4 bg-zinc-800/50 rounded w-80 mt-3 ml-12" />
+            </div>
+
+            {/* Business Hours Skeleton */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 animate-pulse">
+               <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
+                  <div className="flex items-center gap-2 mb-4">
+                     <div className="w-5 h-5 bg-zinc-800 rounded" />
+                     <div className="h-5 bg-zinc-800 rounded w-48" />
+                  </div>
+                  <div className="space-y-2">
+                     {[1, 2, 3, 4, 5, 6, 7].map(i => (
+                        <div key={i} className="h-12 bg-zinc-800/50 rounded-lg" />
+                     ))}
+                  </div>
+               </div>
+
+               <div className="space-y-4">
+                  {/* Buffer Skeleton */}
+                  <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
+                     <div className="flex items-center gap-2 mb-3">
+                        <div className="w-5 h-5 bg-zinc-800 rounded" />
+                        <div className="h-5 bg-zinc-800 rounded w-44" />
+                     </div>
+                     <div className="h-16 bg-zinc-800/50 rounded-lg" />
+                  </div>
+
+                  {/* Modules Skeleton */}
+                  <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
+                     <div className="flex items-center gap-2 mb-3">
+                        <div className="w-5 h-5 bg-zinc-800 rounded" />
+                        <div className="h-5 bg-zinc-800 rounded w-32" />
+                     </div>
+                     <div className="space-y-2">
+                        {[1, 2, 3, 4].map(i => (
+                           <div key={i} className="h-14 bg-zinc-800/50 rounded-lg" />
+                        ))}
+                     </div>
+                  </div>
+               </div>
+            </div>
+         </div>
+      );
+   }
 
    return (
       <div className="space-y-6 animate-fade-in pb-20">

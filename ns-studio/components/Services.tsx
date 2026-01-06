@@ -1,6 +1,25 @@
 
-import React, { useState } from 'react';
-import { Plus, Edit2, Trash2, Clock, DollarSign, Package, CheckCircle2, Check, RefreshCw, CreditCard } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { 
+  Plus, 
+  Edit2, 
+  Trash2, 
+  Clock, 
+  DollarSign, 
+  Package, 
+  CheckCircle2, 
+  Check, 
+  RefreshCw, 
+  CreditCard,
+  Search,
+  LayoutGrid,
+  List,
+  Scissors,
+  Tag,
+  MoreVertical,
+  TrendingUp,
+  Zap
+} from 'lucide-react';
 import { Service, Product } from '../types';
 import Modal from './ui/Modal';
 import Button from './ui/Button';
@@ -19,6 +38,9 @@ interface ServicesProps {
 
 const Services: React.FC<ServicesProps> = ({ services, products, setServices, setProducts }) => {
   const [activeTab, setActiveTab] = useState<'services' | 'products'>('services');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [searchTerm, setSearchTerm] = useState('');
+  
   const [isSyncing, setIsSyncing] = useState(false);
   const [showSyncSuccess, setShowSyncSuccess] = useState(false);
   const toast = useToast();
@@ -36,6 +58,20 @@ const Services: React.FC<ServicesProps> = ({ services, products, setServices, se
       active: true,
       billingType: 'one_time' as 'one_time' | 'recurring'
   });
+
+  // --- Statistics ---
+  const stats = useMemo(() => {
+      const activeCount = services.filter(s => s.active).length;
+      const avgPrice = services.length > 0 
+        ? services.reduce((acc, s) => acc + s.price, 0) / services.length 
+        : 0;
+      return { activeCount, avgPrice };
+  }, [services]);
+
+  const filteredServices = services.filter(s => 
+      s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      (s.category && s.category.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
 
   const handleSyncStripe = () => {
     setIsSyncing(true);
@@ -110,136 +146,230 @@ const Services: React.FC<ServicesProps> = ({ services, products, setServices, se
 
   return (
     <div className="space-y-6 animate-fade-in pb-20">
-      {/* Header & Tabs */}
-      <Card className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 border-l-4 border-l-cyan-500 bg-gradient-to-r from-cyan-500/5 via-barber-900 to-barber-900">
-        <div>
-          <h2 className="text-2xl font-bold text-main flex items-center gap-2">
-            {activeTab === 'services' ? 'Catálogo de Serviços' : 'Estoque de Produtos'}
-          </h2>
-          <p className="text-muted text-sm mt-1">
-            {activeTab === 'services' 
-              ? 'Gerencie preços, durações e profissionais habilitados.' 
-              : 'Controle de vendas, estoque e margem de lucro.'}
-          </p>
-        </div>
-        
-        <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
-           <div className="bg-barber-950 p-1 rounded-lg border border-barber-800 flex w-full sm:w-auto">
-              <button 
-                onClick={() => setActiveTab('services')}
-                className={`flex-1 sm:flex-none px-4 py-2 rounded-md text-sm font-bold transition-all ${
-                  activeTab === 'services' 
-                  ? 'bg-barber-800 text-main shadow' 
-                  : 'text-muted hover:text-main hover:bg-barber-800/50'
-                }`}
-              >
-                Serviços
-              </button>
-              <button 
-                disabled
-                className={`flex-1 sm:flex-none px-4 py-2 rounded-md text-sm font-bold transition-all text-muted/50 cursor-not-allowed flex items-center gap-2`}
-              >
-                Produtos 
-                <span className="text-[10px] uppercase font-bold border border-barber-800 text-muted px-1.5 py-0.5 rounded-full bg-barber-950">
-                    Em breve
-                </span>
-              </button>
-           </div>
+      
+      {/* Header Dashboard */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card noPadding className="md:col-span-2 p-5 bg-gradient-to-r from-zinc-900 to-zinc-950 border-l-4 border-l-cyan-500 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="text-center sm:text-left w-full">
+                  <h2 className="text-xl font-bold text-white">Catálogo de Serviços</h2>
+                  <p className="text-sm text-muted mt-1">Gerencie preços, duração e visibilidade.</p>
+              </div>
+              <div className="flex gap-2 w-full sm:w-auto">
+                  <Button 
+                    variant="outline" 
+                    onClick={handleSyncStripe} 
+                    isLoading={isSyncing}
+                    className="w-full sm:w-auto"
+                    title="Sincronizar com Stripe"
+                  >
+                      {showSyncSuccess ? <CheckCircle2 size={18} className="text-green-500"/> : <RefreshCw size={18}/>}
+                  </Button>
+                  <Button onClick={handleAddNew} leftIcon={<Plus size={18} />} className="w-full sm:w-auto">
+                    Novo Serviço
+                  </Button>
+              </div>
+          </Card>
+          
+          <Card noPadding className="col-span-1 p-4 flex flex-col justify-center border-l-4 border-l-emerald-500">
+              <span className="text-xs font-bold uppercase text-muted tracking-wider">Ativos</span>
+              <div className="text-2xl font-bold text-white mt-1">{stats.activeCount} <span className="text-sm text-muted font-normal">/ {services.length}</span></div>
+              <div className="text-[10px] text-emerald-500 font-bold mt-1 flex items-center gap-1">
+                  <CheckCircle2 size={12} /> Disponíveis no App
+              </div>
+          </Card>
 
-           <div className="flex gap-2 w-full sm:w-auto">
-                {activeTab === 'services' && (
-                    <Button 
-                        variant="outline"
-                        onClick={handleSyncStripe}
-                        isLoading={isSyncing}
-                        title="Sincronizar catálogo com Stripe"
-                        leftIcon={showSyncSuccess ? <CheckCircle2 size={18} /> : <RefreshCw size={18} />}
-                    >
-                        {showSyncSuccess ? 'Sync OK' : 'Sincronizar'}
-                    </Button>
-                )}
+          <Card noPadding className="col-span-1 p-4 flex flex-col justify-center border-l-4 border-l-sky-500">
+              <span className="text-xs font-bold uppercase text-muted tracking-wider">Ticket Médio</span>
+              <div className="text-2xl font-bold text-white mt-1">R$ {stats.avgPrice.toFixed(0)}</div>
+              <div className="text-[10px] text-sky-500 font-bold mt-1">
+                  Baseado no catálogo
+              </div>
+          </Card>
+      </div>
 
-                <Button 
-                    onClick={activeTab === 'services' ? handleAddNew : () => {}}
-                    disabled={activeTab !== 'services'}
-                    leftIcon={<Plus size={18} />}
+      {/* Controls Bar */}
+      <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-zinc-900/50 p-2 rounded-xl border border-zinc-800">
+          <div className="w-full flex flex-col lg:flex-row gap-4">
+            <div className="w-full lg:w-80">
+                <Input 
+                    placeholder="Buscar serviço..." 
+                    value={searchTerm}
+                    onChange={e => setSearchTerm(e.target.value)}
+                    containerClassName="mb-0"
+                    className="bg-zinc-950 border-zinc-800"
+                    icon={<Search size={16}/>}
+                />
+            </div>
+            
+            {/* Filter Tabs */}
+            <div className="flex bg-zinc-950 p-1 rounded-lg border border-zinc-800 overflow-x-auto scrollbar-hide w-full lg:w-auto">
+                <button 
+                    onClick={() => setActiveTab('services')}
+                    className={`flex-1 lg:flex-none px-4 py-2 rounded-md text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 ${activeTab === 'services' ? 'bg-zinc-800 text-white shadow' : 'text-muted hover:text-white'}`}
                 >
-                    {activeTab === 'services' ? 'Novo Serviço' : 'Novo Produto'}
-                </Button>
-           </div>
-        </div>
-      </Card>
+                    <Scissors size={14} /> Serviços
+                </button>
+                <button 
+                    onClick={() => setActiveTab('products')}
+                    className={`flex-1 lg:flex-none px-4 py-2 rounded-md text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 ${activeTab === 'products' ? 'bg-zinc-800 text-white shadow' : 'text-muted hover:text-white'}`}
+                >
+                    <Package size={14} /> Produtos
+                </button>
+            </div>
+          </div>
+
+          <div className="flex bg-zinc-950 rounded-lg p-1 border border-zinc-800 shrink-0 self-end md:self-auto">
+              <button 
+                onClick={() => setViewMode('grid')}
+                className={`p-2 rounded-md transition-colors ${viewMode === 'grid' ? 'bg-zinc-800 text-white' : 'text-muted hover:text-white'}`}
+              >
+                  <LayoutGrid size={18} />
+              </button>
+              <button 
+                onClick={() => setViewMode('list')}
+                className={`p-2 rounded-md transition-colors ${viewMode === 'list' ? 'bg-zinc-800 text-white' : 'text-muted hover:text-white'}`}
+              >
+                  <List size={18} />
+              </button>
+          </div>
+      </div>
 
       {activeTab === 'services' ? (
-        /* SERVICE LIST */
-        <Card noPadding className="overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse min-w-[600px]">
-              <thead>
-                <tr className="bg-barber-950 text-muted text-xs uppercase tracking-wider border-b border-barber-800">
-                  <th className="p-4 pl-6">Serviço</th>
-                  <th className="p-4">Categoria</th>
-                  <th className="p-4">Duração</th>
-                  <th className="p-4">Preço</th>
-                  <th className="p-4">Cobrança</th>
-                  <th className="p-4">Status</th>
-                  <th className="p-4 text-right pr-6">Ações</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-barber-800">
-                {services.map((service) => (
-                  <tr key={service.id} className="hover:bg-barber-800/20 transition-colors group">
-                    <td className="p-4 pl-6">
-                      <div className="font-bold text-main text-base">{service.name}</div>
-                      {service.description && (
-                        <div className="text-xs text-muted mt-0.5 max-w-[200px] truncate">{service.description}</div>
-                      )}
-                    </td>
-                    <td className="p-4">
-                      <Badge variant="outline" size="sm">{service.category || 'Geral'}</Badge>
-                    </td>
-                    <td className="p-4 text-muted">
-                      <div className="flex items-center gap-1.5">
-                        <Clock size={14} className="text-barber-gold" />
-                        {service.duration} min
-                      </div>
-                    </td>
-                    <td className="p-4 text-main font-bold">
-                      <div className="flex items-center gap-1">
-                        <DollarSign size={14} className="text-green-500" />
-                        R$ {service.price.toFixed(2)}
-                      </div>
-                    </td>
-                    <td className="p-4">
-                        {service.billingType === 'recurring' ? (
-                            <Badge variant="info" size="sm" icon={<RefreshCw size={10} />}>Assinatura</Badge>
-                        ) : (
-                            <Badge variant="default" size="sm">Avulso</Badge>
-                        )}
-                    </td>
-                    <td className="p-4">
-                      <Badge variant={service.active ? 'success' : 'danger'} size="sm">
-                        {service.active ? 'Ativo' : 'Inativo'}
-                      </Badge>
-                    </td>
-                    <td className="p-4 text-right pr-6">
-                      <div className="flex items-center justify-end gap-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
-                        <Button size="icon" variant="ghost" onClick={() => handleEdit(service)} title="Editar"><Edit2 size={16} /></Button>
-                        <Button size="icon" variant="ghost" onClick={() => handleDelete(service.id)} className="hover:text-red-500" title="Excluir"><Trash2 size={16} /></Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
+        <>
+            {/* GRID VIEW */}
+            {viewMode === 'grid' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredServices.map(service => (
+                        <Card key={service.id} noPadding className="flex flex-col h-full bg-zinc-900 hover:border-cyan-500/50 transition-all duration-300 group">
+                            <div className="p-5 flex-1">
+                                <div className="flex justify-between items-start mb-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-lg bg-cyan-500/10 text-cyan-500 flex items-center justify-center border border-cyan-500/20">
+                                            <Scissors size={20} />
+                                        </div>
+                                        <div>
+                                            <h3 className="font-bold text-main text-sm">{service.name}</h3>
+                                            <div className="flex items-center gap-2 mt-0.5">
+                                                <Badge size="sm" variant="outline" className="text-[10px] py-0">{service.category || 'Geral'}</Badge>
+                                                {service.billingType === 'recurring' && <Badge size="sm" variant="info" className="text-[10px] py-0">Assinatura</Badge>}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <Switch 
+                                        checked={service.active} 
+                                        onCheckedChange={(c) => {
+                                            const updated = { ...service, active: c };
+                                            setServices(prev => prev.map(s => s.id === service.id ? updated : s));
+                                        }}
+                                    />
+                                </div>
+
+                                <p className="text-xs text-muted line-clamp-2 mb-4 min-h-[32px]">
+                                    {service.description || "Sem descrição definida para este serviço."}
+                                </p>
+
+                                <div className="flex items-center justify-between mt-auto pt-4 border-t border-zinc-800">
+                                    <div className="flex flex-col">
+                                        <span className="text-[10px] text-muted font-bold uppercase">Valor</span>
+                                        <div className="text-lg font-bold text-white">R$ {service.price.toFixed(2)}</div>
+                                    </div>
+                                    <div className="flex flex-col items-end">
+                                        <span className="text-[10px] text-muted font-bold uppercase">Tempo</span>
+                                        <div className="text-sm font-medium text-white flex items-center gap-1">
+                                            <Clock size={14} className="text-barber-gold" /> {service.duration} min
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="bg-zinc-950 p-2 flex justify-end gap-2 border-t border-zinc-800">
+                                <Button size="sm" variant="ghost" onClick={() => handleEdit(service)} className="text-xs h-8">
+                                    <Edit2 size={14} className="mr-1" /> Editar
+                                </Button>
+                                <Button size="sm" variant="ghost" onClick={() => handleDelete(service.id)} className="text-xs h-8 hover:text-red-500">
+                                    <Trash2 size={14} />
+                                </Button>
+                            </div>
+                        </Card>
+                    ))}
+                </div>
+            )}
+
+            {/* LIST VIEW */}
+            {viewMode === 'list' && (
+                <div className="flex flex-col gap-3">
+                    {/* Desktop Header */}
+                    <div className="hidden md:grid grid-cols-12 gap-4 px-4 py-2 text-xs font-bold text-muted uppercase tracking-wider bg-zinc-900/50 rounded-lg border border-transparent">
+                        <div className="col-span-4">Serviço</div>
+                        <div className="col-span-2">Categoria</div>
+                        <div className="col-span-2">Preço / Duração</div>
+                        <div className="col-span-2">Status</div>
+                        <div className="col-span-2 text-right">Ações</div>
+                    </div>
+
+                    {filteredServices.map(service => (
+                        <div 
+                            key={service.id} 
+                            className="bg-zinc-900 border border-zinc-800 hover:border-cyan-500/30 rounded-xl p-4 flex flex-col md:grid md:grid-cols-12 gap-4 items-center transition-all duration-200 group"
+                        >
+                            {/* Name */}
+                            <div className="w-full md:col-span-4 flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-zinc-800 flex items-center justify-center text-muted">
+                                    <Scissors size={14} />
+                                </div>
+                                <div className="min-w-0">
+                                    <div className="font-bold text-main text-sm truncate">{service.name}</div>
+                                    {service.billingType === 'recurring' && <span className="text-[9px] text-sky-400 flex items-center gap-1"><RefreshCw size={8} /> Recorrente</span>}
+                                </div>
+                            </div>
+
+                            {/* Category */}
+                            <div className="w-full md:col-span-2">
+                                <Badge variant="outline" size="sm">{service.category || 'Geral'}</Badge>
+                            </div>
+
+                            {/* Price/Duration */}
+                            <div className="w-full md:col-span-2 flex items-center justify-between md:block">
+                                <div className="text-sm font-bold text-white">R$ {service.price.toFixed(2)}</div>
+                                <div className="text-xs text-muted flex items-center gap-1 mt-0.5">
+                                    <Clock size={10} /> {service.duration} min
+                                </div>
+                            </div>
+
+                            {/* Status */}
+                            <div className="w-full md:col-span-2 flex items-center justify-between md:justify-start">
+                                <span className="md:hidden text-xs font-bold text-muted uppercase">Status</span>
+                                <Switch 
+                                    checked={service.active} 
+                                    onCheckedChange={(c) => {
+                                        const updated = { ...service, active: c };
+                                        setServices(prev => prev.map(s => s.id === service.id ? updated : s));
+                                    }}
+                                />
+                            </div>
+
+                            {/* Actions */}
+                            <div className="w-full md:col-span-2 flex items-center justify-end gap-2 mt-2 md:mt-0 pt-2 md:pt-0 border-t border-zinc-800 md:border-0">
+                                <Button size="icon" variant="ghost" onClick={() => handleEdit(service)} title="Editar" className="h-8 w-8">
+                                    <Edit2 size={14} />
+                                </Button>
+                                <Button size="icon" variant="ghost" onClick={() => handleDelete(service.id)} className="h-8 w-8 hover:text-red-500" title="Excluir">
+                                    <Trash2 size={14} />
+                                </Button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </>
       ) : (
-        /* PRODUCT LIST (Placeholder) */
-        <div className="flex flex-col items-center justify-center py-20 bg-barber-900 border border-barber-800 rounded-xl">
-            <Package size={48} className="text-muted mb-4" />
+        /* PRODUCT LIST (Placeholder styled) */
+        <div className="flex flex-col items-center justify-center py-20 bg-zinc-900/50 border border-zinc-800 border-dashed rounded-xl">
+            <div className="w-16 h-16 bg-zinc-900 rounded-full flex items-center justify-center mb-4 border border-zinc-800">
+                <Package size={24} className="text-muted opacity-50" />
+            </div>
             <h3 className="text-xl font-bold text-main">Módulo em Desenvolvimento</h3>
-            <p className="text-muted mt-2">A gestão de estoque estará disponível em breve.</p>
+            <p className="text-muted mt-2 text-sm">A gestão de estoque e produtos estará disponível na próxima atualização.</p>
+            <Button className="mt-6" variant="outline" disabled>Notificar quando disponível</Button>
         </div>
       )}
 
@@ -263,7 +393,7 @@ const Services: React.FC<ServicesProps> = ({ services, products, setServices, se
                 value={formData.name}
                 onChange={(e) => setFormData({...formData, name: e.target.value})}
                 placeholder="Ex: Corte, Coloração"
-                icon={<Package size={16}/>}
+                icon={<Scissors size={16}/>}
              />
 
              <Input 
@@ -271,6 +401,7 @@ const Services: React.FC<ServicesProps> = ({ services, products, setServices, se
                 value={formData.category}
                 onChange={(e) => setFormData({...formData, category: e.target.value})}
                 placeholder="Ex: Cabelo, Barba"
+                icon={<Tag size={16}/>}
              />
 
              <div className="grid grid-cols-2 gap-4">
@@ -295,7 +426,7 @@ const Services: React.FC<ServicesProps> = ({ services, products, setServices, se
              <div>
                 <label className="block text-xs font-bold text-muted uppercase mb-1 ml-1">Descrição</label>
                 <textarea 
-                    className="w-full bg-barber-950 border border-barber-800 text-main rounded-xl p-3 outline-none focus:border-barber-gold resize-none h-20 text-sm"
+                    className="w-full bg-zinc-950 border border-zinc-800 text-main rounded-xl p-3 outline-none focus:border-barber-gold resize-none h-20 text-sm"
                     placeholder="Descrição opcional..."
                     value={formData.description}
                     onChange={(e) => setFormData({...formData, description: e.target.value})}
@@ -311,7 +442,7 @@ const Services: React.FC<ServicesProps> = ({ services, products, setServices, se
                         className={`p-4 rounded-xl border flex flex-col items-center justify-center gap-2 transition-all ${
                             formData.billingType === 'one_time' 
                             ? 'bg-barber-gold/10 border-barber-gold text-barber-gold' 
-                            : 'bg-barber-950 border-barber-800 text-muted hover:border-barber-700'
+                            : 'bg-zinc-950 border-zinc-800 text-muted hover:border-zinc-700'
                         }`}
                     >
                         <CreditCard size={20} />
@@ -324,7 +455,7 @@ const Services: React.FC<ServicesProps> = ({ services, products, setServices, se
                         className={`p-4 rounded-xl border flex flex-col items-center justify-center gap-2 transition-all ${
                             formData.billingType === 'recurring' 
                             ? 'bg-purple-500/10 border-purple-500 text-purple-400' 
-                            : 'bg-barber-950 border-barber-800 text-muted hover:border-barber-700'
+                            : 'bg-zinc-950 border-zinc-800 text-muted hover:border-zinc-700'
                         }`}
                     >
                         <RefreshCw size={20} />
@@ -334,7 +465,7 @@ const Services: React.FC<ServicesProps> = ({ services, products, setServices, se
                 </div>
              </div>
              
-             <div className="flex items-center justify-between p-4 bg-barber-950 border border-barber-800 rounded-xl">
+             <div className="flex items-center justify-between p-4 bg-zinc-950 border border-zinc-800 rounded-xl">
                 <div>
                     <span className="text-sm font-bold text-main block">Status do Serviço</span>
                     <span className="text-xs text-muted">Disponível para agendamento</span>

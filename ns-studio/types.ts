@@ -55,6 +55,7 @@ export interface SystemSettings {
   businessAddress: string;
   businessPhone: string;
   businessEmail: string;
+  appointmentInterval: number; // Intervalo padrão em minutos
   businessHours: WorkDay[];
   modules: {
     products: boolean;
@@ -149,6 +150,8 @@ export interface Client {
   id: string;
   name: string;
   phone: string;
+  email?: string; // Novo campo
+  instagram?: string; // Novo campo
   cpf?: string;
   lastVisit: string;
   totalVisits: number;
@@ -166,6 +169,12 @@ export interface Client {
   activeMembership?: string;
   origin?: 'public_link' | 'manual' | 'import' | 'whatsapp'; // Origem do cadastro
   createdAt?: string; // Data de cadastro
+  lastService?: string; // String simples (legacy)
+  lastAppointmentDetails?: { // Detalhes estruturados do último serviço
+      services: string[];
+      professionals: string[];
+      date: string;
+  };
 }
 
 export interface Appointment {

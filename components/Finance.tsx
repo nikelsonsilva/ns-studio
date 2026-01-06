@@ -851,6 +851,70 @@ const Finance: React.FC<FinanceProps> = ({ paymentConfig, onSaveConfig, userRole
     }
   };
 
+  // ========== SKELETON LOADER ==========
+  if (loading) {
+    return (
+      <div className="space-y-6 animate-fade-in pb-20">
+        {/* Header Skeleton */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 animate-pulse">
+          <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-zinc-800 rounded-lg" />
+              <div className="h-6 bg-zinc-800 rounded w-48" />
+            </div>
+            <div className="flex gap-2">
+              {[1, 2, 3, 4, 5].map(i => (
+                <div key={i} className="h-9 bg-zinc-800/50 rounded-lg w-20" />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* KPI Cards Skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 animate-pulse">
+          {/* Main Card */}
+          <div className="bg-amber-500/20 p-6 rounded-xl border border-amber-500/30">
+            <div className="h-4 bg-amber-500/30 rounded w-24 mb-3" />
+            <div className="h-8 bg-amber-500/40 rounded w-32 mb-2" />
+            <div className="h-3 bg-amber-500/20 rounded w-40" />
+          </div>
+          {/* Other Cards */}
+          {[1, 2, 3].map(i => (
+            <div key={i} className="bg-zinc-900 p-6 rounded-xl border border-zinc-800">
+              <div className="h-4 bg-zinc-800 rounded w-20 mb-3" />
+              <div className="h-8 bg-zinc-800 rounded w-28 mb-2" />
+              <div className="h-3 bg-zinc-800/50 rounded w-32" />
+            </div>
+          ))}
+        </div>
+
+        {/* Chart and Table Skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-pulse">
+          {/* Chart */}
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+            <div className="h-5 bg-zinc-800 rounded w-40 mb-4" />
+            <div className="h-48 bg-zinc-800/50 rounded-lg flex items-center justify-center">
+              <div className="w-32 h-32 bg-zinc-700/50 rounded-full" />
+            </div>
+          </div>
+          {/* Table */}
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+            <div className="h-5 bg-zinc-800 rounded w-48 mb-4" />
+            <div className="space-y-3">
+              {[1, 2, 3, 4, 5].map(i => (
+                <div key={i} className="flex items-center gap-3">
+                  <div className="h-4 bg-zinc-800/50 rounded w-16" />
+                  <div className="h-4 bg-zinc-800 rounded flex-1" />
+                  <div className="h-4 bg-zinc-800/50 rounded w-20" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 animate-fade-in relative pb-20">
 
