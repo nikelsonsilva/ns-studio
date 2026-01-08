@@ -112,6 +112,7 @@ const Dashboard: React.FC<DashboardProps> = ({ settings, onGoToSettings, onGoToC
     pendingRequests,
     topServices,
     recentActivities,
+    newClientsForWelcome,
     isLoading,
     error,
     refresh
@@ -255,11 +256,196 @@ const Dashboard: React.FC<DashboardProps> = ({ settings, onGoToSettings, onGoToC
     alerts.push({ id: 2, text: `Taxa de No-Show alta: ${stats.taxaNoShow.toFixed(1)}%`, type: 'danger' });
   }
 
-  // Loading state
+  // Loading state - Skeleton Loader
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <Loader2 className="w-8 h-8 text-[var(--brand-primary)] animate-spin" />
+      <div className="space-y-6 animate-fade-in pb-24">
+        {/* Header Skeleton */}
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-[var(--surface-card-50)] p-4 rounded-2xl border border-[var(--border-default)] animate-pulse">
+          <div className="space-y-2">
+            <div className="h-7 w-40 bg-[var(--surface-subtle)] rounded-lg" />
+            <div className="h-4 w-32 bg-[var(--surface-subtle)] rounded" />
+          </div>
+          <div className="flex gap-3">
+            <div className="h-9 w-28 bg-[var(--surface-subtle)] rounded-xl" />
+            <div className="h-9 w-24 bg-[var(--surface-subtle)] rounded-lg" />
+            <div className="h-9 w-36 bg-[var(--brand-primary)]/20 rounded-lg" />
+          </div>
+        </div>
+
+        {/* Grid 1: Priority Cards Skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          {/* Next Appointment Skeleton */}
+          <Card noPadding className="p-5 border-l-4 border-l-[var(--brand-primary)] animate-pulse">
+            <div className="flex justify-between items-start mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-[var(--surface-subtle)]" />
+                <div className="space-y-2">
+                  <div className="h-3 w-20 bg-[var(--surface-subtle)] rounded" />
+                  <div className="h-6 w-16 bg-[var(--surface-subtle)] rounded" />
+                </div>
+              </div>
+              <div className="h-6 w-16 bg-[var(--surface-subtle)] rounded-full" />
+            </div>
+            <div className="space-y-2 mb-4">
+              <div className="h-5 w-40 bg-[var(--surface-subtle)] rounded" />
+              <div className="h-4 w-28 bg-[var(--surface-subtle)] rounded" />
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              <div className="h-9 bg-[var(--surface-subtle)] rounded-lg" />
+              <div className="h-9 bg-[var(--surface-subtle)] rounded-lg" />
+              <div className="h-9 bg-[var(--surface-subtle)] rounded-lg" />
+            </div>
+          </Card>
+
+          {/* Online Appointments Skeleton */}
+          <Card noPadding className="animate-pulse">
+            <div className="p-4 border-b border-[var(--border-default)] flex justify-between items-center">
+              <div className="h-5 w-40 bg-[var(--surface-subtle)] rounded" />
+              <div className="h-5 w-8 bg-[var(--surface-subtle)] rounded-full" />
+            </div>
+            <div className="p-3 space-y-3">
+              {[1, 2].map(i => (
+                <div key={i} className="bg-[var(--surface-app)] border border-[var(--border-default)] rounded-xl p-3">
+                  <div className="flex justify-between mb-2">
+                    <div className="h-4 w-32 bg-[var(--surface-subtle)] rounded" />
+                    <div className="h-4 w-16 bg-[var(--surface-subtle)] rounded-full" />
+                  </div>
+                  <div className="h-3 w-24 bg-[var(--surface-subtle)] rounded" />
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          {/* Alerts Skeleton */}
+          <Card noPadding className="animate-pulse" style={{ background: 'var(--gradient-alert-card)' }}>
+            <div className="p-5 border-b border-[var(--border-subtle)] flex justify-between items-center">
+              <div className="h-5 w-32 bg-[var(--surface-subtle)] rounded" />
+              <div className="h-5 w-6 bg-[var(--surface-subtle)] rounded-full" />
+            </div>
+            <div className="p-4 space-y-3">
+              {[1, 2].map(i => (
+                <div key={i} className="bg-[var(--surface-elevated)] rounded-lg p-3 flex items-center gap-3">
+                  <div className="w-2 h-2 rounded-full bg-[var(--surface-subtle)]" />
+                  <div className="h-3 flex-1 bg-[var(--surface-subtle)] rounded" />
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
+
+        {/* Section Header Skeleton */}
+        <div className="flex items-center gap-2 mt-8 mb-4">
+          <div className="h-4 w-4 bg-[var(--surface-subtle)] rounded" />
+          <div className="h-4 w-48 bg-[var(--surface-subtle)] rounded" />
+        </div>
+
+        {/* Grid 2: Real-time Operations Skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Chairs Skeleton */}
+          <Card noPadding className="animate-pulse">
+            <div className="p-4 border-b border-[var(--border-default)] flex justify-between items-center">
+              <div className="h-5 w-24 bg-[var(--surface-subtle)] rounded" />
+              <div className="h-4 w-20 bg-[var(--surface-subtle)] rounded" />
+            </div>
+            <div className="p-4 space-y-3">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="bg-[var(--surface-app)] border border-[var(--border-default)] rounded-xl p-3 flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-lg bg-[var(--surface-subtle)]" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 w-24 bg-[var(--surface-subtle)] rounded" />
+                    <div className="h-2 w-full bg-[var(--surface-subtle)] rounded-full" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          {/* Today's Agenda Skeleton */}
+          <Card noPadding className="animate-pulse">
+            <div className="p-4 border-b border-[var(--border-default)] flex justify-between items-center">
+              <div className="h-5 w-32 bg-[var(--surface-subtle)] rounded" />
+              <div className="h-4 w-12 bg-[var(--surface-subtle)] rounded" />
+            </div>
+            <div className="p-4 space-y-4">
+              <div className="flex items-end justify-between">
+                <div className="space-y-1">
+                  <div className="h-8 w-16 bg-[var(--surface-subtle)] rounded" />
+                  <div className="h-3 w-24 bg-[var(--surface-subtle)] rounded" />
+                </div>
+                <div className="space-y-1 text-right">
+                  <div className="h-6 w-12 bg-[var(--surface-subtle)] rounded" />
+                  <div className="h-3 w-16 bg-[var(--surface-subtle)] rounded" />
+                </div>
+              </div>
+              <div className="h-3 w-full bg-[var(--surface-subtle)] rounded-full" />
+            </div>
+          </Card>
+
+          {/* Team Online Skeleton */}
+          <Card noPadding className="animate-pulse">
+            <div className="p-4 border-b border-[var(--border-default)] flex justify-between items-center">
+              <div className="h-5 w-28 bg-[var(--surface-subtle)] rounded" />
+              <div className="h-4 w-16 bg-[var(--surface-subtle)] rounded" />
+            </div>
+            <div className="p-3 flex items-center justify-around">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="text-center space-y-2">
+                  <div className="h-8 w-8 mx-auto bg-[var(--surface-subtle)] rounded" />
+                  <div className="h-3 w-16 bg-[var(--surface-subtle)] rounded" />
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
+
+        {/* Section Header Skeleton */}
+        <div className="flex items-center gap-2 mt-8 mb-4">
+          <div className="h-4 w-4 bg-[var(--surface-subtle)] rounded" />
+          <div className="h-4 w-40 bg-[var(--surface-subtle)] rounded" />
+        </div>
+
+        {/* Grid 3: Financial Skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Goal Gauge Skeleton */}
+          <Card noPadding className="p-6 animate-pulse">
+            <div className="flex items-center justify-between gap-4">
+              <div className="w-24 h-24 rounded-full bg-[var(--surface-subtle)]" />
+              <div className="space-y-2 flex-1">
+                <div className="h-3 w-20 bg-[var(--surface-subtle)] rounded" />
+                <div className="h-7 w-28 bg-[var(--surface-subtle)] rounded" />
+                <div className="h-4 w-20 bg-[var(--surface-subtle)] rounded" />
+              </div>
+            </div>
+          </Card>
+
+          {/* Cash Today Skeleton */}
+          <Card noPadding className="p-5 animate-pulse" style={{ background: 'var(--gradient-finance-card)' }}>
+            <div className="flex justify-between items-start">
+              <div className="space-y-3">
+                <div className="h-4 w-24 bg-[var(--surface-subtle)] rounded" />
+                <div className="h-9 w-36 bg-[var(--surface-subtle)] rounded" />
+                <div className="h-4 w-28 bg-[var(--surface-subtle)] rounded" />
+              </div>
+              <div className="w-12 h-12 bg-[var(--surface-subtle)] rounded-lg" />
+            </div>
+          </Card>
+
+          {/* Chart Skeleton */}
+          <Card noPadding className="animate-pulse">
+            <div className="p-4 border-b border-[var(--border-default)] flex justify-between items-center">
+              <div className="h-5 w-36 bg-[var(--surface-subtle)] rounded" />
+              <div className="h-5 w-16 bg-[var(--surface-subtle)] rounded-full" />
+            </div>
+            <div className="p-4">
+              <div className="h-[120px] w-full bg-[var(--surface-subtle)] rounded-lg flex items-end gap-1 p-2">
+                {[40, 60, 35, 80, 55, 70, 45].map((h, i) => (
+                  <div key={i} className="flex-1 bg-[var(--brand-primary)]/20 rounded-t" style={{ height: `${h}%` }} />
+                ))}
+              </div>
+            </div>
+          </Card>
+        </div>
       </div>
     );
   }
@@ -270,6 +456,23 @@ const Dashboard: React.FC<DashboardProps> = ({ settings, onGoToSettings, onGoToC
       return;
     }
     window.open(`https://wa.me/55${phone.replace(/\D/g, '')}`, '_blank');
+  };
+
+  // Enviar mensagem de boas-vindas para novos clientes
+  const handleSendWelcomeMessage = () => {
+    if (newClientsForWelcome.length === 0) {
+      toast.info('Não há novos clientes com telefone este mês');
+      return;
+    }
+
+    // Pegar o primeiro cliente novo para enviar mensagem
+    const firstClient = newClientsForWelcome[0];
+    const message = encodeURIComponent(
+      `Olá ${firstClient.name}! 💈\n\nSeja bem-vindo(a) ao nosso salão! É um prazer tê-lo(a) como cliente.\n\nAgradecemos sua preferência!`
+    );
+    const phone = firstClient.phone.replace(/\D/g, '');
+    window.open(`https://wa.me/55${phone}?text=${message}`, '_blank');
+    toast.success(`Mensagem enviada para ${firstClient.name}`);
   };
 
   // Confirmar agendamento pendente
@@ -573,8 +776,8 @@ const Dashboard: React.FC<DashboardProps> = ({ settings, onGoToSettings, onGoToC
               return (
                 <div key={chair.id} className="bg-[var(--dark-bg-elevated-50)] border border-[var(--dark-border-default)] rounded-xl p-3 flex items-center gap-4">
                   <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold text-sm shrink-0 shadow-lg ${chair.status === 'busy'
-                      ? 'bg-[var(--dark-brand-primary)] text-[var(--dark-text-inverted)]'
-                      : 'bg-[var(--dark-bg-subtle)] text-[var(--dark-text-subtle)]'
+                    ? 'bg-[var(--dark-brand-primary)] text-[var(--dark-text-inverted)]'
+                    : 'bg-[var(--dark-bg-subtle)] text-[var(--dark-text-subtle)]'
                     }`}>
                     {index + 1}
                   </div>
@@ -788,7 +991,12 @@ const Dashboard: React.FC<DashboardProps> = ({ settings, onGoToSettings, onGoToC
             </div>
           </div>
           <div className="px-4 pb-4">
-            <Button size="sm" variant="ghost" className="w-full text-xs h-8 border border-[var(--border-default)]">
+            <Button
+              size="sm"
+              variant="ghost"
+              className="w-full text-xs h-8 border border-[var(--border-default)]"
+              onClick={handleSendWelcomeMessage}
+            >
               <MessageCircle size={14} className="mr-2" /> Enviar Msg Boas-vindas
             </Button>
           </div>

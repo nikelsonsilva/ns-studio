@@ -42,9 +42,8 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, isOpen, to
     { id: 'calendar', label: 'Agenda', icon: CalendarDays, visible: true, activeClass: 'bg-sky-500 text-white shadow-sky-500/20' },
     { id: 'services', label: 'Serviços', icon: Scissors, visible: true, activeClass: 'bg-cyan-500 text-black shadow-cyan-500/20' },
     { id: 'clients', label: 'Clientes', icon: Users, visible: true, activeClass: 'bg-indigo-500 text-white shadow-indigo-500/20' },
-    { id: 'finance', label: 'Financeiro', icon: WalletCards, visible: settings?.modules.finance !== false && userRole !== 'Barber', activeClass: 'bg-emerald-500 text-white shadow-emerald-500/20' },
     { id: 'team', label: 'Equipe', icon: ScissorsLineDashed, visible: userRole !== 'Barber', activeClass: 'bg-orange-500 text-white shadow-orange-500/20' },
-    { id: 'public_booking', label: 'Link Público', icon: ExternalLink, visible: settings?.modules.publicBooking !== false, activeClass: 'bg-fuchsia-500 text-white shadow-fuchsia-500/20' },
+    { id: 'finance', label: 'Financeiro', icon: WalletCards, visible: settings?.modules.finance !== false && userRole !== 'Barber', activeClass: 'bg-emerald-500 text-white shadow-emerald-500/20' },
     { id: 'settings', label: 'Configurações', icon: Settings, visible: userRole === 'Admin' || isSuper, activeClass: 'bg-zinc-700 text-white shadow-zinc-700/20' },
   ];
 
@@ -107,6 +106,21 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, isOpen, to
           </nav>
 
           <div className="pt-6 border-t border-barber-800 space-y-3">
+            {/* Public Booking Link (Moved from main menu) */}
+            {settings?.modules.publicBooking !== false && (
+              <button
+                type="button"
+                onClick={() => {
+                  onChangeView('public_booking');
+                  if (window.innerWidth < 768) toggleSidebar();
+                }}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-muted hover:text-main hover:bg-barber-800 transition-colors font-medium group"
+              >
+                <ExternalLink size={20} className="group-hover:text-fuchsia-500 transition-colors" />
+                Link Público
+              </button>
+            )}
+
             {/* Theme Toggle Button */}
             <button 
                 type="button"

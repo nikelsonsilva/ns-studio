@@ -96,7 +96,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, isOpen, to
                     w-full flex items-center gap-3 px-4 py-3 rounded-lg 
                     transition-all duration-150 ease-[cubic-bezier(0.2,0.8,0.2,1)]
                     ${isActive
-                      ? 'bg-[var(--bg-selected)] text-[var(--brand-primary)] font-semibold'
+                      ? 'bg-[var(--dark-sidebar-item-hover-bg)] text-[var(--brand-primary)] font-semibold'
                       : 'text-[var(--text-muted)] hover:bg-[var(--surface-subtle)] hover:text-[var(--text-primary)]'
                     }
                   `.replace(/\s+/g, ' ').trim()}

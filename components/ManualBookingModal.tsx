@@ -7,6 +7,8 @@ import { createStripePaymentLink } from '../lib/stripePaymentLinks';
 import { copyToClipboard } from '../lib/bookingLinks';
 import { isStripeConfigured } from '../lib/stripeConfig';
 import Toast from './Toast';
+import Input from './ui/Input';
+import Button from './ui/Button';
 import type { Client, Service, Professional } from '../types';
 
 interface ManualBookingModalProps {
@@ -541,122 +543,56 @@ const ManualBookingModal: React.FC<ManualBookingModalProps> = ({
                                 {isCreatingNewClient ? (
                                     <div className="space-y-4">
                                         {/* Name Input */}
-                                        <div>
-                                            <label className="block text-[11px] uppercase tracking-wider mb-2 font-medium" style={{ color: 'var(--dark-text-subtle)' }}>
-                                                Nome Completo *
-                                            </label>
-                                            <div className="relative group">
-                                                <User
-                                                    size={16}
-                                                    className="absolute left-4 top-1/2 -translate-y-1/2 transition-colors"
-                                                    style={{ color: 'var(--dark-text-subtle)' }}
-                                                />
-                                                <input
-                                                    type="text"
-                                                    placeholder="Digite o nome..."
-                                                    className="w-full pl-11 pr-4 py-3 rounded-xl text-sm placeholder-zinc-600 outline-none transition-all"
-                                                    style={{
-                                                        background: 'var(--dark-bg-input)',
-                                                        border: '1px solid var(--dark-border-default)',
-                                                        color: 'var(--dark-text-main)'
-                                                    }}
-                                                    value={newClientName}
-                                                    onChange={(e) => setNewClientName(e.target.value)}
-                                                    autoFocus
-                                                />
-                                            </div>
-                                        </div>
+                                        <Input
+                                            label="Nome Completo *"
+                                            icon={<User size={16} />}
+                                            placeholder="Digite o nome..."
+                                            value={newClientName}
+                                            onChange={(e) => setNewClientName(e.target.value)}
+                                            autoFocus
+                                        />
 
                                         {/* Phone Input */}
-                                        <div>
-                                            <label className="block text-[11px] uppercase tracking-wider mb-2 font-medium" style={{ color: 'var(--dark-text-subtle)' }}>
-                                                Telefone *
-                                            </label>
-                                            <div className="relative group">
-                                                <Phone
-                                                    size={16}
-                                                    className="absolute left-4 top-1/2 -translate-y-1/2 transition-colors"
-                                                    style={{ color: 'var(--dark-text-subtle)' }}
-                                                />
-                                                <input
-                                                    type="tel"
-                                                    placeholder="(11) 99999-9999"
-                                                    className="w-full pl-11 pr-4 py-3 rounded-xl text-sm placeholder-zinc-600 outline-none transition-all"
-                                                    style={{
-                                                        background: 'var(--dark-bg-input)',
-                                                        border: '1px solid var(--dark-border-default)',
-                                                        color: 'var(--dark-text-main)'
-                                                    }}
-                                                    value={newClientPhone}
-                                                    onChange={(e) => setNewClientPhone(e.target.value)}
-                                                />
-                                            </div>
-                                        </div>
+                                        <Input
+                                            label="Telefone *"
+                                            icon={<Phone size={16} />}
+                                            type="tel"
+                                            placeholder="(11) 99999-9999"
+                                            value={newClientPhone}
+                                            onChange={(e) => setNewClientPhone(e.target.value)}
+                                        />
 
                                         {/* Email Input */}
-                                        <div>
-                                            <label className="block text-[11px] uppercase tracking-wider mb-2 font-medium" style={{ color: 'var(--dark-text-subtle)' }}>
-                                                Email <span style={{ color: 'var(--dark-text-faint)' }}>(opcional)</span>
-                                            </label>
-                                            <div className="relative group">
-                                                <Mail
-                                                    size={16}
-                                                    className="absolute left-4 top-1/2 -translate-y-1/2 transition-colors"
-                                                    style={{ color: 'var(--dark-text-subtle)' }}
-                                                />
-                                                <input
-                                                    type="email"
-                                                    placeholder="email@exemplo.com"
-                                                    className="w-full pl-11 pr-4 py-3 rounded-xl text-sm placeholder-zinc-600 outline-none transition-all"
-                                                    style={{
-                                                        background: 'var(--dark-bg-input)',
-                                                        border: '1px solid var(--dark-border-default)',
-                                                        color: 'var(--dark-text-main)'
-                                                    }}
-                                                    value={newClientEmail}
-                                                    onChange={(e) => setNewClientEmail(e.target.value)}
-                                                />
-                                            </div>
-                                        </div>
+                                        <Input
+                                            label="Email (opcional)"
+                                            icon={<Mail size={16} />}
+                                            type="email"
+                                            placeholder="email@exemplo.com"
+                                            value={newClientEmail}
+                                            onChange={(e) => setNewClientEmail(e.target.value)}
+                                        />
 
                                         {/* Create Button */}
-                                        <button
+                                        <Button
                                             onClick={handleCreateClient}
-                                            disabled={isCreatingClient || !newClientName.trim() || !newClientPhone.trim()}
-                                            className="w-full py-3.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                                            style={{
-                                                background: 'var(--dark-brand-primary)',
-                                                color: 'var(--dark-text-inverted)'
-                                            }}
+                                            disabled={!newClientName.trim() || !newClientPhone.trim()}
+                                            isLoading={isCreatingClient}
+                                            leftIcon={<UserPlus size={18} />}
+                                            className="w-full"
                                         >
-                                            {isCreatingClient ? (
-                                                <div className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin" />
-                                            ) : (
-                                                <><UserPlus size={18} /> Criar e Continuar</>
-                                            )}
-                                        </button>
+                                            Criar e Continuar
+                                        </Button>
                                     </div>
                                 ) : (
                                     <>
                                         {/* Search Input */}
-                                        <div className="relative group">
-                                            <div className="absolute left-4 top-0 bottom-0 flex items-center">
-                                                <Search size={18} style={{ color: 'var(--dark-text-subtle)' }} />
-                                            </div>
-                                            <input
-                                                type="text"
-                                                placeholder="Buscar cliente..."
-                                                className="w-full pl-12 pr-4 py-3.5 rounded-xl text-sm outline-none transition-all"
-                                                style={{
-                                                    background: 'var(--dark-bg-input)',
-                                                    border: '1px solid var(--dark-border-default)',
-                                                    color: 'var(--dark-text-main)'
-                                                }}
-                                                value={searchTerm}
-                                                onChange={(e) => setSearchTerm(e.target.value)}
-                                                autoFocus
-                                            />
-                                        </div>
+                                        <Input
+                                            icon={<Search size={18} />}
+                                            placeholder="Buscar cliente..."
+                                            value={searchTerm}
+                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                            autoFocus
+                                        />
 
                                         {/* Client List */}
                                         <div className="space-y-2 max-h-[280px] overflow-y-auto custom-scrollbar">

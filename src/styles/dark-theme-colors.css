@@ -1168,7 +1168,171 @@
 
     /* --- CARD HEADER GRADIENT --- */
     --dark-card-header-gradient: linear-gradient(to right, #27272a, #18181b);
+
+    /* =========================================
+       45. CLIENT COMPONENT COLORS
+       Clients.tsx, ClientModal.tsx, ClientDetailsModal.tsx
+       ========================================= */
+
+    /* --- CLIENT AVATAR GRADIENTS --- */
+    --dark-avatar-gradient-blue: linear-gradient(to bottom right, #2563eb, #1e40af);
+    /* from-blue-600 to-blue-800 */
+    --dark-avatar-gradient-emerald: linear-gradient(to bottom right, #059669, #065f46);
+    /* from-emerald-600 to-emerald-800 */
+    --dark-avatar-gradient-purple: linear-gradient(to bottom right, #9333ea, #6b21a8);
+    /* from-purple-600 to-purple-800 */
+    --dark-avatar-gradient-amber: linear-gradient(to bottom right, #d97706, #92400e);
+    /* from-amber-600 to-amber-800 */
+    --dark-avatar-gradient-rose: linear-gradient(to bottom right, #e11d48, #9f1239);
+    /* from-rose-600 to-rose-800 */
+    --dark-avatar-gradient-indigo: linear-gradient(to bottom right, #4f46e5, #3730a3);
+    /* from-indigo-600 to-indigo-800 */
+
+    /* --- CLIENT TIER COLORS --- */
+
+    /* Diamante Tier (Cyan) */
+    --dark-client-tier-diamante: #06b6d4;
+    /* cyan-500 */
+    --dark-client-tier-diamante-light: #22d3ee;
+    /* cyan-400 */
+    --dark-client-tier-diamante-bg: rgba(6, 182, 212, 0.1);
+    /* bg-cyan-500/10 */
+    --dark-client-tier-diamante-border: #06b6d4;
+    --dark-client-tier-diamante-shadow: 0 0 20px rgba(6, 182, 212, 0.2);
+
+    /* Ouro Tier (Yellow) */
+    --dark-client-tier-ouro: #eab308;
+    /* yellow-500 */
+    --dark-client-tier-ouro-bg: rgba(234, 179, 8, 0.1);
+    /* bg-yellow-500/10 */
+    --dark-client-tier-ouro-border: #eab308;
+    --dark-client-tier-ouro-shadow: 0 0 20px rgba(234, 179, 8, 0.3);
+
+    /* Prata Tier (Gray) */
+    --dark-client-tier-prata: #9ca3af;
+    /* gray-400 */
+    --dark-client-tier-prata-bg: rgba(156, 163, 175, 0.1);
+    /* bg-gray-400/10 */
+    --dark-client-tier-prata-border: #9ca3af;
+    --dark-client-tier-prata-shadow: 0 0 20px rgba(156, 163, 175, 0.2);
+
+    /* Bronze Tier (Orange) */
+    --dark-client-tier-bronze: #c2410c;
+    /* orange-700 */
+    --dark-client-tier-bronze-dark: #9a3412;
+    /* orange-800 */
+    --dark-client-tier-bronze-bg: rgba(194, 65, 12, 0.1);
+    /* bg-orange-700/10 */
+    --dark-client-tier-bronze-border: #9a3412;
+    --dark-client-tier-bronze-shadow: 0 0 20px rgba(194, 65, 12, 0.2);
+
+    /* --- CLIENT ORIGIN BADGES --- */
+
+    /* Via Link (Blue) */
+    --dark-client-origin-link: #60a5fa;
+    /* blue-400 */
+    --dark-client-origin-link-bg: rgba(59, 130, 246, 0.1);
+
+    /* Via WhatsApp (Green) */
+    --dark-client-origin-whatsapp: #22c55e;
+    /* green-500 */
+    --dark-client-origin-whatsapp-bg: rgba(34, 197, 94, 0.1);
+
+    /* Balcão/Manual (Zinc) */
+    --dark-client-origin-manual: #a1a1aa;
+    /* zinc-400 */
+    --dark-client-origin-manual-bg: rgba(161, 161, 170, 0.1);
+
+    /* --- CLIENT FILTER TABS --- */
+
+    /* "Novos" Tab Active State (Blue) */
+    --dark-filter-new-active-bg: rgba(37, 99, 235, 0.2);
+    /* blue-600/20 */
+    --dark-filter-new-active-text: #60a5fa;
+    /* blue-400 */
+    --dark-filter-new-active-border: rgba(37, 99, 235, 0.3);
+    /* blue-600/30 */
+
+    /* --- CLIENT CARD ACCENTS --- */
+
+    /* Indigo (Header Border Left) */
+    --dark-client-accent-indigo: #6366f1;
+    /* indigo-500 */
+
+    /* Emerald (LTV Card Border Left) */
+    --dark-client-accent-emerald: #10b981;
+    /* emerald-500 */
+
+    /* --- CLIENT DETAILS MODAL --- */
+
+    /* LTV Text */
+    --dark-client-ltv-text: #10b981;
+    /* emerald-500 */
+
+    /* Fidelity Text */
+    --dark-client-fidelity-text: #0ea5e9;
+    /* sky-500 */
+
+    /* Last Service Card */
+    --dark-client-service-accent: #3b82f6;
+    /* blue-500 */
+    --dark-client-service-hover: rgba(59, 130, 246, 0.5);
+
+    /* Loyalty Card Progress */
+    --dark-client-loyalty-filled: #f59e0b;
+    /* amber-500 */
+    --dark-client-loyalty-empty: #3f3f46;
+    /* zinc-700 */
+    --dark-client-loyalty-glow: 0 0 10px rgba(245, 158, 11, 0.4);
+
+    /* No-Show Tab (Red) */
+    --dark-client-noshow-active-bg: rgba(239, 68, 68, 0.1);
+    /* red-500/10 */
+    --dark-client-noshow-active-text: #ef4444;
+    /* red-500 */
+    --dark-client-noshow-hover-text: #f87171;
+    /* red-400 */
+
+    /* Gallery Photo Actions */
+    --dark-client-photo-delete-bg: rgba(239, 68, 68, 0.2);
+    /* red-500/20 */
+    --dark-client-photo-delete-hover: rgba(239, 68, 68, 0.4);
+    /* red-500/40 */
+    --dark-client-photo-delete-text: #f87171;
+    /* red-400 */
+
+    /* Gallery Timeline */
+    --dark-client-gallery-latest-line: rgba(245, 158, 11, 0.5);
+    /* amber-500/50 */
+    --dark-client-gallery-latest-badge-bg: #f59e0b;
+    /* amber-500 */
+    --dark-client-gallery-latest-badge-shadow: 0 0 20px rgba(245, 158, 11, 0.2);
+    --dark-client-gallery-photo-grid-border: rgba(245, 158, 11, 0.2);
+    --dark-client-gallery-photo-grid-bg: linear-gradient(to bottom, rgba(245, 158, 11, 0.05), transparent);
+
+    /* Internal Notes Icon */
+    --dark-client-notes-icon: #818cf8;
+    /* indigo-400 */
+
+    /* WhatsApp Button */
+    --dark-client-whatsapp-bg: rgba(34, 197, 94, 0.1);
+    /* green-500/10 */
+    --dark-client-whatsapp-hover: rgba(34, 197, 94, 0.2);
+    /* green-500/20 */
+    --dark-client-whatsapp-text: #22c55e;
+    /* green-500 */
+
+    /* VIP Crown Icon */
+    --dark-client-vip-crown: #f59e0b;
+    /* amber-500 */
+
+    /* Campaign Icons */
+    --dark-client-campaign-inactive-red: rgba(239, 68, 68, 0.5);
+    /* red-500/50 */
+    --dark-client-campaign-inactive-purple: rgba(168, 85, 247, 0.5);
+    /* purple-500/50 */
 }
+
 
 /* =========================================
    UTILITY CLASSES FOR DARK THEME
@@ -1537,4 +1701,337 @@
 
 .shadow-\[0_0_25px_rgba\(250\,204\,21\,0\.4\)\] {
     box-shadow: 0 0 25px rgba(250, 204, 21, 0.4);
+}
+
+/* =========================================
+   36. SERVICES COMPONENT
+   ========================================= */
+
+:root {
+    /* --- Header Dashboard Card --- */
+    --dark-services-header-bg-from: #18181b;
+    /* zinc-900 */
+    --dark-services-header-bg-to: #09090b;
+    /* zinc-950 */
+    --dark-services-header-border: #06b6d4;
+    /* cyan-500 (border-l) */
+    --dark-services-title: #ffffff;
+    /* text-white */
+    --dark-services-subtitle: #a1a1aa;
+    /* text-muted */
+
+    /* --- Stats Cards --- */
+    /* Ativos Card (Emerald) */
+    --dark-services-stats-ativos-border: #10b981;
+    /* emerald-500 */
+    --dark-services-stats-ativos-text: #10b981;
+    /* text-emerald-500 */
+    --dark-services-stats-ativos-icon: #10b981;
+    /* emerald-500 */
+
+    /* Ticket Médio Card (Sky) */
+    --dark-services-stats-ticket-border: #0ea5e9;
+    /* sky-500 */
+    --dark-services-stats-ticket-text: #0ea5e9;
+    /* text-sky-500 */
+
+    /* --- Controls Bar --- */
+    --dark-services-controls-bg: rgba(24, 24, 27, 0.5);
+    /* bg-zinc-900/50 */
+    --dark-services-controls-border: #27272a;
+    /* border-zinc-800 */
+
+    /* Search Input */
+    --dark-services-search-bg: #09090b;
+    /* bg-zinc-950 */
+    --dark-services-search-border: #27272a;
+    /* border-zinc-800 */
+
+    /* Filter Tabs Container */
+    --dark-services-tabs-bg: #09090b;
+    /* bg-zinc-950 */
+    --dark-services-tabs-border: #27272a;
+    /* border-zinc-800 */
+    --dark-services-tab-active-bg: #27272a;
+    /* bg-zinc-800 */
+    --dark-services-tab-active-text: #ffffff;
+    /* text-white */
+    --dark-services-tab-inactive-text: #a1a1aa;
+    /* text-muted */
+
+    /* View Toggle (Grid/List) */
+    --dark-services-toggle-bg: #09090b;
+    /* bg-zinc-950 */
+    --dark-services-toggle-border: #27272a;
+    /* border-zinc-800 */
+    --dark-services-toggle-active-bg: #27272a;
+    /* bg-zinc-800 */
+    --dark-services-toggle-active-text: #ffffff;
+    /* text-white */
+    --dark-services-toggle-inactive-text: #a1a1aa;
+    /* text-muted */
+
+    /* --- Service Cards (Grid View) --- */
+    --dark-services-card-bg: #18181b;
+    /* bg-zinc-900 */
+    --dark-services-card-border: #27272a;
+    /* border-zinc-800 */
+    --dark-services-card-border-hover: rgba(6, 182, 212, 0.5);
+    /* hover:border-cyan-500/50 */
+    --dark-services-card-inactive-opacity: 0.6;
+    /* opacity-60 */
+
+    /* Service Icon Box (Cyan accent) */
+    --dark-services-icon-bg: rgba(6, 182, 212, 0.1);
+    /* bg-cyan-500/10 */
+    --dark-services-icon-text: #06b6d4;
+    /* text-cyan-500 */
+    --dark-services-icon-border: rgba(6, 182, 212, 0.2);
+    /* border-cyan-500/20 */
+
+    /* Service Name */
+    --dark-services-name: #ffffff;
+    /* text-main (from tailwind.config extends) */
+
+    /* Service Description */
+    --dark-services-description: #a1a1aa;
+    /* text-muted */
+
+    /* Price/Duration Section */
+    --dark-services-price-label: #a1a1aa;
+    /* text-muted */
+    --dark-services-price-value: #ffffff;
+    /* text-white */
+    --dark-services-duration-label: #a1a1aa;
+    /* text-muted */
+    --dark-services-duration-value: #ffffff;
+    /* text-white */
+    --dark-services-duration-icon: #f59e0b;
+    /* text-barber-gold */
+    --dark-services-divider: #27272a;
+    /* border-t border-zinc-800 */
+
+    /* Card Footer (Actions area) */
+    --dark-services-footer-bg: #09090b;
+    /* bg-zinc-950 */
+    --dark-services-footer-border: #27272a;
+    /* border-t border-zinc-800 */
+    --dark-services-action-delete-hover: #ef4444;
+    /* hover:text-red-500 */
+
+    /* --- Service Cards (List View) --- */
+    --dark-services-list-header-bg: rgba(24, 24, 27, 0.5);
+    /* bg-zinc-900/50 */
+    --dark-services-list-header-text: #a1a1aa;
+    /* text-muted uppercase */
+    --dark-services-list-item-bg: #18181b;
+    /* bg-zinc-900 */
+    --dark-services-list-item-border: #27272a;
+    /* border-zinc-800 */
+    --dark-services-list-item-border-hover: rgba(6, 182, 212, 0.3);
+    /* hover:border-cyan-500/30 */
+    --dark-services-list-icon-bg: #27272a;
+    /* bg-zinc-800 */
+    --dark-services-list-icon-text: #a1a1aa;
+    /* text-muted */
+
+    /* --- Empty State --- */
+    --dark-services-empty-border: #27272a;
+    /* border-dashed border-zinc-800 */
+    --dark-services-empty-icon-opacity: 0.2;
+    /* opacity-20 */
+    --dark-services-empty-title: #ffffff;
+    /* text-white */
+    --dark-services-empty-text: #a1a1aa;
+    /* text-muted */
+
+    /* --- Products Placeholder --- */
+    --dark-services-products-bg: rgba(24, 24, 27, 0.5);
+    /* bg-zinc-900/50 */
+    --dark-services-products-border: #27272a;
+    /* border-zinc-800 border-dashed */
+    --dark-services-products-icon-bg: #18181b;
+    /* bg-zinc-900 */
+    --dark-services-products-icon-border: #27272a;
+    /* border-zinc-800 */
+    --dark-services-products-icon-text: rgba(161, 161, 170, 0.5);
+    /* text-muted opacity-50 */
+    --dark-services-products-title: #ffffff;
+    /* text-main */
+    --dark-services-products-text: #a1a1aa;
+    /* text-muted */
+
+    /* --- Sync Modal --- */
+    --dark-services-sync-overlay: rgba(0, 0, 0, 0.8);
+    /* bg-black/80 */
+    --dark-services-sync-bg: #18181b;
+    /* bg-zinc-900 */
+    --dark-services-sync-border: #27272a;
+    /* border-zinc-800 */
+    --dark-services-sync-title: #ffffff;
+    /* text-white */
+    --dark-services-sync-close-text: #a1a1aa;
+    /* text-muted */
+    --dark-services-sync-close-hover: #ffffff;
+    /* hover:text-white */
+    --dark-services-sync-text: #a1a1aa;
+    /* text-muted */
+
+    /* Stripe Brand Color */
+    --dark-services-stripe-color: #635BFF;
+    /* Stripe purple */
+
+    /* Sync Loading Bar */
+    --dark-services-sync-loading-bg: #09090b;
+    /* bg-zinc-950 */
+    --dark-services-sync-loading-track: #27272a;
+    /* bg-zinc-800 */
+    --dark-services-sync-loading-fill: #635BFF;
+    /* Stripe purple */
+
+    /* Sync Stats - Total */
+    --dark-services-sync-total-bg: #09090b;
+    /* bg-zinc-950 */
+    --dark-services-sync-total-border: #27272a;
+    /* border-zinc-800 */
+    --dark-services-sync-total-text: #ffffff;
+    /* text-white */
+    --dark-services-sync-total-label: #a1a1aa;
+    /* text-muted */
+
+    /* Sync Stats - Created (Emerald) */
+    --dark-services-sync-created-bg: rgba(16, 185, 129, 0.1);
+    /* bg-emerald-500/10 */
+    --dark-services-sync-created-border: rgba(16, 185, 129, 0.3);
+    /* border-emerald-500/30 */
+    --dark-services-sync-created-text: #10b981;
+    /* text-emerald-500 */
+
+    /* Sync Stats - Updated (Blue) */
+    --dark-services-sync-updated-bg: rgba(59, 130, 246, 0.1);
+    /* bg-blue-500/10 */
+    --dark-services-sync-updated-border: rgba(59, 130, 246, 0.3);
+    /* border-blue-500/30 */
+    --dark-services-sync-updated-text: #60a5fa;
+    /* text-blue-400 */
+
+    /* Sync Errors (Red) */
+    --dark-services-sync-error-bg: rgba(239, 68, 68, 0.1);
+    /* bg-red-500/10 */
+    --dark-services-sync-error-border: rgba(239, 68, 68, 0.3);
+    /* border-red-500/30 */
+    --dark-services-sync-error-title: #ef4444;
+    /* text-red-500 */
+    --dark-services-sync-error-text: #f87171;
+    /* text-red-400 */
+
+    /* Sync Success Icon */
+    --dark-services-sync-success-icon: #10b981;
+    /* text-emerald-500 */
+
+    /* Sync Error Icon */
+    --dark-services-sync-error-icon: #ef4444;
+    /* text-red-500 */
+
+    /* Sync Close Button */
+    --dark-services-sync-close-btn-bg: #f59e0b;
+    /* bg-barber-gold */
+    --dark-services-sync-close-btn-hover: rgba(245, 158, 11, 0.9);
+    /* hover:bg-barber-gold/90 */
+    --dark-services-sync-close-btn-text: #000000;
+    /* text-black */
+
+    /* --- Skeleton Loader --- */
+    --dark-services-skeleton-bg-strong: #27272a;
+    /* bg-zinc-800 */
+    --dark-services-skeleton-bg-medium: rgba(39, 39, 42, 0.5);
+    /* bg-zinc-800/50 */
+    --dark-services-skeleton-bg-light: rgba(39, 39, 42, 0.3);
+    /* bg-zinc-800/30 */
+
+    /* =========================================
+       36. SETTINGS PAGE SPECIFIC
+       ========================================= */
+
+    /* Sticky Header Background with Transparency */
+    --dark-bg-app-90: rgba(9, 9, 11, 0.9);
+    /* bg-barber-950/90 */
+    --dark-bg-app-50: rgba(9, 9, 11, 0.5);
+    /* bg-barber-950/50 */
+
+    /* Settings Header Gradient */
+    --dark-settings-header-gradient: linear-gradient(to right, #18181b, #09090b);
+    /* from-barber-900 to-barber-950 */
+
+    /* Card Accent Left Borders */
+    --dark-card-accent-neutral: #71717a;
+    /* border-l-zinc-500 */
+    --dark-card-accent-blue: #3b82f6;
+    /* border-l-blue-500 */
+    --dark-card-accent-amber: #f59e0b;
+    /* border-l-amber-500 */
+
+    /* Tab Active State */
+    --dark-settings-tab-active-bg: #27272a;
+    /* bg-barber-800 */
+    --dark-settings-tab-active-text: #ffffff;
+    /* text-main */
+    --dark-settings-tab-inactive-text: #a1a1aa;
+    /* text-muted */
+
+    /* Shadow Success (Save Button) */
+    --dark-shadow-success: 0 10px 15px rgba(21, 128, 61, 0.2);
+    /* shadow-lg shadow-green-900/20 */
+
+    /* Closed Day State */
+    --dark-closed-text-soft: rgba(239, 68, 68, 0.7);
+    /* text-red-500/70 */
+
+    /* Module Borders */
+    --dark-module-border-emerald: rgba(16, 185, 129, 0.2);
+    /* border-emerald-500/20 */
+    --dark-module-border-emerald-strong: rgba(16, 185, 129, 0.3);
+    /* border-emerald-500/30 */
+    --dark-module-border-blue: rgba(59, 130, 246, 0.2);
+    /* border-blue-500/20 */
+    --dark-module-border-amber: rgba(245, 158, 11, 0.2);
+    /* border-amber-500/20 */
+
+    /* Orange Icon (Products Module) */
+    --dark-icon-orange-bg: rgba(249, 115, 22, 0.1);
+    /* bg-orange-500/10 */
+    --dark-icon-orange-text: #f97316;
+    /* text-orange-500 */
+    --dark-icon-orange-border: rgba(249, 115, 22, 0.2);
+    /* border-orange-500/20 */
+
+    /* Info Box (Loyalty Section) */
+    --dark-info-box-bg: rgba(59, 130, 246, 0.1);
+    /* bg-blue-500/10 */
+    --dark-info-box-border: rgba(59, 130, 246, 0.3);
+    /* border-blue-500/30 */
+    --dark-info-box-text: #60a5fa;
+    /* text-blue-400 */
+
+    /* Active Badge (ATIVO label) */
+    --dark-settings-active-badge-bg: rgba(16, 185, 129, 0.2);
+    /* bg-emerald-500/20 */
+    --dark-settings-active-badge-text: #10b981;
+    /* text-emerald-500 */
+
+    /* Loyalty Card Stamps */
+    --dark-loyalty-stamp-filled-bg: #f59e0b;
+    /* bg-barber-gold */
+    --dark-loyalty-stamp-filled-text: #000000;
+    /* text-black */
+    --dark-loyalty-stamp-empty-bg: #27272a;
+    /* bg-barber-800 */
+    --dark-loyalty-stamp-empty-border: #3f3f46;
+    /* border-barber-700 */
+    --dark-loyalty-stamp-empty-text: #a1a1aa;
+    /* text-muted */
+
+    /* Locked Module Overlay (AI Tab) */
+    --dark-locked-filter-blur: blur(1px);
+    /* backdrop-blur-[1px] */
 }

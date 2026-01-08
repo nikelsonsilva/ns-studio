@@ -3,7 +3,7 @@
  * Modal para criação e edição de serviços
  */
 import React, { useState, useEffect } from 'react';
-import { Tag, DollarSign, Clock, FileText, CreditCard, Repeat, Plus, Layers } from 'lucide-react';
+import { Scissors, Tag, DollarSign, Clock, CreditCard, RefreshCw, Check, Plus, Layers } from 'lucide-react';
 import { createService, updateService } from '../lib/database';
 import type { Service } from '../types';
 
@@ -11,7 +11,7 @@ import type { Service } from '../types';
 import Modal from './ui/Modal';
 import Input from './ui/Input';
 import Button from './ui/Button';
-import Textarea from './ui/Textarea';
+import Switch from './ui/Switch';
 import { useToast } from './ui/Toast';
 
 interface ServiceModalProps {
@@ -111,51 +111,45 @@ const ServiceModal: React.FC<ServiceModalProps> = ({ service, onClose, onSuccess
       isOpen={true}
       onClose={onClose}
       title={service ? 'Editar Serviço' : 'Novo Serviço'}
-      subtitle={service ? 'Atualizar informações' : 'Adicionar ao catálogo'}
-      icon={<Tag size={20} />}
       size="md"
       footer={
         <>
-          <Button variant="secondary" onClick={onClose}>
-            Cancelar
-          </Button>
+          <Button variant="ghost" onClick={onClose}>Cancelar</Button>
           <Button
+            variant="primary"
             onClick={() => handleSubmit()}
             isLoading={isLoading}
-            leftIcon={service ? undefined : <Plus size={16} />}
+            leftIcon={<Check size={18} />}
           >
             {service ? 'Salvar Alterações' : 'Criar Serviço'}
           </Button>
         </>
       }
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Name */}
+      <div className="space-y-5">
+        {/* Nome do Serviço */}
         <Input
-          label="Nome do Serviço *"
-          icon={<Tag size={18} />}
+          label="Nome do Serviço"
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          placeholder="Ex: Corte, Coloração, Manicure"
-          required
+          placeholder="Ex: Corte, Coloração"
+          icon={<Scissors size={16} />}
         />
 
-        {/* Category */}
+        {/* Categoria */}
         <div>
-          <label className="block text-xs font-bold text-[var(--text-subtle)] uppercase mb-1 ml-1">
-            Categoria
-          </label>
+          <label className="block text-xs font-bold text-muted uppercase mb-1 ml-1">Categoria</label>
           <div className="relative group">
-            <div className="absolute left-3 top-0 bottom-0 flex items-center text-[var(--text-subtle)] group-focus-within:text-[var(--brand-primary)] transition-colors pointer-events-none">
-              <Layers size={18} />
+            <div className="absolute left-3 top-0 bottom-0 flex items-center text-muted group-focus-within:text-barber-gold transition-colors pointer-events-none">
+              <Tag size={16} />
             </div>
             <input
               type="text"
               list="categories"
               value={formData.category}
               onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-              className="w-full bg-[var(--surface-app)] border border-[var(--border-default)] text-[var(--text-primary)] rounded-xl py-3 pl-10 pr-4 text-sm outline-none focus:border-[var(--brand-primary)] focus:bg-[var(--surface-card)] transition-all"
-              placeholder="Ex: Cabelo, Estética, Unhas"
+              className="w-full bg-zinc-950 border border-zinc-800 text-white rounded-xl py-3 pl-10 pr-4 text-sm outline-none focus:border-barber-gold transition-all"
+              placeholder="Ex: Cabelo, Barba"
             />
             <datalist id="categories">
               {existingCategories.map((cat, idx) => (
@@ -165,11 +159,10 @@ const ServiceModal: React.FC<ServiceModalProps> = ({ service, onClose, onSuccess
           </div>
         </div>
 
-        {/* Price and Duration */}
+        {/* Preço e Duração */}
         <div className="grid grid-cols-2 gap-4">
           <Input
-            label="Preço (R$) *"
-            icon={<DollarSign size={18} />}
+            label="Preço (R$)"
             value={formData.price === 0 ? '' : (formData.price).toFixed(2).replace('.', ',')}
             onChange={(e) => {
               const value = e.target.value.replace(/\D/g, '');
@@ -177,27 +170,18 @@ const ServiceModal: React.FC<ServiceModalProps> = ({ service, onClose, onSuccess
               setFormData({ ...formData, price: numValue });
             }}
             placeholder="0,00"
-            required
+            icon={<DollarSign size={16} />}
           />
-
           <div>
-            <label className="block text-xs font-bold text-[var(--text-subtle)] uppercase mb-1 ml-1">
-              Duração *
-            </label>
+            <label className="block text-xs font-bold text-muted uppercase mb-1 ml-1">Duração</label>
             <div className="relative group">
-              <div className="absolute left-3 top-0 bottom-0 flex items-center text-[var(--text-subtle)] group-focus-within:text-[var(--brand-primary)] transition-colors pointer-events-none">
-                <Clock size={18} />
+              <div className="absolute left-3 top-0 bottom-0 flex items-center text-muted group-focus-within:text-barber-gold transition-colors pointer-events-none">
+                <Clock size={16} />
               </div>
               <select
-                value={[15, 30, 45, 60, 90, 120, 150, 180, 240, 300].includes(formData.duration_minutes) ? formData.duration_minutes : 'custom'}
-                onChange={(e) => {
-                  if (e.target.value === 'custom') {
-                    setFormData({ ...formData, duration_minutes: 1 });
-                  } else {
-                    setFormData({ ...formData, duration_minutes: parseInt(e.target.value) });
-                  }
-                }}
-                className="w-full bg-[var(--surface-app)] border border-[var(--border-default)] text-[var(--text-primary)] rounded-xl py-3 pl-10 pr-4 text-sm outline-none focus:border-[var(--brand-primary)] focus:bg-[var(--surface-card)] transition-all appearance-none cursor-pointer"
+                value={formData.duration_minutes}
+                onChange={(e) => setFormData({ ...formData, duration_minutes: parseInt(e.target.value) })}
+                className="w-full bg-zinc-950 border border-zinc-800 text-white rounded-xl py-3 pl-10 pr-4 text-sm outline-none focus:border-barber-gold transition-all appearance-none cursor-pointer"
               >
                 <option value={15}>15 min</option>
                 <option value={30}>30 min</option>
@@ -209,134 +193,102 @@ const ServiceModal: React.FC<ServiceModalProps> = ({ service, onClose, onSuccess
                 <option value={180}>3 horas</option>
                 <option value={240}>4 horas</option>
                 <option value={300}>5 horas</option>
-                <option value="custom">Personalizado</option>
               </select>
             </div>
           </div>
         </div>
 
-        {/* Custom Duration Input */}
-        {![15, 30, 45, 60, 90, 120, 150, 180, 240, 300].includes(formData.duration_minutes) && (
-          <Input
-            label="Duração Personalizada (minutos)"
-            icon={<Clock size={18} />}
-            type="number"
-            min={5}
-            step={5}
-            value={formData.duration_minutes.toString()}
-            onChange={(e) => setFormData({ ...formData, duration_minutes: parseInt(e.target.value) || 30 })}
-            placeholder="Digite em minutos..."
+        {/* Descrição */}
+        <div>
+          <label className="block text-xs font-bold text-muted uppercase mb-1 ml-1">Descrição</label>
+          <textarea
+            className="w-full bg-zinc-950 border border-zinc-800 text-white rounded-xl p-3 outline-none focus:border-barber-gold resize-none h-20 text-sm"
+            placeholder="Descrição opcional..."
+            value={formData.description}
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
           />
-        )}
+        </div>
 
-        {/* Description */}
-        <Textarea
-          label="Descrição"
-          value={formData.description}
-          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-          placeholder="Descrição opcional do serviço..."
-          rows={2}
-        />
-
-        {/* Billing Type */}
-        <div className="space-y-3">
-          <label className="block text-xs font-bold text-[var(--text-subtle)] uppercase ml-1">
-            Tipo de Cobrança
-          </label>
-          <div className="grid grid-cols-2 gap-3">
+        {/* Tipo de Cobrança */}
+        <div>
+          <label className="block text-xs font-bold text-muted uppercase mb-2 ml-1">Tipo de Cobrança</label>
+          <div className="flex gap-2">
             <button
               type="button"
               onClick={() => setFormData({ ...formData, billing_type: 'one_time' })}
-              className={`p-4 rounded-xl border transition-all ${formData.billing_type === 'one_time'
-                ? 'border-barber-gold bg-[var(--brand-primary)]/10 text-[var(--text-primary)]'
-                : 'border-[var(--border-default)] bg-[var(--surface-app)] text-[var(--text-muted)] hover:border-[var(--border-strong)]'
+              className={`flex-1 px-4 py-2.5 rounded-lg border flex items-center justify-center gap-2 transition-all text-sm font-bold ${formData.billing_type === 'one_time'
+                ? 'bg-barber-gold/10 border-barber-gold text-barber-gold'
+                : 'bg-zinc-950 border-zinc-800 text-muted hover:border-zinc-700'
                 }`}
             >
-              <div className="flex flex-col items-center gap-2">
-                <CreditCard size={20} />
-                <span className="font-bold text-sm">Avulso</span>
-                <span className="text-xs opacity-75">Pagamento único</span>
-              </div>
+              <CreditCard size={16} />
+              Avulso
             </button>
             <button
               type="button"
               onClick={() => setFormData({ ...formData, billing_type: 'recurring' })}
-              className={`p-4 rounded-xl border transition-all ${formData.billing_type === 'recurring'
-                ? 'border-barber-gold bg-[var(--brand-primary)]/10 text-[var(--text-primary)]'
-                : 'border-[var(--border-default)] bg-[var(--surface-app)] text-[var(--text-muted)] hover:border-[var(--border-strong)]'
+              className={`flex-1 px-4 py-2.5 rounded-lg border flex items-center justify-center gap-2 transition-all text-sm font-bold ${formData.billing_type === 'recurring'
+                ? 'bg-purple-500/10 border-purple-500 text-purple-400'
+                : 'bg-zinc-950 border-zinc-800 text-muted hover:border-zinc-700'
                 }`}
             >
-              <div className="flex flex-col items-center gap-2">
-                <Repeat size={20} />
-                <span className="font-bold text-sm">Recorrente</span>
-                <span className="text-xs opacity-75">Assinatura</span>
-              </div>
+              <RefreshCw size={16} />
+              Recorrente
             </button>
           </div>
+        </div>
 
-          {/* Recurring Options */}
-          {formData.billing_type === 'recurring' && (
-            <div className="bg-[var(--surface-app)] border border-[var(--border-default)] rounded-xl p-4 space-y-3 animate-fade-in">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-[var(--text-subtle)] uppercase mb-1">
-                    Intervalo
-                  </label>
-                  <select
-                    value={formData.recurring_interval}
-                    onChange={(e) => setFormData({ ...formData, recurring_interval: e.target.value as any })}
-                    className="w-full bg-[var(--surface-card)] border border-[var(--border-default)] text-[var(--text-primary)] rounded-lg px-3 py-2 text-sm outline-none focus:border-[var(--brand-primary)] transition-colors"
-                  >
-                    <option value="day">Dia</option>
-                    <option value="week">Semana</option>
-                    <option value="month">Mês</option>
-                    <option value="year">Ano</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-[var(--text-subtle)] uppercase mb-1">
-                    A cada
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="12"
-                    value={formData.recurring_interval_count}
-                    onChange={(e) => setFormData({ ...formData, recurring_interval_count: parseInt(e.target.value) })}
-                    className="w-full bg-[var(--surface-card)] border border-[var(--border-default)] text-[var(--text-primary)] rounded-lg px-3 py-2 text-sm outline-none focus:border-[var(--brand-primary)] transition-colors"
-                  />
-                </div>
+        {/* Recurring Options */}
+        {formData.billing_type === 'recurring' && (
+          <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4 space-y-3 animate-fade-in">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-muted uppercase mb-1">Intervalo</label>
+                <select
+                  value={formData.recurring_interval}
+                  onChange={(e) => setFormData({ ...formData, recurring_interval: e.target.value as any })}
+                  className="w-full bg-zinc-900 border border-zinc-800 text-white rounded-lg px-3 py-2 text-sm outline-none focus:border-barber-gold transition-colors"
+                >
+                  <option value="day">Dia</option>
+                  <option value="week">Semana</option>
+                  <option value="month">Mês</option>
+                  <option value="year">Ano</option>
+                </select>
               </div>
-              <div className="text-xs text-[var(--text-muted)] bg-[var(--surface-card)] rounded-lg p-2">
-                Cobrança: A cada {formData.recurring_interval_count} {
-                  formData.recurring_interval === 'day' ? 'dia(s)' :
-                    formData.recurring_interval === 'week' ? 'semana(s)' :
-                      formData.recurring_interval === 'month' ? 'mês(es)' : 'ano(s)'
-                }
+              <div>
+                <label className="block text-xs font-bold text-muted uppercase mb-1">A cada</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="12"
+                  value={formData.recurring_interval_count}
+                  onChange={(e) => setFormData({ ...formData, recurring_interval_count: parseInt(e.target.value) })}
+                  className="w-full bg-zinc-900 border border-zinc-800 text-white rounded-lg px-3 py-2 text-sm outline-none focus:border-barber-gold transition-colors"
+                />
               </div>
             </div>
-          )}
-        </div>
+            <div className="text-xs text-muted bg-zinc-900 rounded-lg p-2">
+              Cobrança: A cada {formData.recurring_interval_count} {
+                formData.recurring_interval === 'day' ? 'dia(s)' :
+                  formData.recurring_interval === 'week' ? 'semana(s)' :
+                    formData.recurring_interval === 'month' ? 'mês(es)' : 'ano(s)'
+              }
+            </div>
+          </div>
+        )}
 
         {/* Status Toggle */}
-        <div className="flex items-center justify-between gap-3 p-4 bg-[var(--surface-app)] rounded-xl border border-[var(--border-default)]">
-          <div className="flex-1 min-w-0">
-            <label className="block text-sm font-bold text-[var(--text-primary)] mb-0.5">
-              Status do Serviço
-            </label>
-            <p className="text-xs text-[var(--text-muted)]">
-              {formData.is_active ? 'Visível para agendamentos' : 'Oculto do catálogo'}
-            </p>
+        <div className="flex items-center justify-between p-4 bg-zinc-950 border border-zinc-800 rounded-xl">
+          <div>
+            <span className="text-sm font-bold text-white block">Status do Serviço</span>
+            <span className="text-xs text-muted">{formData.is_active ? 'Disponível para agendamento' : 'Oculto do catálogo'}</span>
           </div>
-          <button
-            type="button"
-            onClick={() => setFormData({ ...formData, is_active: !formData.is_active })}
-            className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${formData.is_active ? 'bg-green-500' : 'bg-gray-600'}`}
-          >
-            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${formData.is_active ? 'translate-x-6' : 'translate-x-1'}`} />
-          </button>
+          <Switch
+            checked={formData.is_active}
+            onCheckedChange={(c) => setFormData({ ...formData, is_active: c })}
+          />
         </div>
-      </form>
+      </div>
     </Modal>
   );
 };

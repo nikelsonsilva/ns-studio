@@ -50,8 +50,23 @@ export interface WorkDay {
   active: boolean;
 }
 
+export interface WhatsappConfig {
+  isConnected: boolean;
+  instanceName: string;
+  phoneNumber?: string;
+  profilePicUrl?: string;
+  batteryLevel?: number;
+  aiEnabled: boolean;
+  aiName: string;
+  aiTone: 'formal' | 'descontraido' | 'vendedor';
+  allowCancellation: boolean;
+  responseDelay: number; // segundos
+}
+
 export interface SystemSettings {
   businessName: string;
+  businessCnpj?: string; // Novo campo
+  businessCep?: string;  // Novo campo
   businessAddress: string;
   businessPhone: string;
   businessEmail: string;
@@ -64,6 +79,7 @@ export interface SystemSettings {
     publicBooking: boolean;
     loyaltyProgram: boolean;
   };
+  whatsappConfig?: WhatsappConfig; // Nova configuração
   aiConfig: {
     enableInsights: boolean;
     insightTypes: {
@@ -102,6 +118,12 @@ export interface Resource {
   status: 'active' | 'maintenance';
 }
 
+export interface OrderBump {
+  active: boolean;
+  targetServiceId: string; // O serviço que será oferecido
+  discountPercent: number; // A porcentagem de desconto
+}
+
 export interface Service {
   id: string;
   name: string;
@@ -113,6 +135,7 @@ export interface Service {
   commissionRate?: number;
   image?: string;
   billingType?: 'one_time' | 'recurring';
+  orderBump?: OrderBump; // Configuração opcional de Order Bump
 }
 
 export interface Product {

@@ -77,7 +77,9 @@ const dbData = {
     membershipPlans: [] as any[],
     settings: {
         businessName: 'NS Studio',
-        businessAddress: 'Av. Paulista, 1000 - SP',
+        businessCnpj: '',
+        businessCep: '01310-100',
+        businessAddress: 'Av. Paulista, 1000 - Bela Vista - São Paulo/SP',
         businessPhone: '(11) 99999-0000',
         businessEmail: 'contato@nsstudio.com',
         businessHours: [],
@@ -100,7 +102,7 @@ const AppContent: React.FC = () => {
   
   // User Profile State
   const [currentUser, setCurrentUser] = useState<UserProfile>({
-    name: 'NS Studio Admin',
+    name: 'Admin', // Nome base do usuário
     email: 'admin@nsstudio.com',
     role: 'Admin',
     avatar: ''
@@ -260,10 +262,17 @@ const AppContent: React.FC = () => {
       />
 
       {isProfileOpen && (
-          <UserProfileModal user={currentUser} onSave={setCurrentUser} onClose={() => setIsProfileOpen(false)} onLogout={handleLogout} />
+          <UserProfileModal 
+            user={currentUser} 
+            businessName={settings.businessName}
+            onSave={setCurrentUser} 
+            onClose={() => setIsProfileOpen(false)} 
+            onLogout={handleLogout} 
+          />
       )}
 
       <main className="flex-1 flex flex-col h-full relative overflow-hidden">
+        {/* Header Fixo Global (Apenas visualmente, não overlap) */}
         <header className="h-16 border-b border-barber-800 bg-barber-900/80 backdrop-blur-md flex items-center justify-between px-4 sm:px-6 shrink-0 z-30 transition-colors duration-300">
           <div className="flex items-center gap-4">
             <button onClick={toggleSidebar} className="md:hidden text-muted hover:text-main">
@@ -300,7 +309,8 @@ const AppContent: React.FC = () => {
             >
               <div className="text-right hidden sm:block">
                 <div className="text-sm font-bold text-main group-hover:text-barber-gold">
-                    {currentUser.name}
+                    {/* Visual Fix: Combine Business Name + User Name */}
+                    {settings.businessName} {currentUser.name}
                 </div>
                 <div className="text-xs text-barber-gold/70">
                     {currentUser.role}
@@ -313,7 +323,7 @@ const AppContent: React.FC = () => {
           </div>
         </header>
 
-        {/* Content Area - Conditional Padding based on View */}
+        {/* Content Area */}
         <div className={`flex-1 overflow-y-auto scroll-smooth bg-barber-950/50 ${currentView === 'calendar' ? 'p-0 overflow-hidden' : 'p-4 md:p-8'}`}>
           <div className={`${currentView === 'calendar' ? 'h-full' : 'max-w-7xl mx-auto'}`}>
              {renderContent()}

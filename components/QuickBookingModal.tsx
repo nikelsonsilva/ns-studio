@@ -18,7 +18,9 @@ import { createStripePaymentLink } from '../lib/stripePaymentLinks';
 import { copyToClipboard } from '../lib/bookingLinks';
 import { isStripeConfigured } from '../lib/stripeConfig';
 import Toast from './Toast';
-import { Modal, Input, Button, Select } from './ui';
+import Modal from './ui/Modal';
+import Input from './ui/Input';
+import Button from './ui/Button';
 import type { Client, Service, Professional } from '../types';
 
 interface QuickBookingModalProps {
@@ -648,122 +650,62 @@ const QuickBookingModal: React.FC<QuickBookingModalProps> = ({
                 {isCreatingNewClient ? (
                   <div className="space-y-4">
                     {/* Name Input */}
-                    <div>
-                      <label className="block text-[11px] uppercase tracking-wider text-zinc-500 mb-2 font-medium">
-                        Nome Completo *
-                      </label>
-                      <div className="relative group">
-                        <User
-                          size={16}
-                          className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-amber-500 transition-colors"
-                        />
-                        <input
-                          type="text"
-                          placeholder="Digite o nome..."
-                          className="w-full pl-11 pr-4 py-3 rounded-xl text-sm text-white placeholder-zinc-600 outline-none transition-all"
-                          style={{
-                            background: 'var(--dark-bg-input)',
-                            border: '1px solid var(--dark-border-default)'
-                          }}
-                          value={newClientName}
-                          onChange={(e) => setNewClientName(e.target.value)}
-                          autoFocus
-                        />
-                      </div>
-                    </div>
+                    <Input
+                      label="Nome Completo *"
+                      icon={<User size={16} />}
+                      placeholder="Digite o nome..."
+                      value={newClientName}
+                      onChange={(e) => setNewClientName(e.target.value)}
+                      autoFocus
+                    />
 
                     {/* Phone Input */}
-                    <div>
-                      <label className="block text-[11px] uppercase tracking-wider text-zinc-500 mb-2 font-medium">
-                        Telefone *
-                      </label>
-                      <div className="relative group">
-                        <Phone
-                          size={16}
-                          className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-amber-500 transition-colors"
-                        />
-                        <input
-                          type="tel"
-                          placeholder="(11) 99999-9999"
-                          className="w-full pl-11 pr-4 py-3 rounded-xl text-sm text-white placeholder-zinc-600 outline-none transition-all"
-                          style={{
-                            background: 'var(--dark-bg-input)',
-                            border: '1px solid var(--dark-border-default)'
-                          }}
-                          value={newClientPhone}
-                          onChange={(e) => {
-                            let v = e.target.value.replace(/\D/g, '');
-                            if (v.length > 11) v = v.substring(0, 11);
-                            if (v.length > 2) v = `(${v.substring(0, 2)}) ${v.substring(2)}`;
-                            if (v.length > 9) v = `${v.substring(0, 9)}-${v.substring(9)}`;
-                            setNewClientPhone(v);
-                          }}
-                        />
-                      </div>
-                    </div>
+                    <Input
+                      label="Telefone *"
+                      icon={<Phone size={16} />}
+                      type="tel"
+                      placeholder="(11) 99999-9999"
+                      value={newClientPhone}
+                      onChange={(e) => {
+                        let v = e.target.value.replace(/\D/g, '');
+                        if (v.length > 11) v = v.substring(0, 11);
+                        if (v.length > 2) v = `(${v.substring(0, 2)}) ${v.substring(2)}`;
+                        if (v.length > 9) v = `${v.substring(0, 9)}-${v.substring(9)}`;
+                        setNewClientPhone(v);
+                      }}
+                    />
 
                     {/* Email Input */}
-                    <div>
-                      <label className="block text-[11px] uppercase tracking-wider text-zinc-500 mb-2 font-medium">
-                        Email <span className="text-zinc-600">(opcional)</span>
-                      </label>
-                      <div className="relative group">
-                        <Mail
-                          size={16}
-                          className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-amber-500 transition-colors"
-                        />
-                        <input
-                          type="email"
-                          placeholder="email@exemplo.com"
-                          className="w-full pl-11 pr-4 py-3 rounded-xl text-sm text-white placeholder-zinc-600 outline-none transition-all"
-                          style={{
-                            background: 'rgba(255, 255, 255, 0.03)',
-                            border: '1px solid rgba(255, 255, 255, 0.08)'
-                          }}
-                          value={newClientEmail}
-                          onChange={(e) => setNewClientEmail(e.target.value)}
-                        />
-                      </div>
-                    </div>
+                    <Input
+                      label="Email (opcional)"
+                      icon={<Mail size={16} />}
+                      type="email"
+                      placeholder="email@exemplo.com"
+                      value={newClientEmail}
+                      onChange={(e) => setNewClientEmail(e.target.value)}
+                    />
 
                     {/* Create Button */}
-                    <button
+                    <Button
                       onClick={handleCreateClient}
-                      disabled={isCreatingClient || !newClientName.trim() || !newClientPhone.trim()}
-                      className="w-full py-3.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                      style={{
-                        background: 'var(--dark-brand-primary)',
-                        color: 'var(--dark-text-inverted)'
-                      }}
+                      disabled={!newClientName.trim() || !newClientPhone.trim()}
+                      isLoading={isCreatingClient}
+                      leftIcon={<UserPlus size={18} />}
+                      className="w-full"
                     >
-                      {isCreatingClient ? (
-                        <div className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin" />
-                      ) : (
-                        <><UserPlus size={18} /> Criar e Continuar</>
-                      )}
-                    </button>
+                      Criar e Continuar
+                    </Button>
                   </div>
                 ) : (
                   <>
                     {/* Search Input */}
-                    <div className="relative group">
-                      <div className="absolute left-4 top-0 bottom-0 flex items-center">
-                        <Search size={18} className="text-zinc-500 group-focus-within:text-amber-500 transition-colors" />
-                      </div>
-                      <input
-                        type="text"
-                        placeholder="Buscar cliente..."
-                        className="w-full pl-12 pr-4 py-3.5 rounded-xl text-sm outline-none transition-all"
-                        style={{
-                          background: 'var(--dark-bg-input)',
-                          border: '1px solid var(--dark-border-default)',
-                          color: 'var(--dark-text-main)'
-                        }}
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        autoFocus
-                      />
-                    </div>
+                    <Input
+                      icon={<Search size={18} />}
+                      placeholder="Buscar cliente..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      autoFocus
+                    />
 
                     {/* Client List */}
                     <div className="space-y-2 max-h-[280px] overflow-y-auto custom-scrollbar">
@@ -870,23 +812,12 @@ const QuickBookingModal: React.FC<QuickBookingModalProps> = ({
                 </div>
 
                 {/* Service Search */}
-                <div className="relative group">
-                  <Search
-                    size={18}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-amber-500 transition-colors"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Buscar serviço..."
-                    className="w-full pl-12 pr-4 py-3.5 rounded-xl text-sm text-white placeholder-zinc-500 outline-none transition-all"
-                    style={{
-                      background: 'rgba(255, 255, 255, 0.03)',
-                      border: '1px solid rgba(255, 255, 255, 0.08)'
-                    }}
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </div>
+                <Input
+                  icon={<Search size={18} />}
+                  placeholder="Buscar serviço..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
 
                 {/* Service List */}
                 <div className="space-y-2 max-h-[250px] overflow-y-auto custom-scrollbar">
@@ -1118,50 +1049,37 @@ const QuickBookingModal: React.FC<QuickBookingModalProps> = ({
             <div className="p-6 border-t" style={{ background: 'var(--dark-modal-footer-bg)', borderTop: '1px solid var(--dark-modal-border)' }}>
               <div className="flex gap-4">
                 {currentStep === 2 && (
-                  <button
+                  <Button
                     onClick={handleContinueToPayment}
-                    className="w-full py-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all transition-all"
-                    style={{
-                      background: 'var(--dark-brand-primary)',
-                      color: 'var(--dark-text-inverted)'
-                    }}
+                    rightIcon={<ArrowRight size={18} />}
+                    className="w-full"
+                    size="lg"
                   >
-                    CONTINUAR PARA PAGAMENTO <ArrowRight size={18} />
-                  </button>
+                    CONTINUAR PARA PAGAMENTO
+                  </Button>
                 )}
                 {currentStep === 3 && paymentMethod === 'online' && !bookingLink && (
-                  <button
+                  <Button
                     onClick={handleCreateAppointment}
-                    disabled={isLoading}
-                    className="w-full py-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-50"
-                    style={{
-                      background: 'var(--dark-brand-primary)',
-                      color: 'var(--dark-text-inverted)'
-                    }}
+                    isLoading={isLoading}
+                    leftIcon={<CreditCard size={18} />}
+                    className="w-full"
+                    size="lg"
                   >
-                    {isLoading ? (
-                      <div className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin" />
-                    ) : (
-                      <><CreditCard size={18} /> GERAR LINK DE PAGAMENTO</>
-                    )}
-                  </button>
+                    GERAR LINK DE PAGAMENTO
+                  </Button>
                 )}
                 {currentStep === 3 && paymentMethod === 'presential' && (
-                  <button
+                  <Button
                     onClick={handleCreateAppointment}
-                    disabled={isLoading}
-                    className="w-full py-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-50"
-                    style={{
-                      background: 'var(--dark-btn-success-bg)',
-                      color: 'var(--dark-btn-success-text)'
-                    }}
+                    isLoading={isLoading}
+                    leftIcon={<CheckCircle size={18} />}
+                    variant="success"
+                    className="w-full"
+                    size="lg"
                   >
-                    {isLoading ? (
-                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    ) : (
-                      <><CheckCircle size={18} /> CONFIRMAR AGENDAMENTO</>
-                    )}
-                  </button>
+                    CONFIRMAR AGENDAMENTO
+                  </Button>
                 )}
               </div>
             </div>

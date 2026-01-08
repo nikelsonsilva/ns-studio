@@ -194,6 +194,9 @@ export interface Client {
   // Tags
   tags: string[];
 
+  // Origin tracking - 'manual' (balcão), 'public_link', 'whatsapp', 'api'
+  source?: 'manual' | 'public_link' | 'whatsapp' | 'api';
+
   created_at: string;
   updated_at: string;
 }

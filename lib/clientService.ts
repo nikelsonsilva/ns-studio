@@ -271,12 +271,9 @@ export const uploadClientPhoto = async (
     file: File,
     notes?: string
 ): Promise<ClientPhotoRecord | null> => {
-    console.log('📸 [uploadClientPhoto] Iniciando upload...', { businessId, clientId, fileName: file.name, fileSize: file.size });
-
     try {
         // 1. Upload para o Storage
         const fileName = `${clientId}/${Date.now()}_${file.name}`;
-        console.log('📸 [uploadClientPhoto] Uploading to storage:', fileName);
 
         const { data: uploadData, error: uploadError } = await supabase.storage
             .from('client-photos')
@@ -290,25 +287,25 @@ export const uploadClientPhoto = async (
             return null;
         }
 
-        console.log('✅ [uploadClientPhoto] Storage upload success:', uploadData);
-
         // 2. Obter URL pública
         const { data: urlData } = supabase.storage
             .from('client-photos')
             .getPublicUrl(fileName);
 
         const publicUrl = urlData.publicUrl;
-        console.log('📸 [uploadClientPhoto] Public URL:', publicUrl);
 
         // 3. Salvar metadados no banco
-        console.log('📸 [uploadClientPhoto] Saving to database...');
+        // Get local date in YYYY-MM-DD format (robust cross-browser solution)
+        const now = new Date();
+        const localDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
         const { data, error } = await supabase
             .from('client_photos')
             .insert({
                 business_id: businessId,
                 client_id: clientId,
                 url: publicUrl,
-                date: new Date().toISOString().split('T')[0],
+                date: localDate,
                 type: 'after',
                 notes: notes || null
             })
@@ -320,7 +317,6 @@ export const uploadClientPhoto = async (
             return null;
         }
 
-        console.log('✅ [uploadClientPhoto] Success! Photo saved:', data);
         return data;
     } catch (error) {
         console.error('❌ [uploadClientPhoto] Unexpected error:', error);

@@ -1,11 +1,46 @@
-
 import React, { useState, useEffect } from 'react';
-import { DollarSign, CreditCard, Wallet, ArrowUpRight, ArrowDownRight, PieChart, Sparkles, Download, Lock, Settings, Key, ShieldCheck, Eye, EyeOff, X, CheckCircle2, PiggyBank, Receipt, Printer, FileText, Sheet } from 'lucide-react';
+import { 
+  DollarSign, 
+  CreditCard, 
+  Wallet, 
+  ArrowUpRight, 
+  ArrowDownRight, 
+  PieChart, 
+  Sparkles, 
+  Download, 
+  Lock, 
+  Settings, 
+  Key, 
+  ShieldCheck, 
+  Eye, 
+  EyeOff, 
+  X, 
+  CheckCircle2, 
+  PiggyBank, 
+  Receipt, 
+  Printer, 
+  FileText, 
+  Sheet,
+  Search,
+  LayoutGrid,
+  List,
+  Filter,
+  Landmark,
+  Calculator,
+  CalendarCheck,
+  AlertTriangle,
+  UploadCloud,
+  Building2,
+  Zap,
+  TrendingUp
+} from 'lucide-react';
 import { PieChart as RePieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { Barber, RecurringExpense, Role } from '../types';
 import Switch from './ui/Switch';
 import Card from './ui/Card';
 import Button from './ui/Button';
+import Input from './ui/Input';
+import Badge from './ui/Badge';
 import { useToast } from './ui/Toast';
 
 interface FinanceProps {
@@ -19,7 +54,9 @@ interface FinanceProps {
 }
 
 const Finance: React.FC<FinanceProps> = ({ paymentConfig, onSaveConfig, barbers, userRole = 'Admin' }) => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'commissions' | 'expenses'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'cash_close' | 'commissions' | 'expenses' | 'fiscal'>('dashboard');
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
+  const [searchTerm, setSearchTerm] = useState('');
   const toast = useToast();
   
   // State for Payment Configuration
@@ -45,43 +82,54 @@ const Finance: React.FC<FinanceProps> = ({ paymentConfig, onSaveConfig, barbers,
 
   const isKeySaved = paymentConfig?.isConnected || false;
 
-  // COLORBLIND SAFE PALETTE
-  // Verde -> Emerald (Blueish Green)
-  // Amarelo -> Amber/Orange
-  // Cinza -> Slate/Purple Grey
+  // --- MOCK DATA ---
+  
   const paymentData = [
-    { name: 'Pix', value: 4500, color: '#10b981' }, // Emerald-500
-    { name: 'Cartão Crédito', value: 3200, color: '#f59e0b' }, // Amber-500
-    { name: 'Dinheiro', value: 1100, color: '#64748b' }, // Slate-500
+    { name: 'Pix', value: 4500, color: '#10b981' }, // Emerald
+    { name: 'Cartão Crédito', value: 3200, color: '#f59e0b' }, // Amber
+    { name: 'Dinheiro', value: 1100, color: '#64748b' }, // Slate
   ];
 
   const transactions = [
-    { id: 1, desc: 'Corte + Barba (João)', amount: 85, type: 'income', method: 'Pix', time: '14:30' },
-    { id: 2, desc: 'Compra Bebidas', amount: 150, type: 'expense', method: 'Cartão', time: '13:00' },
-    { id: 3, desc: 'Selagem (Pedro)', amount: 120, type: 'income', method: 'Cartão', time: '11:45' },
-    { id: 4, desc: 'Pagamento Internet', amount: 199.90, type: 'expense', method: 'Boleto', time: '09:00' },
-    { id: 5, desc: 'Corte Simples (João)', amount: 45, type: 'income', method: 'Dinheiro', time: '09:30' },
+    { id: 1, desc: 'Corte + Barba (João)', amount: 85, type: 'income', method: 'Pix', time: '14:30', status: 'confirmed' },
+    { id: 2, desc: 'Compra Bebidas', amount: 150, type: 'expense', method: 'Cartão', time: '13:00', status: 'confirmed' },
+    { id: 3, desc: 'Selagem (Pedro)', amount: 120, type: 'income', method: 'Cartão', time: '11:45', status: 'confirmed' },
+    { id: 4, desc: 'Pagamento Internet', amount: 199.90, type: 'expense', method: 'Boleto', time: '09:00', status: 'pending' },
+    { id: 5, desc: 'Corte Simples (João)', amount: 45, type: 'income', method: 'Dinheiro', time: '09:30', status: 'confirmed' },
   ];
-  
-  // Barber Profit Analysis Mock
-  const barberProfits = [
-    { name: 'João Barber', gross: 4200, costs: 300, net: 3900 },
-    { name: 'Pedro Cortes', gross: 3800, costs: 150, net: 3650 },
+
+  // Cash Close Mock Data
+  const cashCloseStats = {
+      revenue: 8800.00,
+      commissions: 3250.00,
+      netProfit: 5550.00,
+      pending: 450.00,
+      paymentMethods: [
+          { method: 'Pix', amount: 4500, percent: 51, icon: Zap, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+          { method: 'Crédito', amount: 3200, percent: 36, icon: CreditCard, color: 'text-blue-500', bg: 'bg-blue-500/10' },
+          { method: 'Débito', amount: 0, percent: 0, icon: CreditCard, color: 'text-amber-500', bg: 'bg-amber-500/10' },
+          { method: 'Dinheiro', amount: 1100, percent: 13, icon: DollarSign, color: 'text-green-500', bg: 'bg-green-500/10' },
+      ]
+  };
+
+  const fiscalInvoices = [
+      { id: 'NFS-1023', value: 85.00, client: 'João Silva', status: 'Emitida', date: 'Hoje, 14:30' },
+      { id: 'NFS-1022', value: 120.00, client: 'Pedro Santos', status: 'Emitida', date: 'Hoje, 11:45' },
+      { id: 'NFS-1021', value: 45.00, client: 'Marcos Oliveira', status: 'Processando', date: 'Hoje, 09:30' },
   ];
+
+  // --- ACTIONS ---
 
   const handleSaveKey = () => {
     if (!stripeKeyInput) return;
     setIsSaving(true);
-    // Simulate API verification
     setTimeout(() => {
         setIsSaving(false);
         if (onSaveConfig) {
             onSaveConfig({ isConnected: true, stripeKey: stripeKeyInput });
         }
         toast.success('Configuração de pagamento salva!');
-        setTimeout(() => {
-            setShowConfig(false);
-        }, 1500);
+        setTimeout(() => setShowConfig(false), 1500);
     }, 1500);
   };
 
@@ -93,8 +141,12 @@ const Finance: React.FC<FinanceProps> = ({ paymentConfig, onSaveConfig, barbers,
       }, 2000);
   };
 
-  const handlePrintPayslip = (barberName: string) => {
-      toast.info(`Imprimindo Holerite de ${barberName}...`);
+  const handleConfirmClose = () => {
+      toast.success('Caixa fechado com sucesso! Relatório enviado por e-mail.');
+  };
+
+  const handlePayCommission = (barberName: string) => {
+      toast.success(`Pagamento registrado para ${barberName}.`);
   };
 
   const toggleExpense = (id: string) => {
@@ -104,275 +156,428 @@ const Finance: React.FC<FinanceProps> = ({ paymentConfig, onSaveConfig, barbers,
   };
 
   return (
-    <div className="space-y-6 animate-fade-in relative pb-20">
+    <div className="space-y-6 animate-fade-in pb-20">
       
-      {/* Header Actions */}
-      <Card className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 border-l-4 border-l-emerald-500 bg-gradient-to-r from-emerald-500/5 via-barber-900 to-barber-900">
-        <h2 className="text-xl font-bold text-main flex items-center gap-3">
-            <div className="bg-barber-950 p-2 rounded-lg border border-barber-800 shrink-0">
-                <Wallet size={20} className="text-emerald-500" />
-            </div>
-            Controle Financeiro
-        </h2>
-        
-        <div className="flex flex-col sm:flex-row gap-4 w-full xl:w-auto">
-            {/* Navigation Tabs */}
-            <div className="flex bg-barber-950 rounded-lg p-1 border border-barber-800 overflow-x-auto">
+      {/* Header Dashboard */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card noPadding className="md:col-span-2 p-5 bg-gradient-to-r from-zinc-900 to-zinc-950 border-l-4 border-l-emerald-500 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="text-center sm:text-left w-full">
+                  <h2 className="text-xl font-bold text-white">Controle Financeiro</h2>
+                  <p className="text-sm text-muted mt-1">Gestão de caixa, comissões e fiscal.</p>
+              </div>
+              <div className="flex gap-2 w-full sm:w-auto">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setShowConfig(true)}
+                    leftIcon={<Settings size={18} />}
+                    className="w-full sm:w-auto"
+                  >
+                      Config
+                  </Button>
+                  <Button onClick={() => setActiveTab('cash_close')} leftIcon={<Lock size={18} />} className="w-full sm:w-auto" variant="success">
+                    Fechar Caixa
+                  </Button>
+              </div>
+          </Card>
+          
+          <Card noPadding className="col-span-1 p-4 flex flex-col justify-center border-l-4 border-l-barber-gold">
+              <span className="text-xs font-bold uppercase text-muted tracking-wider">Saldo Líquido</span>
+              <div className="text-2xl font-bold text-white mt-1">R$ 5.550,00</div>
+              <div className="text-[10px] text-barber-gold font-bold mt-1 flex items-center gap-1">
+                  <TrendingUp size={12} /> Margem: 63%
+              </div>
+          </Card>
+
+          <Card noPadding className="col-span-1 p-4 flex flex-col justify-center border-l-4 border-l-sky-500">
+              <span className="text-xs font-bold uppercase text-muted tracking-wider">A Receber</span>
+              <div className="text-2xl font-bold text-white mt-1">R$ 450,00</div>
+              <div className="text-[10px] text-sky-500 font-bold mt-1">
+                  3 agendamentos pendentes
+              </div>
+          </Card>
+      </div>
+
+      {/* Main List Controls */}
+      <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-zinc-900/50 p-2 rounded-xl border border-zinc-800">
+          <div className="w-full flex flex-col lg:flex-row gap-4">
+            {/* Filter Tabs */}
+            <div className="flex bg-zinc-950 p-1 rounded-lg border border-zinc-800 overflow-x-auto scrollbar-hide w-full lg:w-auto">
                 <button 
                     onClick={() => setActiveTab('dashboard')}
-                    className={`flex-1 sm:flex-none px-4 py-2 rounded-md text-sm font-bold transition-all whitespace-nowrap ${
-                      activeTab === 'dashboard' 
-                      ? 'bg-barber-800 text-main shadow' 
-                      : 'text-muted hover:text-main hover:bg-barber-800/50'
-                    }`}
+                    className={`flex-1 lg:flex-none px-4 py-2 rounded-md text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 ${activeTab === 'dashboard' ? 'bg-zinc-800 text-white shadow' : 'text-muted hover:text-white'}`}
                 >
-                    Visão Geral
+                    <PieChart size={14} /> Visão Geral
+                </button>
+                <button 
+                    onClick={() => setActiveTab('cash_close')}
+                    className={`flex-1 lg:flex-none px-4 py-2 rounded-md text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 ${activeTab === 'cash_close' ? 'bg-zinc-800 text-white shadow' : 'text-muted hover:text-white'}`}
+                >
+                    <Lock size={14} /> Fechamento
                 </button>
                 <button 
                     onClick={() => setActiveTab('commissions')}
-                    className={`flex-1 sm:flex-none px-4 py-2 rounded-md text-sm font-bold transition-all whitespace-nowrap ${
-                      activeTab === 'commissions' 
-                      ? 'bg-barber-800 text-main shadow' 
-                      : 'text-muted hover:text-main hover:bg-barber-800/50'
-                    }`}
+                    className={`flex-1 lg:flex-none px-4 py-2 rounded-md text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 ${activeTab === 'commissions' ? 'bg-zinc-800 text-white shadow' : 'text-muted hover:text-white'}`}
                 >
-                    Comissões
+                    <Receipt size={14} /> Comissões
                 </button>
                 <button 
                     onClick={() => setActiveTab('expenses')}
-                    className={`flex-1 sm:flex-none px-4 py-2 rounded-md text-sm font-bold transition-all whitespace-nowrap ${
-                      activeTab === 'expenses' 
-                      ? 'bg-barber-800 text-main shadow' 
-                      : 'text-muted hover:text-main hover:bg-barber-800/50'
-                    }`}
+                    className={`flex-1 lg:flex-none px-4 py-2 rounded-md text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 ${activeTab === 'expenses' ? 'bg-zinc-800 text-white shadow' : 'text-muted hover:text-white'}`}
                 >
-                    Despesas
+                    <Wallet size={14} /> Despesas
+                </button>
+                <button 
+                    onClick={() => setActiveTab('fiscal')}
+                    className={`flex-1 lg:flex-none px-4 py-2 rounded-md text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 ${activeTab === 'fiscal' ? 'bg-zinc-800 text-white shadow' : 'text-muted hover:text-white'}`}
+                >
+                    <Landmark size={14} /> Fiscal
                 </button>
             </div>
+          </div>
 
-            <div className="flex gap-2 w-full sm:w-auto">
-               {userRole === 'Admin' && (
-                 <Button 
-                   variant="outline"
-                   onClick={() => setShowConfig(true)}
-                   leftIcon={isKeySaved ? <CheckCircle2 size={14} /> : <Settings size={14} />}
-                 >
-                    {isKeySaved ? 'Ativo' : 'Configurar'}
-                 </Button>
-               )}
-               <Button 
-                    variant="success"
-                    leftIcon={<Lock size={14} />}
-               >
-                  Fechar Caixa
-               </Button>
-            </div>
-        </div>
-      </Card>
+          <div className="flex gap-2">
+             <Button 
+                variant="ghost"
+                size="sm"
+                className="text-muted hover:text-white border border-zinc-800"
+                onClick={() => handleExport('excel')}
+                isLoading={isExporting === 'excel'}
+                leftIcon={<Sheet size={14} />}
+             >
+                 Exportar
+             </Button>
+          </div>
+      </div>
 
+      {/* === TAB: DASHBOARD === */}
       {activeTab === 'dashboard' && (
           <div className="space-y-6 animate-fade-in">
-            {/* Export Buttons */}
-             <div className="flex flex-col sm:flex-row justify-end gap-2">
-                 <Button 
-                    variant="ghost"
-                    size="sm"
-                    className="text-red-500 hover:text-red-400 border border-red-500/20 bg-red-500/10"
-                    onClick={() => handleExport('pdf')}
-                    isLoading={isExporting === 'pdf'}
-                    leftIcon={<FileText size={14} />}
-                 >
-                     Relatório PDF
-                 </Button>
-                 <Button 
-                    variant="ghost"
-                    size="sm"
-                    className="text-emerald-500 hover:text-emerald-400 border border-emerald-500/20 bg-emerald-500/10"
-                    onClick={() => handleExport('excel')}
-                    isLoading={isExporting === 'excel'}
-                    leftIcon={<Sheet size={14} />}
-                 >
-                     Relatório Excel
-                 </Button>
-             </div>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  {/* Fluxo de Caixa (Lista) */}
+                  <Card noPadding className="lg:col-span-2 p-6 flex flex-col">
+                      <div className="flex justify-between items-center mb-6">
+                          <h3 className="text-lg font-bold text-main">Fluxo de Caixa Recente</h3>
+                          <div className="flex gap-2">
+                              <Input 
+                                  placeholder="Buscar transação..." 
+                                  value={searchTerm}
+                                  onChange={e => setSearchTerm(e.target.value)}
+                                  className="h-8 text-xs bg-zinc-950 border-zinc-800 w-48"
+                                  containerClassName="mb-0"
+                              />
+                          </div>
+                      </div>
+                      
+                      <div className="flex-1 overflow-x-auto">
+                          <table className="w-full text-left border-collapse min-w-[500px]">
+                          <thead>
+                              <tr className="text-muted text-xs uppercase border-b border-barber-800">
+                              <th className="pb-3 pl-2">Hora</th>
+                              <th className="pb-3">Descrição</th>
+                              <th className="pb-3">Pagamento</th>
+                              <th className="pb-3 text-right pr-2">Valor</th>
+                              </tr>
+                          </thead>
+                          <tbody className="text-sm">
+                              {transactions
+                                .filter(t => t.desc.toLowerCase().includes(searchTerm.toLowerCase()))
+                                .map((tx) => (
+                              <tr key={tx.id} className="border-b border-barber-800/50 hover:bg-barber-800/20 transition-colors">
+                                  <td className="py-4 pl-2 text-muted font-mono text-xs">{tx.time}</td>
+                                  <td className="py-4 text-main font-medium">
+                                      {tx.desc}
+                                      {tx.status === 'pending' && <span className="ml-2 text-[9px] bg-amber-500/10 text-amber-500 px-1.5 py-0.5 rounded border border-amber-500/20 uppercase font-bold">Pendente</span>}
+                                  </td>
+                                  <td className="py-4">
+                                  <span className={`text-xs px-2 py-1 rounded border ${
+                                      tx.method === 'Pix' ? 'border-emerald-500/30 text-emerald-500 bg-emerald-500/10' :
+                                      tx.method === 'Cartão' ? 'border-amber-500/30 text-amber-500 bg-amber-500/10' :
+                                      'border-gray-500/30 text-gray-400 bg-gray-500/10'
+                                  }`}>
+                                      {tx.method}
+                                  </span>
+                                  </td>
+                                  <td className={`py-4 text-right pr-2 font-bold ${tx.type === 'income' ? 'text-emerald-500' : 'text-rose-500'}`}>
+                                  {tx.type === 'income' ? '+' : '-'} R$ {tx.amount.toFixed(2)}
+                                  </td>
+                              </tr>
+                              ))}
+                          </tbody>
+                          </table>
+                      </div>
+                  </Card>
 
-            {/* AI Financial Insight */}
-            <div className="bg-gradient-to-r from-emerald-900/20 to-barber-900 border border-emerald-500/20 rounded-xl p-4 flex flex-col sm:flex-row items-start gap-4">
-                <div className="bg-emerald-500/20 p-2 rounded-full text-emerald-500 shrink-0">
-                <Sparkles size={20} />
-                </div>
-                <div>
-                <h3 className="text-emerald-500 font-bold text-sm">Análise Inteligente de Caixa</h3>
-                <p className="text-muted text-sm mt-1 leading-relaxed">
-                    O volume de pagamentos via <strong>Pix</strong> cresceu 22% este mês. A redução nas taxas de cartão economizou <strong>R$ 340,00</strong>. Continue incentivando o Pix!
-                </p>
-                </div>
-            </div>
-
-            {/* KPI Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-                <div className="bg-barber-900 p-6 rounded-xl border border-barber-800 shadow-lg relative overflow-hidden group">
-                <div className="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                    <DollarSign size={100} />
-                </div>
-                <h3 className="text-muted text-sm font-medium uppercase mb-2">Entradas (Mês)</h3>
-                <div className="text-3xl font-bold text-emerald-500 flex items-center gap-2">
-                    R$ 8.800
-                    <ArrowUpRight size={20} />
-                </div>
-                <div className="mt-2 text-xs text-muted">+15% vs mês anterior</div>
-                </div>
-
-                <div className="bg-barber-900 p-6 rounded-xl border border-barber-800 shadow-lg relative overflow-hidden group">
-                <div className="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                    <Wallet size={100} />
-                </div>
-                <h3 className="text-muted text-sm font-medium uppercase mb-2">Saídas (Mês)</h3>
-                <div className="text-3xl font-bold text-rose-500 flex items-center gap-2">
-                    R$ 2.450
-                    <ArrowDownRight size={20} />
-                </div>
-                <div className="mt-2 text-xs text-muted">Dentro do orçamento</div>
-                </div>
-
-                {/* Tip Control Card */}
-                <div className="bg-barber-900 p-6 rounded-xl border border-barber-800 shadow-lg relative overflow-hidden group">
-                    <div className="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                        <PiggyBank size={100} />
-                    </div>
-                    <h3 className="text-muted text-sm font-medium uppercase mb-2">Caixinha Acumulada</h3>
-                    <div className="text-3xl font-bold text-sky-400 flex items-center gap-2">
-                        R$ 385
-                    </div>
-                    <div className="mt-2 text-xs text-muted">Separado do faturamento</div>
-                </div>
-
-                {/* Saldo Líquido Card - Corrigido para evitar degradê sujo em tema Roxo */}
-                <div className="bg-gradient-to-br from-barber-gold to-barber-goldhover p-6 rounded-xl shadow-lg relative overflow-hidden">
-                <h3 className="text-black/70 dark:text-black/70 text-sm font-bold uppercase mb-2 mix-blend-multiply">Saldo Líquido</h3>
-                {userRole === 'Admin' ? (
-                     <div className="text-4xl font-extrabold text-inverted">
-                        R$ 6.350
-                    </div>
-                ) : (
-                    <div className="text-2xl font-extrabold text-inverted/50 flex items-center gap-2">
-                        <Lock size={20} /> Acesso Restrito
-                    </div>
-                )}
-                <div className="mt-4 inline-flex items-center gap-2 bg-black/20 px-3 py-1 rounded-full text-inverted text-xs font-bold backdrop-blur-sm">
-                    <PieChart size={14} /> Margem: 72%
-                </div>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Payment Methods Chart */}
-                <Card noPadding className="p-6">
-                <h3 className="text-lg font-bold text-main mb-6 flex items-center gap-2">
-                    <CreditCard size={20} className="text-barber-gold" />
-                    Métodos de Pagamento
-                </h3>
-                <div className="h-64 w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                    <RePieChart>
-                        <Pie
-                        data={paymentData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={80}
-                        paddingAngle={5}
-                        dataKey="value"
-                        stroke="none"
-                        >
-                        {paymentData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                        </Pie>
-                        <Tooltip 
-                        contentStyle={{ backgroundColor: 'rgb(var(--color-surface))', borderColor: 'rgb(var(--color-border))', color: 'rgb(var(--color-text-main))' }}
-                        itemStyle={{ color: 'rgb(var(--color-text-main))' }}
-                        />
-                        <Legend iconType="circle" />
-                    </RePieChart>
-                    </ResponsiveContainer>
-                </div>
-                </Card>
-
-                {/* Transactions List */}
-                <Card noPadding className="lg:col-span-2 p-6 flex flex-col">
-                <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-lg font-bold text-main">Fluxo de Caixa Diário</h3>
-                    <button className="text-xs text-barber-gold hover:underline">Ver completo</button>
-                </div>
-                
-                <div className="flex-1 overflow-x-auto">
-                    <table className="w-full text-left border-collapse min-w-[500px]">
-                    <thead>
-                        <tr className="text-muted text-xs uppercase border-b border-barber-800">
-                        <th className="pb-3 pl-2">Hora</th>
-                        <th className="pb-3">Descrição</th>
-                        <th className="pb-3">Pagamento</th>
-                        <th className="pb-3 text-right pr-2">Valor</th>
-                        </tr>
-                    </thead>
-                    <tbody className="text-sm">
-                        {transactions.map((tx) => (
-                        <tr key={tx.id} className="border-b border-barber-800/50 hover:bg-barber-800/20 transition-colors">
-                            <td className="py-4 pl-2 text-muted font-mono text-xs">{tx.time}</td>
-                            <td className="py-4 text-main font-medium">{tx.desc}</td>
-                            <td className="py-4">
-                            <span className={`text-xs px-2 py-1 rounded border ${
-                                tx.method === 'Pix' ? 'border-emerald-500/30 text-emerald-500 bg-emerald-500/10' :
-                                tx.method === 'Cartão' ? 'border-amber-500/30 text-amber-500 bg-amber-500/10' :
-                                'border-gray-500/30 text-gray-400 bg-gray-500/10'
-                            }`}>
-                                {tx.method}
-                            </span>
-                            </td>
-                            <td className={`py-4 text-right pr-2 font-bold ${tx.type === 'income' ? 'text-emerald-500' : 'text-rose-500'}`}>
-                            {tx.type === 'income' ? '+' : '-'} R$ {tx.amount.toFixed(2)}
-                            </td>
-                        </tr>
-                        ))}
-                    </tbody>
-                    </table>
-                </div>
-                </Card>
-            </div>
-            
-            {/* Barber Profitability Analysis */}
-            {userRole === 'Admin' && (
-                <Card noPadding className="p-6">
-                    <h3 className="text-lg font-bold text-main mb-6">Lucratividade por Barbeiro (Líquido)</h3>
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left min-w-[600px]">
-                        <thead>
-                            <tr className="text-xs text-muted uppercase border-b border-barber-800">
-                                <th className="pb-3">Profissional</th>
-                                <th className="pb-3">Receita Bruta</th>
-                                <th className="pb-3">Despesas/Custos</th>
-                                <th className="pb-3 text-right">Lucro Líquido</th>
-                            </tr>
-                        </thead>
-                        <tbody className="text-sm">
-                            {barberProfits.map((b, idx) => (
-                                <tr key={idx} className="border-b border-barber-800/50 hover:bg-barber-800/20">
-                                    <td className="py-4 font-bold text-main">{b.name}</td>
-                                    <td className="py-4 text-emerald-500">R$ {b.gross.toFixed(2)}</td>
-                                    <td className="py-4 text-rose-400">R$ {b.costs.toFixed(2)}</td>
-                                    <td className="py-4 text-right font-bold text-barber-gold">R$ {b.net.toFixed(2)}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                        </table>
-                    </div>
-                </Card>
-            )}
+                  {/* Payment Methods Chart */}
+                  <Card noPadding className="p-6">
+                      <h3 className="text-lg font-bold text-main mb-6 flex items-center gap-2">
+                          <CreditCard size={20} className="text-barber-gold" />
+                          Métodos de Pagamento
+                      </h3>
+                      <div className="h-64 w-full">
+                          <ResponsiveContainer width="100%" height="100%">
+                          <RePieChart>
+                              <Pie
+                              data={paymentData}
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={60}
+                              outerRadius={80}
+                              paddingAngle={5}
+                              dataKey="value"
+                              stroke="none"
+                              >
+                              {paymentData.map((entry, index) => (
+                                  <Cell key={`cell-${index}`} fill={entry.color} />
+                              ))}
+                              </Pie>
+                              <Tooltip 
+                              contentStyle={{ backgroundColor: 'rgb(var(--color-surface))', borderColor: 'rgb(var(--color-border))', color: 'rgb(var(--color-text-main))' }}
+                              itemStyle={{ color: 'rgb(var(--color-text-main))' }}
+                              />
+                              <Legend iconType="circle" />
+                          </RePieChart>
+                          </ResponsiveContainer>
+                      </div>
+                  </Card>
+              </div>
           </div>
       )}
 
-      {/* Commission Calculator Tab (Payroll) */}
+      {/* === TAB: CASH CLOSE (FECHAMENTO) === */}
+      {activeTab === 'cash_close' && (
+          <div className="space-y-6 animate-slide-up">
+              {/* Resumo do Fechamento */}
+              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+                  <div className="flex justify-between items-center mb-6">
+                      <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                          <Lock size={24} className="text-emerald-500" /> Fechamento de Caixa
+                      </h3>
+                      <Badge variant="outline" className="px-3 py-1 text-xs">
+                          {new Date().toLocaleDateString('pt-BR')}
+                      </Badge>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="bg-zinc-950 p-4 rounded-xl border border-zinc-800">
+                          <span className="text-[10px] text-emerald-500 font-bold uppercase flex items-center gap-1"><DollarSign size={12}/> Faturamento</span>
+                          <div className="text-2xl font-bold text-emerald-500 mt-1">R$ {cashCloseStats.revenue.toLocaleString('pt-BR')}</div>
+                          <span className="text-[10px] text-muted">6 atendimentos</span>
+                      </div>
+                      <div className="bg-zinc-950 p-4 rounded-xl border border-zinc-800">
+                          <span className="text-[10px] text-amber-500 font-bold uppercase flex items-center gap-1"><LayoutGrid size={12}/> Comissões</span>
+                          <div className="text-2xl font-bold text-amber-500 mt-1">R$ {cashCloseStats.commissions.toLocaleString('pt-BR')}</div>
+                          <span className="text-[10px] text-muted">Pago: R$ 0,00</span>
+                      </div>
+                      <div className="bg-zinc-950 p-4 rounded-xl border border-zinc-800">
+                          <span className="text-[10px] text-blue-500 font-bold uppercase flex items-center gap-1"><TrendingUp size={12}/> Lucro Líquido</span>
+                          <div className="text-2xl font-bold text-blue-500 mt-1">R$ {cashCloseStats.netProfit.toLocaleString('pt-BR')}</div>
+                          <span className="text-[10px] text-muted">Após comissões</span>
+                      </div>
+                      <div className="bg-zinc-950 p-4 rounded-xl border border-zinc-800">
+                          <span className="text-[10px] text-red-500 font-bold uppercase flex items-center gap-1"><AlertTriangle size={12}/> Pendente</span>
+                          <div className="text-2xl font-bold text-red-500 mt-1">R$ {cashCloseStats.pending.toLocaleString('pt-BR')}</div>
+                          <span className="text-[10px] text-muted">Comissões a pagar</span>
+                      </div>
+                  </div>
+              </div>
+
+              {/* Formas de Pagamento Breakdown */}
+              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+                  <h4 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
+                      <CreditCard size={16} /> Formas de Pagamento
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                      {cashCloseStats.paymentMethods.map((pm) => (
+                          <div key={pm.method} className="bg-zinc-950 border border-zinc-800 rounded-lg p-3 flex items-center gap-3">
+                              <div className={`p-2 rounded-lg ${pm.bg} ${pm.color}`}>
+                                  <pm.icon size={18} />
+                              </div>
+                              <div className="flex-1">
+                                  <div className="text-xs font-bold text-muted uppercase">{pm.method}</div>
+                                  <div className="text-lg font-bold text-white">R$ {pm.amount.toLocaleString('pt-BR')}</div>
+                                  <div className="text-[10px] text-muted">({pm.percent}%)</div>
+                              </div>
+                          </div>
+                      ))}
+                  </div>
+              </div>
+
+              {/* Lista de Profissionais (Pagar Comissões) */}
+              <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
+                  <div className="p-4 border-b border-zinc-800 flex justify-between items-center bg-zinc-950/50">
+                      <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                          <LayoutGrid size={16} /> Profissionais (Comissões do Dia)
+                      </h4>
+                      <div className="flex gap-2">
+                          <Button size="sm" variant="outline" className="h-8 text-xs">Filtrar</Button>
+                          <Button size="sm" variant="outline" className="h-8 text-xs">Exportar</Button>
+                      </div>
+                  </div>
+                  <div className="divide-y divide-zinc-800">
+                      {barbers.map((barber) => {
+                          const totalGenerated = barber.currentSales || 0; // Mock value
+                          const commissionVal = totalGenerated * (barber.commissionRate / 100);
+                          
+                          return (
+                              <div key={barber.id} className="p-4 flex flex-col sm:flex-row items-center justify-between gap-4 hover:bg-zinc-800/20 transition-colors">
+                                  <div className="flex items-center gap-3 w-full sm:w-auto">
+                                      <div className="relative">
+                                          <img src={barber.avatar} className="w-10 h-10 rounded-full object-cover border border-zinc-700" />
+                                          <div className="absolute -bottom-1 -right-1 bg-zinc-900 rounded text-[10px] font-bold px-1 border border-zinc-700">
+                                              {barber.name.charAt(0)}
+                                          </div>
+                                      </div>
+                                      <div>
+                                          <div className="font-bold text-white">{barber.name}</div>
+                                          <div className="text-xs text-muted">3 atendimentos • R$ {totalGenerated.toFixed(2)} gerados</div>
+                                      </div>
+                                  </div>
+                                  
+                                  <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
+                                      <div className="text-right">
+                                          <div className="text-[10px] text-muted uppercase font-bold">Comissão ({barber.commissionRate}%)</div>
+                                          <div className="text-lg font-bold text-amber-500">R$ {commissionVal.toFixed(2)}</div>
+                                      </div>
+                                      <Button 
+                                          size="sm" 
+                                          className="bg-green-600 hover:bg-green-500 text-white border-none"
+                                          onClick={() => handlePayCommission(barber.name)}
+                                          leftIcon={<DollarSign size={14} />}
+                                      >
+                                          Pagar
+                                      </Button>
+                                  </div>
+                              </div>
+                          );
+                      })}
+                  </div>
+              </div>
+
+              {/* Botão de Fechamento */}
+              <div className="bg-gradient-to-r from-emerald-900/20 to-zinc-900 border border-emerald-500/20 rounded-xl p-6 flex flex-col md:flex-row items-center justify-between gap-6">
+                  <div>
+                      <h4 className="text-lg font-bold text-white flex items-center gap-2">
+                          <Lock size={20} className="text-emerald-500" /> Pronto para fechar o caixa?
+                      </h4>
+                      <p className="text-sm text-muted mt-1">
+                          6 atendimentos • R$ {cashCloseStats.revenue.toLocaleString('pt-BR')} faturado • R$ {cashCloseStats.pending.toLocaleString('pt-BR')} pendente
+                      </p>
+                  </div>
+                  <Button 
+                      size="lg" 
+                      variant="success" 
+                      onClick={handleConfirmClose}
+                      className="w-full md:w-auto shadow-lg shadow-emerald-500/20"
+                      leftIcon={<CheckCircle2 size={20} />}
+                  >
+                      Confirmar Fechamento
+                  </Button>
+              </div>
+          </div>
+      )}
+
+      {/* === TAB: FISCAL (NEW) === */}
+      {activeTab === 'fiscal' && (
+          <div className="space-y-6 animate-fade-in">
+              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+                  <div className="flex justify-between items-center mb-6">
+                      <div>
+                          <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                              <Landmark size={24} className="text-barber-gold" /> Status Fiscal
+                          </h3>
+                          <p className="text-sm text-muted mt-1">Complete a configuração para emitir notas fiscais automaticamente</p>
+                      </div>
+                      <Badge variant="warning">Pendente</Badge>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      {/* Empresa Card */}
+                      <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-5 flex flex-col items-center text-center hover:border-barber-gold/50 transition-colors cursor-pointer group">
+                          <div className="w-12 h-12 bg-zinc-900 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                              <Building2 size={20} className="text-white" />
+                          </div>
+                          <h4 className="font-bold text-white">Empresa</h4>
+                          <p className="text-xs text-muted mb-2">CNPJ: 61.871.049/0001-04</p>
+                          <Badge variant="success" size="sm" className="mt-auto">Configurado</Badge>
+                          <Button variant="ghost" size="sm" className="mt-3 text-xs w-full">Editar Dados</Button>
+                      </div>
+
+                      {/* Certificado Card */}
+                      <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-5 flex flex-col items-center text-center hover:border-red-500/50 transition-colors cursor-pointer group relative overflow-hidden">
+                          <div className="w-12 h-12 bg-zinc-900 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                              <ShieldCheck size={20} className="text-red-500" />
+                          </div>
+                          <h4 className="font-bold text-white">Certificado A1</h4>
+                          <p className="text-xs text-muted mb-2">Vencido ou não enviado</p>
+                          <Badge variant="danger" size="sm" className="mt-auto">Pendente</Badge>
+                          <Button variant="ghost" size="sm" className="mt-3 text-xs w-full text-red-400 hover:text-red-300">Enviar Arquivo</Button>
+                      </div>
+
+                      {/* Config NFS-e Card */}
+                      <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-5 flex flex-col items-center text-center hover:border-amber-500/50 transition-colors cursor-pointer group">
+                          <div className="w-12 h-12 bg-zinc-900 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                              <Settings size={20} className="text-amber-500" />
+                          </div>
+                          <h4 className="font-bold text-white">Config NFS-e</h4>
+                          <p className="text-xs text-muted mb-2">Série, RPS e Alíquotas</p>
+                          <Badge variant="warning" size="sm" className="mt-auto">Pendente</Badge>
+                          <Button variant="ghost" size="sm" className="mt-3 text-xs w-full text-amber-400 hover:text-amber-300">Configurar</Button>
+                      </div>
+                  </div>
+                  
+                  <div className="flex justify-end mt-4">
+                      <Button className="bg-amber-500 hover:bg-amber-600 text-black font-bold border-none">
+                          Configurar Emissão Automática
+                      </Button>
+                  </div>
+              </div>
+
+              {/* Lista de Notas Fiscais */}
+              <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
+                  <div className="p-4 border-b border-zinc-800 flex justify-between items-center bg-zinc-950/50">
+                      <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                          <FileText size={16} /> Notas Fiscais Emitidas
+                      </h4>
+                      <Button size="sm" variant="ghost" className="text-xs" rightIcon={<ArrowUpRight size={12}/>}>Atualizar</Button>
+                  </div>
+                  
+                  {fiscalInvoices.length > 0 ? (
+                      <div className="divide-y divide-zinc-800">
+                          {fiscalInvoices.map((nf) => (
+                              <div key={nf.id} className="p-4 flex items-center justify-between hover:bg-zinc-800/20 transition-colors">
+                                  <div className="flex items-center gap-3">
+                                      <div className={`p-2 rounded-lg ${nf.status === 'Emitida' ? 'bg-green-500/10 text-green-500' : 'bg-amber-500/10 text-amber-500'}`}>
+                                          <FileText size={16} />
+                                      </div>
+                                      <div>
+                                          <div className="font-bold text-white text-sm">{nf.id}</div>
+                                          <div className="text-xs text-muted">{nf.date} • {nf.client}</div>
+                                      </div>
+                                  </div>
+                                  <div className="flex items-center gap-4">
+                                      <span className="font-bold text-white text-sm">R$ {nf.value.toFixed(2)}</span>
+                                      <Badge variant={nf.status === 'Emitida' ? 'success' : 'warning'} size="sm">
+                                          {nf.status}
+                                      </Badge>
+                                      <button className="text-muted hover:text-white p-1"><Download size={14} /></button>
+                                  </div>
+                              </div>
+                          ))}
+                      </div>
+                  ) : (
+                      <div className="p-12 flex flex-col items-center justify-center text-center">
+                          <div className="w-16 h-16 bg-zinc-800 rounded-full flex items-center justify-center mb-4">
+                              <FileText size={24} className="text-zinc-600" />
+                          </div>
+                          <h3 className="text-white font-bold mb-1">Nenhuma nota fiscal emitida ainda</h3>
+                          <p className="text-xs text-muted">As notas aparecerão aqui após pagamentos confirmados e processados.</p>
+                      </div>
+                  )}
+              </div>
+          </div>
+      )}
+
+      {/* === TAB: COMMISSIONS === */}
       {activeTab === 'commissions' && (
           <Card noPadding className="animate-fade-in p-6">
              <h3 className="text-xl font-bold text-main mb-6 flex items-center gap-2">
@@ -422,7 +627,7 @@ const Finance: React.FC<FinanceProps> = ({ paymentConfig, onSaveConfig, barbers,
                                   R$ {netPay.toFixed(2)}
                                </td>
                                <td className="p-3 text-center">
-                                  <Button size="icon" variant="ghost" onClick={() => handlePrintPayslip(barber.name)} title="Imprimir Holerite">
+                                  <Button size="icon" variant="ghost" onClick={() => toast.info(`Imprimindo Holerite de ${barber.name}...`)} title="Imprimir Holerite">
                                      <Printer size={16} />
                                   </Button>
                                </td>
@@ -435,7 +640,7 @@ const Finance: React.FC<FinanceProps> = ({ paymentConfig, onSaveConfig, barbers,
           </Card>
       )}
 
-      {/* Recurring Expenses Tab */}
+      {/* === TAB: EXPENSES === */}
       {activeTab === 'expenses' && (
           <div className="animate-fade-in space-y-6">
               <Card noPadding className="p-6">

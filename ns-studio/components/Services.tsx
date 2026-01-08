@@ -18,7 +18,9 @@ import {
   Tag,
   MoreVertical,
   TrendingUp,
-  Zap
+  Zap,
+  Flame,
+  Percent
 } from 'lucide-react';
 import { Service, Product } from '../types';
 import Modal from './ui/Modal';
@@ -27,6 +29,7 @@ import Input from './ui/Input';
 import Card from './ui/Card';
 import Switch from './ui/Switch';
 import Badge from './ui/Badge';
+import Select from './ui/Select'; // Ensure Select is imported
 import { useToast } from './ui/Toast';
 
 interface ServicesProps {
@@ -56,7 +59,11 @@ const Services: React.FC<ServicesProps> = ({ services, products, setServices, se
       description: '',
       image: '',
       active: true,
-      billingType: 'one_time' as 'one_time' | 'recurring'
+      billingType: 'one_time' as 'one_time' | 'recurring',
+      // Order Bump Fields
+      bumpActive: false,
+      bumpTargetServiceId: '',
+      bumpDiscount: '10'
   });
 
   // --- Statistics ---
@@ -94,7 +101,10 @@ const Services: React.FC<ServicesProps> = ({ services, products, setServices, se
           description: '',
           image: '',
           active: true,
-          billingType: 'one_time'
+          billingType: 'one_time',
+          bumpActive: false,
+          bumpTargetServiceId: '',
+          bumpDiscount: '10'
       });
       setIsModalOpen(true);
   };
@@ -109,7 +119,10 @@ const Services: React.FC<ServicesProps> = ({ services, products, setServices, se
           description: service.description || '',
           image: service.image || '',
           active: service.active,
-          billingType: service.billingType || 'one_time'
+          billingType: service.billingType || 'one_time',
+          bumpActive: service.orderBump?.active || false,
+          bumpTargetServiceId: service.orderBump?.targetServiceId || '',
+          bumpDiscount: service.orderBump?.discountPercent.toString() || '10'
       });
       setIsModalOpen(true);
   };
@@ -131,7 +144,12 @@ const Services: React.FC<ServicesProps> = ({ services, products, setServices, se
           description: formData.description,
           image: formData.image,
           active: formData.active,
-          billingType: formData.billingType
+          billingType: formData.billingType,
+          orderBump: {
+              active: formData.bumpActive,
+              targetServiceId: formData.bumpTargetServiceId,
+              discountPercent: parseFloat(formData.bumpDiscount) || 0
+          }
       };
 
       if (editingService) {
@@ -268,6 +286,19 @@ const Services: React.FC<ServicesProps> = ({ services, products, setServices, se
                                     {service.description || "Sem descrição definida para este serviço."}
                                 </p>
 
+                                {/* Order Bump Indicator */}
+                                {service.orderBump?.active && (
+                                    <div className="mb-4 bg-gradient-to-r from-barber-gold/10 to-transparent p-2 rounded-lg border-l-2 border-barber-gold flex items-center gap-2">
+                                        <Flame size={14} className="text-barber-gold" />
+                                        <div className="text-[10px]">
+                                            <span className="text-barber-gold font-bold">Combo Ativo:</span>
+                                            <span className="text-muted ml-1">
+                                                {services.find(s => s.id === service.orderBump?.targetServiceId)?.name} (-{service.orderBump.discountPercent}%)
+                                            </span>
+                                        </div>
+                                    </div>
+                                )}
+
                                 <div className="flex items-center justify-between mt-auto pt-4 border-t border-zinc-800">
                                     <div className="flex flex-col">
                                         <span className="text-[10px] text-muted font-bold uppercase">Valor</span>
@@ -317,7 +348,10 @@ const Services: React.FC<ServicesProps> = ({ services, products, setServices, se
                                     <Scissors size={14} />
                                 </div>
                                 <div className="min-w-0">
-                                    <div className="font-bold text-main text-sm truncate">{service.name}</div>
+                                    <div className="flex items-center gap-2">
+                                        <div className="font-bold text-main text-sm truncate">{service.name}</div>
+                                        {service.orderBump?.active && <span title="Combo Ativo"><Flame size={12} className="text-barber-gold fill-barber-gold" /></span>}
+                                    </div>
                                     {service.billingType === 'recurring' && <span className="text-[9px] text-sky-400 flex items-center gap-1"><RefreshCw size={8} /> Recorrente</span>}
                                 </div>
                             </div>
@@ -378,6 +412,7 @@ const Services: React.FC<ServicesProps> = ({ services, products, setServices, se
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         title={editingService ? 'Editar Serviço' : 'Novo Serviço'}
+        size="lg"
         footer={
             <>
                 <Button variant="ghost" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
@@ -387,93 +422,141 @@ const Services: React.FC<ServicesProps> = ({ services, products, setServices, se
             </>
         }
       >
-          <div className="space-y-5">
-             <Input 
-                label="Nome do Serviço"
-                value={formData.name}
-                onChange={(e) => setFormData({...formData, name: e.target.value})}
-                placeholder="Ex: Corte, Coloração"
-                icon={<Scissors size={16}/>}
-             />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+             <div className="space-y-5">
+                 <Input 
+                    label="Nome do Serviço"
+                    value={formData.name}
+                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    placeholder="Ex: Corte, Coloração"
+                    icon={<Scissors size={16}/>}
+                 />
 
-             <Input 
-                label="Categoria"
-                value={formData.category}
-                onChange={(e) => setFormData({...formData, category: e.target.value})}
-                placeholder="Ex: Cabelo, Barba"
-                icon={<Tag size={16}/>}
-             />
+                 <Input 
+                    label="Categoria"
+                    value={formData.category}
+                    onChange={(e) => setFormData({...formData, category: e.target.value})}
+                    placeholder="Ex: Cabelo, Barba"
+                    icon={<Tag size={16}/>}
+                 />
 
-             <div className="grid grid-cols-2 gap-4">
-                <Input 
-                    label="Preço (R$)"
-                    type="number"
-                    value={formData.price}
-                    onChange={(e) => setFormData({...formData, price: e.target.value})}
-                    placeholder="0.00"
-                    icon={<DollarSign size={16}/>}
-                />
-                <Input 
-                    label="Duração (min)"
-                    type="number"
-                    value={formData.duration}
-                    onChange={(e) => setFormData({...formData, duration: e.target.value})}
-                    placeholder="30"
-                    icon={<Clock size={16}/>}
-                />
+                 <div className="grid grid-cols-2 gap-4">
+                    <Input 
+                        label="Preço (R$)"
+                        type="number"
+                        value={formData.price}
+                        onChange={(e) => setFormData({...formData, price: e.target.value})}
+                        placeholder="0.00"
+                        icon={<DollarSign size={16}/>}
+                    />
+                    <Input 
+                        label="Duração (min)"
+                        type="number"
+                        value={formData.duration}
+                        onChange={(e) => setFormData({...formData, duration: e.target.value})}
+                        placeholder="30"
+                        icon={<Clock size={16}/>}
+                    />
+                 </div>
+
+                 <div>
+                    <label className="block text-xs font-bold text-muted uppercase mb-1 ml-1">Descrição</label>
+                    <textarea 
+                        className="w-full bg-zinc-950 border border-zinc-800 text-main rounded-xl p-3 outline-none focus:border-barber-gold resize-none h-20 text-sm"
+                        placeholder="Descrição opcional..."
+                        value={formData.description}
+                        onChange={(e) => setFormData({...formData, description: e.target.value})}
+                    />
+                 </div>
              </div>
 
-             <div>
-                <label className="block text-xs font-bold text-muted uppercase mb-1 ml-1">Descrição</label>
-                <textarea 
-                    className="w-full bg-zinc-950 border border-zinc-800 text-main rounded-xl p-3 outline-none focus:border-barber-gold resize-none h-20 text-sm"
-                    placeholder="Descrição opcional..."
-                    value={formData.description}
-                    onChange={(e) => setFormData({...formData, description: e.target.value})}
-                />
-             </div>
+             <div className="space-y-6">
+                 <div>
+                    <label className="block text-xs font-bold text-muted uppercase mb-2 ml-1">Tipo de Cobrança</label>
+                    <div className="grid grid-cols-2 gap-4">
+                        <button
+                            type="button"
+                            onClick={() => setFormData({...formData, billingType: 'one_time'})}
+                            className={`p-3 rounded-xl border flex flex-col items-center justify-center gap-2 transition-all ${
+                                formData.billingType === 'one_time' 
+                                ? 'bg-barber-gold/10 border-barber-gold text-barber-gold' 
+                                : 'bg-zinc-950 border-zinc-800 text-muted hover:border-zinc-700'
+                            }`}
+                        >
+                            <CreditCard size={20} />
+                            <span className="text-sm font-bold">Avulso</span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setFormData({...formData, billingType: 'recurring'})}
+                            className={`p-3 rounded-xl border flex flex-col items-center justify-center gap-2 transition-all ${
+                                formData.billingType === 'recurring' 
+                                ? 'bg-purple-500/10 border-purple-500 text-purple-400' 
+                                : 'bg-zinc-950 border-zinc-800 text-muted hover:border-zinc-700'
+                            }`}
+                        >
+                            <RefreshCw size={20} />
+                            <span className="text-sm font-bold">Recorrente</span>
+                        </button>
+                    </div>
+                 </div>
 
-             <div>
-                <label className="block text-xs font-bold text-muted uppercase mb-2 ml-1">Tipo de Cobrança</label>
-                <div className="grid grid-cols-2 gap-4">
-                    <button
-                        type="button"
-                        onClick={() => setFormData({...formData, billingType: 'one_time'})}
-                        className={`p-4 rounded-xl border flex flex-col items-center justify-center gap-2 transition-all ${
-                            formData.billingType === 'one_time' 
-                            ? 'bg-barber-gold/10 border-barber-gold text-barber-gold' 
-                            : 'bg-zinc-950 border-zinc-800 text-muted hover:border-zinc-700'
-                        }`}
-                    >
-                        <CreditCard size={20} />
-                        <span className="text-sm font-bold">Avulso</span>
-                        <span className="text-xs opacity-70">Pagamento único</span>
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setFormData({...formData, billingType: 'recurring'})}
-                        className={`p-4 rounded-xl border flex flex-col items-center justify-center gap-2 transition-all ${
-                            formData.billingType === 'recurring' 
-                            ? 'bg-purple-500/10 border-purple-500 text-purple-400' 
-                            : 'bg-zinc-950 border-zinc-800 text-muted hover:border-zinc-700'
-                        }`}
-                    >
-                        <RefreshCw size={20} />
-                        <span className="text-sm font-bold">Recorrente</span>
-                        <span className="text-xs opacity-70">Assinatura</span>
-                    </button>
-                </div>
-             </div>
-             
-             <div className="flex items-center justify-between p-4 bg-zinc-950 border border-zinc-800 rounded-xl">
-                <div>
-                    <span className="text-sm font-bold text-main block">Status do Serviço</span>
-                    <span className="text-xs text-muted">Disponível para agendamento</span>
-                </div>
-                <Switch 
-                    checked={formData.active} 
-                    onCheckedChange={(c) => setFormData({...formData, active: c})} 
-                />
+                 {/* ORDER BUMP SECTION */}
+                 <div className="bg-gradient-to-br from-zinc-900 to-zinc-950 border border-zinc-800 rounded-xl p-4 relative overflow-hidden">
+                     {/* Decorative Background */}
+                     <div className="absolute -top-4 -right-4 w-24 h-24 bg-barber-gold/5 rounded-full blur-xl pointer-events-none"></div>
+                     
+                     <div className="flex justify-between items-center mb-4 relative z-10">
+                         <div>
+                             <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                                 <Flame size={16} className="text-barber-gold" /> Order Bump (Combo)
+                             </h4>
+                             <p className="text-[10px] text-muted mt-0.5">Ofereça um serviço extra ao selecionar este.</p>
+                         </div>
+                         <Switch 
+                            checked={formData.bumpActive} 
+                            onCheckedChange={(c) => setFormData({...formData, bumpActive: c})}
+                         />
+                     </div>
+
+                     {formData.bumpActive && (
+                         <div className="space-y-4 animate-fade-in relative z-10">
+                             <Select 
+                                label="Serviço a Ofertar"
+                                options={services
+                                    .filter(s => s.id !== editingService?.id) // Avoid self-reference
+                                    .map(s => ({ value: s.id, label: s.name }))}
+                                value={formData.bumpTargetServiceId}
+                                onChange={(e) => setFormData({...formData, bumpTargetServiceId: e.target.value})}
+                             />
+                             <div className="relative">
+                                 <Input 
+                                    label="Desconto na Oferta (%)"
+                                    type="number"
+                                    value={formData.bumpDiscount}
+                                    onChange={(e) => setFormData({...formData, bumpDiscount: e.target.value})}
+                                    icon={<Percent size={14} />}
+                                 />
+                             </div>
+                             {formData.bumpTargetServiceId && (
+                                 <div className="text-[10px] text-green-500 bg-green-500/10 p-2 rounded border border-green-500/20 text-center">
+                                     O cliente verá a oferta para adicionar <strong>{services.find(s => s.id === formData.bumpTargetServiceId)?.name}</strong> com <strong>{formData.bumpDiscount}% OFF</strong>.
+                                 </div>
+                             )}
+                         </div>
+                     )}
+                 </div>
+                 
+                 <div className="flex items-center justify-between p-4 bg-zinc-950 border border-zinc-800 rounded-xl">
+                    <div>
+                        <span className="text-sm font-bold text-main block">Status</span>
+                        <span className="text-xs text-muted">Disponível no app</span>
+                    </div>
+                    <Switch 
+                        checked={formData.active} 
+                        onCheckedChange={(c) => setFormData({...formData, active: c})} 
+                    />
+                 </div>
              </div>
           </div>
       </Modal>

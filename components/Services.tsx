@@ -1,23 +1,50 @@
 
-import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Clock, DollarSign, Package, AlertTriangle, Search, Filter, RefreshCw, CheckCircle2, Loader, X } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import {
+  Plus,
+  Edit2,
+  Trash2,
+  Clock,
+  DollarSign,
+  Package,
+  CheckCircle2,
+  Check,
+  RefreshCw,
+  CreditCard,
+  Search,
+  LayoutGrid,
+  List,
+  Scissors,
+  Tag,
+  Loader,
+  AlertTriangle,
+  X
+} from 'lucide-react';
 import { Service, Product } from '../types';
-import ServiceModal from './ServiceModal';
 
+// Backend hooks & functions
 import { useSupabaseQuery } from '../lib/hooks';
-import { fetchServices, fetchProducts, deleteService, deleteProduct } from '../lib/database';
-import { syncFromStripe, getStripeSyncStatus } from '../lib/stripeSync';
+import { fetchServices, fetchProducts, deleteService, getCurrentBusinessId } from '../lib/database';
+import { syncFromStripe } from '../lib/stripeSync';
 import { isStripeConfigured } from '../lib/stripe';
+import { getBusinessPaymentProvider } from '../lib/abacatePayCheckout';
 
-// UI Components (Design System)
-import Card from './ui/Card';
+// UI Components
+import ServiceModal from './ServiceModal';
+import Modal from './ui/Modal';
 import Button from './ui/Button';
+import Input from './ui/Input';
+import Card from './ui/Card';
+import Switch from './ui/Switch';
+import Badge from './ui/Badge';
 import { useToast } from './ui/Toast';
 
 interface ServicesProps { }
 
 const Services: React.FC<ServicesProps> = () => {
   const toast = useToast();
+
+  // ========== BACKEND DATA ==========
   const { data: servicesData, loading: isLoading, refetch: refetchServices } = useSupabaseQuery(fetchServices);
   const { data: productsData } = useSupabaseQuery(fetchProducts);
 
@@ -32,37 +59,49 @@ const Services: React.FC<ServicesProps> = () => {
     if (productsData) setProducts(productsData);
   }, [productsData]);
 
+  // ========== UI STATE ==========
   const [activeTab, setActiveTab] = useState<'services' | 'products'>('services');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // Stripe Sync State
   const [isSyncing, setIsSyncing] = useState(false);
   const [showSyncModal, setShowSyncModal] = useState(false);
   const [syncResult, setSyncResult] = useState<any>(null);
   const [stripeConfigured, setStripeConfigured] = useState(false);
-
-  // Search and Filter State
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [hoveredServiceId, setHoveredServiceId] = useState<string | null>(null);
+  const [paymentProvider, setPaymentProvider] = useState<'stripe' | 'abacatepay'>('stripe');
 
   // Service Modal State
   const [showServiceModal, setShowServiceModal] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
 
-  // Get unique categories for filter
-  const categories = Array.from(new Set(services.map(s => s.category).filter(Boolean))) as string[];
+  // --- Statistics ---
+  const stats = useMemo(() => {
+    const activeCount = services.filter(s => s.is_active !== false).length;
+    const avgPrice = services.length > 0
+      ? services.reduce((acc, s) => acc + s.price, 0) / services.length
+      : 0;
+    return { activeCount, avgPrice };
+  }, [services]);
 
-  // Filter services based on search and category
-  const filteredServices = services.filter(service => {
-    const matchesSearch = searchQuery === '' ||
-      service.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (service.description?.toLowerCase().includes(searchQuery.toLowerCase()));
-    const matchesCategory = selectedCategory === null || service.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  const filteredServices = services.filter(s =>
+    s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (s.category && s.category.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
 
-  // Check if Stripe is configured
+  // ========== BACKEND FUNCTIONS ==========
   useEffect(() => {
     checkStripeConfig();
+    loadPaymentProvider();
   }, []);
+
+  const loadPaymentProvider = async () => {
+    const businessId = await getCurrentBusinessId();
+    if (businessId) {
+      const provider = await getBusinessPaymentProvider(businessId);
+      setPaymentProvider(provider);
+    }
+  };
 
   const checkStripeConfig = async () => {
     const configured = await isStripeConfigured();
@@ -84,7 +123,6 @@ const Services: React.FC<ServicesProps> = () => {
       setSyncResult(result);
 
       if (result.success || result.created > 0 || result.updated > 0) {
-        // Recarregar serviços
         await refetchServices();
       }
     } catch (error) {
@@ -101,23 +139,27 @@ const Services: React.FC<ServicesProps> = () => {
     }
   };
 
-  const handleCreateService = () => {
+  const handleAddNew = () => {
     setEditingService(null);
     setShowServiceModal(true);
   };
 
-  const handleEditService = (service: Service) => {
+  const handleEdit = (service: Service) => {
     setEditingService(service);
     setShowServiceModal(true);
   };
 
-  const handleDeleteService = async (id: string) => {
-    if (confirm('Tem certeza que deseja excluir este serviço?')) {
-      const result = await deleteService(id);
-      if (result) {
-        refetchServices();
+  const handleDelete = async (id: string) => {
+    toast.confirm(
+      'Tem certeza que deseja excluir este serviço?',
+      async () => {
+        const result = await deleteService(id);
+        if (result) {
+          refetchServices();
+          toast.success('Serviço excluído com sucesso.');
+        }
       }
-    }
+    );
   };
 
   const handleServiceSuccess = () => {
@@ -128,54 +170,63 @@ const Services: React.FC<ServicesProps> = () => {
   if (isLoading) {
     return (
       <div className="space-y-6 animate-fade-in pb-20">
-        {/* Header Skeleton */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 animate-pulse">
-          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-            <div className="space-y-2">
-              <div className="h-7 bg-zinc-800 rounded w-56" />
-              <div className="h-4 bg-zinc-800/50 rounded w-80" />
+        {/* Header Dashboard Skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card noPadding className="md:col-span-2 p-5 bg-gradient-to-r from-[var(--dark-services-header-bg-from)] to-[var(--dark-services-header-bg-to)] border-l-4 border-l-[var(--dark-services-header-border)] animate-pulse">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="space-y-2 w-full">
+                <div className="h-6 bg-[var(--dark-services-skeleton-bg-strong)] rounded w-48" />
+                <div className="h-4 bg-[var(--dark-services-skeleton-bg-medium)] rounded w-64" />
+              </div>
+              <div className="flex gap-2">
+                <div className="h-10 w-10 bg-[var(--dark-services-skeleton-bg-medium)] rounded-lg" />
+                <div className="h-10 bg-[var(--dark-services-skeleton-bg-strong)] rounded-lg w-32" />
+              </div>
             </div>
-            <div className="flex gap-3">
-              <div className="h-10 bg-zinc-800/50 rounded-lg w-40" />
-              <div className="h-10 bg-zinc-800 rounded-lg w-32" />
-            </div>
-          </div>
+          </Card>
+
+          <Card noPadding className="col-span-1 p-4 border-l-4 border-l-[var(--dark-services-stats-ativos-border)] animate-pulse">
+            <div className="h-4 bg-[var(--dark-services-skeleton-bg-medium)] rounded w-12 mb-2" />
+            <div className="h-8 bg-[var(--dark-services-skeleton-bg-strong)] rounded w-16" />
+          </Card>
+
+          <Card noPadding className="col-span-1 p-4 border-l-4 border-l-[var(--dark-services-stats-ticket-border)] animate-pulse">
+            <div className="h-4 bg-[var(--dark-services-skeleton-bg-medium)] rounded w-20 mb-2" />
+            <div className="h-8 bg-[var(--dark-services-skeleton-bg-strong)] rounded w-20" />
+          </Card>
         </div>
 
-        {/* Search & Filters Skeleton */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 animate-pulse">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1 h-10 bg-zinc-800/50 rounded-lg" />
-            <div className="flex gap-2">
-              {[1, 2, 3, 4].map(i => (
-                <div key={i} className="h-8 bg-zinc-800/50 rounded-lg w-16" />
-              ))}
-            </div>
+        {/* Controls Bar Skeleton */}
+        <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-[var(--dark-services-controls-bg)] p-2 rounded-xl border border-[var(--dark-services-controls-border)] animate-pulse">
+          <div className="flex gap-4 w-full">
+            <div className="h-10 bg-[var(--dark-services-skeleton-bg-medium)] rounded-lg w-80" />
+            <div className="h-10 bg-[var(--dark-services-skeleton-bg-medium)] rounded-lg w-40" />
           </div>
+          <div className="h-10 bg-[var(--dark-services-skeleton-bg-medium)] rounded-lg w-20" />
         </div>
 
-        {/* List Skeleton */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden animate-pulse">
+        {/* Grid Skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3, 4, 5, 6].map(i => (
-            <div key={i} className="p-4 flex items-center gap-4 border-b border-zinc-800/50">
-              <div className="flex-1 space-y-2">
-                <div className="flex items-center gap-3">
-                  <div className="h-5 bg-zinc-800 rounded w-40" />
-                  <div className="h-5 bg-zinc-800/50 rounded w-16" />
+            <Card key={i} noPadding className="animate-pulse">
+              <div className="p-5">
+                <div className="flex justify-between mb-4">
+                  <div className="flex gap-3">
+                    <div className="w-10 h-10 bg-[var(--dark-services-skeleton-bg-strong)] rounded-lg" />
+                    <div>
+                      <div className="h-4 bg-[var(--dark-services-skeleton-bg-strong)] rounded w-24 mb-2" />
+                      <div className="h-3 bg-[var(--dark-services-skeleton-bg-medium)] rounded w-16" />
+                    </div>
+                  </div>
+                  <div className="w-11 h-6 bg-[var(--dark-services-skeleton-bg-medium)] rounded-full" />
                 </div>
-                <div className="h-3 bg-zinc-800/30 rounded w-64" />
+                <div className="h-8 bg-[var(--dark-services-skeleton-bg-light)] rounded mb-4" />
+                <div className="flex justify-between pt-4 border-t border-[var(--dark-services-divider)]">
+                  <div className="h-6 bg-[var(--dark-services-skeleton-bg-strong)] rounded w-20" />
+                  <div className="h-6 bg-[var(--dark-services-skeleton-bg-medium)] rounded w-16" />
+                </div>
               </div>
-              <div className="hidden sm:flex items-center gap-1.5 w-20">
-                <div className="h-4 bg-zinc-800/50 rounded w-full" />
-              </div>
-              <div className="flex items-center gap-1 w-28 justify-end">
-                <div className="h-6 bg-zinc-800 rounded w-20" />
-              </div>
-              <div className="flex gap-1">
-                <div className="w-8 h-8 bg-zinc-800/50 rounded-lg" />
-                <div className="w-8 h-8 bg-zinc-800/50 rounded-lg" />
-              </div>
-            </div>
+            </Card>
           ))}
         </div>
       </div>
@@ -184,339 +235,266 @@ const Services: React.FC<ServicesProps> = () => {
 
   return (
     <div className="space-y-6 animate-fade-in pb-20">
-      {/* Header */}
-      <div className="bg-[var(--surface-card)] border border-[var(--border-default)] rounded-xl p-6 shadow-lg">
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-          {/* Title Section */}
-          <div>
-            <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-1">
-              {activeTab === 'services' ? 'Catálogo de Serviços' : 'Estoque de Produtos'}
-            </h2>
-            <p className="text-sm text-[var(--text-[var(--text-muted)])]">
-              {activeTab === 'services'
-                ? 'Gerencie preços, durações e profissionais habilitados.'
-                : 'Controle de vendas, estoque e margem de lucro.'}
-            </p>
+
+      {/* Header Dashboard */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card noPadding className="md:col-span-2 p-5 bg-gradient-to-r from-[var(--dark-services-header-bg-from)] to-[var(--dark-services-header-bg-to)] border-l-4 border-l-[var(--dark-services-header-border)] flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="text-center sm:text-left w-full">
+            <h2 className="text-xl font-bold text-[var(--dark-services-title)]">Catálogo de Serviços</h2>
+            <p className="text-sm text-[var(--dark-services-subtitle)] mt-1">Gerencie preços, duração e visibilidade.</p>
+          </div>
+          <div className="flex gap-2 w-full sm:w-auto">
+            {paymentProvider === 'stripe' && (
+              <Button
+                variant="outline"
+                onClick={handleSyncStripe}
+                isLoading={isSyncing}
+                className="w-full sm:w-auto"
+                title="Sincronizar com Stripe"
+              >
+                <RefreshCw size={18} />
+              </Button>
+            )}
+            <Button onClick={handleAddNew} leftIcon={<Plus size={18} />} className="w-full sm:w-auto whitespace-nowrap">
+              Novo Serviço
+            </Button>
+          </div>
+        </Card>
+
+        <Card noPadding className="col-span-1 p-4 flex flex-col justify-center border-l-4 border-l-[var(--dark-services-stats-ativos-border)]">
+          <span className="text-xs font-bold uppercase text-[var(--dark-text-muted)] tracking-wider">Ativos</span>
+          <div className="text-2xl font-bold text-[var(--dark-text-main)] mt-1">{stats.activeCount} <span className="text-sm text-[var(--dark-text-muted)] font-normal">/ {services.length}</span></div>
+          <div className="text-[10px] text-[var(--dark-services-stats-ativos-text)] font-bold mt-1 flex items-center gap-1">
+            <CheckCircle2 size={12} /> Disponíveis no App
+          </div>
+        </Card>
+
+        <Card noPadding className="col-span-1 p-4 flex flex-col justify-center border-l-4 border-l-[var(--dark-services-stats-ticket-border)]">
+          <span className="text-xs font-bold uppercase text-[var(--dark-text-muted)] tracking-wider">Ticket Médio</span>
+          <div className="text-2xl font-bold text-[var(--dark-text-main)] mt-1">R$ {stats.avgPrice.toFixed(0)}</div>
+          <div className="text-[10px] text-[var(--dark-services-stats-ticket-text)] font-bold mt-1">
+            Baseado no catálogo
+          </div>
+        </Card>
+      </div>
+
+      {/* Controls Bar */}
+      <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-[var(--dark-services-controls-bg)] p-2 rounded-xl border border-[var(--dark-services-controls-border)]">
+        <div className="w-full flex flex-col lg:flex-row gap-4">
+          <div className="w-full lg:w-80">
+            <Input
+              placeholder="Buscar serviço..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              containerClassName="mb-0"
+              className="bg-[var(--dark-services-search-bg)] border-[var(--dark-services-search-border)]"
+              icon={<Search size={16} />}
+            />
           </div>
 
-          {/* Actions */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
-            {/* Tabs */}
-            <div className="bg-[var(--surface-subtle)] p-1 rounded-lg border border-[var(--border-default)] flex">
-              <button
-                onClick={() => setActiveTab('services')}
-                className={`flex-1 sm:flex-none px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'services' ? 'bg-[var(--surface-card)] text-[var(--text-primary)] shadow' : 'text-[var(--text-[var(--text-muted)])] hover:text-[var(--text-primary)] '
-                  }`}
-              >
-                Serviços
-              </button>
-              <button
-                disabled
-                className="flex-1 sm:flex-none px-4 py-2 rounded-md text-sm font-medium text-[var(--text-subtle)] cursor-not-allowed flex items-center gap-2"
-              >
-                Produtos
-                <span className="text-[10px] bg-[var(--surface-subtle)] text-[var(--text-subtle)] dark:text-[var(--text-subtle)] px-1.5 py-0.5 rounded uppercase">em breve</span>
-              </button>
-            </div>
-
-            {/* New Service Button */}
+          {/* Filter Tabs */}
+          <div className="flex bg-[var(--dark-services-tabs-bg)] p-1 rounded-lg border border-[var(--dark-services-tabs-border)] overflow-x-auto scrollbar-hide w-full lg:w-auto">
             <button
-              onClick={handleCreateService}
-              className="bg-[var(--brand-primary)] hover:bg-[var(--brand-primary)]hover text-[var(--text-primary)] dark:text-black px-4 py-2 rounded-lg font-bold flex items-center justify-center gap-2 transition-colors shadow-lg shadow-indigo-500/20 dark:shadow-amber-500/20 text-sm"
+              onClick={() => setActiveTab('services')}
+              className={`flex-1 lg:flex-none px-4 py-2 rounded-md text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 ${activeTab === 'services' ? 'bg-[var(--dark-services-tab-active-bg)] text-[var(--dark-services-tab-active-text)] shadow' : 'text-[var(--dark-services-tab-inactive-text)] hover:text-[var(--dark-text-main)]'}`}
             >
-              <Plus size={16} />
-              {activeTab === 'services' ? 'Novo Serviço' : 'Novo Produto'}
+              <Scissors size={14} /> Serviços
+            </button>
+            <button
+              onClick={() => setActiveTab('products')}
+              className={`flex-1 lg:flex-none px-4 py-2 rounded-md text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 ${activeTab === 'products' ? 'bg-[var(--dark-services-tab-active-bg)] text-[var(--dark-services-tab-active-text)] shadow' : 'text-[var(--dark-services-tab-inactive-text)] hover:text-[var(--dark-text-main)]'}`}
+            >
+              <Package size={14} /> Produtos
             </button>
           </div>
+        </div>
+
+        <div className="flex bg-[var(--dark-services-toggle-bg)] rounded-lg p-1 border border-[var(--dark-services-toggle-border)] shrink-0 self-end md:self-auto">
+          <button
+            onClick={() => setViewMode('grid')}
+            className={`p-2 rounded-md transition-colors ${viewMode === 'grid' ? 'bg-[var(--dark-services-toggle-active-bg)] text-[var(--dark-services-toggle-active-text)]' : 'text-[var(--dark-services-toggle-inactive-text)] hover:text-[var(--dark-text-main)]'}`}
+          >
+            <LayoutGrid size={18} />
+          </button>
+          <button
+            onClick={() => setViewMode('list')}
+            className={`p-2 rounded-md transition-colors ${viewMode === 'list' ? 'bg-[var(--dark-services-toggle-active-bg)] text-[var(--dark-services-toggle-active-text)]' : 'text-[var(--dark-services-toggle-inactive-text)] hover:text-[var(--dark-text-main)]'}`}
+          >
+            <List size={18} />
+          </button>
         </div>
       </div>
 
       {activeTab === 'services' ? (
-        /* SERVICE LIST */
-        <div className="space-y-4">
-          {/* Search and Filters Bar */}
-          <div className="bg-[var(--surface-card)] border border-[var(--border-default)] rounded-xl p-4 shadow-lg">
-            <div className="flex flex-col md:flex-row gap-4">
-              {/* Search */}
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-[var(--text-muted)])]" size={18} />
-                <input
-                  type="text"
-                  placeholder="Buscar serviço por nome..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-[var(--surface-subtle)] border border-[var(--border-default)] text-[var(--text-primary)] pl-10 pr-4 py-2.5 rounded-lg focus:border-[var(--brand-primary)] outline-none text-sm"
-                />
-              </div>
-
-              {/* Category Filter Chips */}
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs text-[var(--text-subtle)] font-medium">Filtrar:</span>
-                <button
-                  onClick={() => setSelectedCategory(null)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${selectedCategory === null
-                    ? 'bg-[var(--brand-primary)] text-[var(--text-primary)] dark:text-black'
-                    : 'bg-[var(--surface-subtle)] text-[var(--text-subtle)] hover:text-[var(--text-primary)] '
-                    }`}
-                >
-                  Todas
-                </button>
-                {categories.map((cat) => (
-                  <button
-                    key={cat}
-                    onClick={() => setSelectedCategory(selectedCategory === cat ? null : cat)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${selectedCategory === cat
-                      ? 'bg-[var(--brand-primary)] text-[var(--text-primary)] dark:text-black'
-                      : 'bg-[var(--surface-subtle)] text-[var(--text-subtle)] hover:text-[var(--text-primary)] '
-                      }`}
-                  >
-                    {cat}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Results count */}
-            {(searchQuery || selectedCategory) && (
-              <div className="mt-3 text-xs text-[var(--text-subtle)]">
-                {filteredServices.length} serviço{filteredServices.length !== 1 ? 's' : ''} encontrado{filteredServices.length !== 1 ? 's' : ''}
-                {selectedCategory && <span className="text-[var(--brand-primary)] ml-1">em {selectedCategory}</span>}
-              </div>
-            )}
-          </div>
-
-          {/* Services List */}
-          <div className="bg-[var(--surface-card)] border border-[var(--border-default)] rounded-xl overflow-hidden shadow-lg">
-            {filteredServices.length === 0 ? (
-              <div className="p-12 text-center">
-                <div className="flex flex-col items-center gap-3 text-[var(--text-subtle)]">
-                  {services.length === 0 ? (
-                    <>
-                      <Clock size={48} className="opacity-20" />
-                      <p className="text-base font-medium">Você ainda não tem nenhum serviço cadastrado</p>
-                      <p className="text-sm text-[var(--text-subtle)]">Clique em"Novo Serviço" para começar</p>
-                    </>
-                  ) : (
-                    <>
-                      <Search size={48} className="opacity-20" />
-                      <p className="text-base font-medium">Nenhum serviço encontrado</p>
-                      <p className="text-sm text-[var(--text-subtle)]">Tente ajustar os filtros ou busca</p>
-                    </>
-                  )}
+        <>
+          {/* GRID VIEW */}
+          {viewMode === 'grid' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredServices.length === 0 ? (
+                <div className="col-span-full p-12 text-center border border-dashed border-[var(--dark-services-empty-border)] rounded-xl">
+                  <div className="flex flex-col items-center gap-3 text-[var(--dark-services-empty-text)]">
+                    <Scissors size={48} style={{ opacity: 'var(--dark-services-empty-icon-opacity)' }} />
+                    <p className="text-lg font-medium text-[var(--dark-services-empty-title)]">Nenhum serviço encontrado</p>
+                    <p className="text-sm">Clique em "Novo Serviço" para adicionar</p>
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <div className="divide-y divide-barber-800">
-                {filteredServices.map((service) => {
-                  const isHovered = hoveredServiceId === service.id;
-
-                  return (
-                    <div
-                      key={service.id}
-                      onClick={() => handleEditService(service)}
-                      onMouseEnter={() => setHoveredServiceId(service.id)}
-                      onMouseLeave={() => setHoveredServiceId(null)}
-                      className={`p-4 flex items-center gap-4 cursor-pointer transition-all ${isHovered ? 'bg-[var(--surface-subtle)]/50' : 'hover:bg-[var(--surface-subtle)]/30'
-                        } ${!service.is_active ? 'opacity-60' : ''}`}
-                    >
-                      {/* Service Info - Main Column */}
-                      <div className="flex-1 min-w-0">
+              ) : (
+                filteredServices.map(service => (
+                  <Card key={service.id} noPadding className={`flex flex-col h-full bg-[var(--dark-services-card-bg)] hover:border-[var(--dark-services-card-border-hover)] transition-all duration-300 group ${service.is_active === false ? 'opacity-60' : ''}`}>
+                    <div className="p-5 flex-1">
+                      <div className="flex justify-between items-start mb-4">
                         <div className="flex items-center gap-3">
-                          {/* Name - Strong */}
-                          <h3 className="text-[var(--text-primary)] font-bold truncate">{service.name}</h3>
-
-                          {/* Category Tag - Clickable */}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedCategory(service.category || null);
-                            }}
-                            className="shrink-0 bg-[var(--surface-subtle)] text-[var(--text-subtle)] px-2 py-0.5 rounded text-[10px] font-medium border border-[var(--border-default)] hover:border-indigo-400 dark:hover:border-amber-500/50 hover:text-indigo-600 dark:hover:text-amber-500 transition-colors"
-                          >
-                            {service.category || 'Geral'}
-                          </button>
-
-                          {/* Status Badge - Subtle for active, visible for inactive */}
-                          {!service.is_active && (
-                            <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-red-500/20 text-[var(--status-error)] border border-red-500/30">
-                              Inativo
-                            </span>
-                          )}
+                          <div className="w-10 h-10 rounded-lg bg-[var(--dark-services-icon-bg)] text-[var(--dark-services-icon-text)] flex items-center justify-center border border-[var(--dark-services-icon-border)]">
+                            <Scissors size={20} />
+                          </div>
+                          <div>
+                            <h3 className="font-bold text-[var(--dark-services-name)] text-sm">{service.name}</h3>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <Badge size="sm" variant="outline" className="text-[10px] py-0">{service.category || 'Geral'}</Badge>
+                            </div>
+                          </div>
                         </div>
-
-                        {/* Description - Subtle */}
-                        {service.description && (
-                          <p className="text-xs text-[var(--text-subtle)] mt-1 truncate max-w-md">{service.description}</p>
-                        )}
+                        <Switch
+                          checked={service.is_active !== false}
+                          onCheckedChange={() => { }}
+                        />
                       </div>
 
-                      {/* Duration */}
-                      <div className="hidden sm:flex items-center gap-1.5 text-sm text-[var(--text-[var(--text-muted)])] shrink-0 w-20">
-                        <Clock size={14} className="text-[var(--text-subtle)]" />
-                        <span>{service.duration_minutes}min</span>
-                      </div>
+                      <p className="text-xs text-[var(--dark-services-description)] line-clamp-2 mb-4 min-h-[32px]">
+                        {service.description || "Sem descrição definida para este serviço."}
+                      </p>
 
-                      {/* Price - Strong */}
-                      <div className="flex items-center gap-1 shrink-0 w-28 justify-end">
-                        <DollarSign size={14} className="text-[var(--status-success)]" />
-                        <span className="text-lg font-bold text-[var(--text-primary)]">
-                          R$ {service.price.toFixed(0)}
-                        </span>
-                      </div>
-
-                      {/* Hover Actions */}
-                      <div className={`flex items-center gap-1 shrink-0 transition-opacity ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEditService(service);
-                          }}
-                          className="p-2 hover:bg-[var(--surface-hover)] rounded-lg text-[var(--text-[var(--text-muted)])] hover:text-[var(--text-primary)] transition-colors"
-                          title="Editar"
-                        >
-                          <Edit2 size={16} />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            // Duplicate - create new with same data
-                            setEditingService({ ...service, id: '', name: `${service.name} (Cópia)` } as Service);
-                            setShowServiceModal(true);
-                          }}
-                          className="p-2 hover:bg-blue-500/20 rounded-lg text-[var(--text-[var(--text-muted)])] hover:text-blue-400 transition-colors"
-                          title="Duplicar"
-                        >
-                          <Package size={16} />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteService(service.id);
-                          }}
-                          className="p-2 hover:bg-red-500/20 rounded-lg text-[var(--text-[var(--text-muted)])] hover:text-red-500 transition-colors"
-                          title="Excluir"
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                      <div className="flex items-center justify-between mt-auto pt-4 border-t border-[var(--dark-services-divider)]">
+                        <div className="flex flex-col">
+                          <span className="text-[10px] text-[var(--dark-services-price-label)] font-bold uppercase">Valor</span>
+                          <div className="text-lg font-bold text-[var(--dark-services-price-value)]">R$ {service.price.toFixed(2)}</div>
+                        </div>
+                        <div className="flex flex-col items-end">
+                          <span className="text-[10px] text-[var(--dark-services-duration-label)] font-bold uppercase">Tempo</span>
+                          <div className="text-sm font-medium text-[var(--dark-services-duration-value)] flex items-center gap-1">
+                            <Clock size={14} className="text-[var(--dark-services-duration-icon)]" /> {service.duration_minutes} min
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </div>
-      ) : (
-        /* PRODUCT LIST */
-        <>
-          {products.some(p => p.stock <= p.minStock) && (
-            <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 flex items-start gap-3 mb-4">
-              <AlertTriangle className="text-red-500 shrink-0" size={20} />
-              <div>
-                <h4 className="text-red-500 font-bold text-sm">Atenção: Estoque Baixo</h4>
-                <p className="text-[var(--status-error)] text-xs mt-1">Alguns produtos estão abaixo do mínimo e precisam de reposição.</p>
-              </div>
+                    <div className="bg-[var(--dark-services-footer-bg)] p-2 flex justify-end gap-2 border-t border-[var(--dark-services-footer-border)]">
+                      <Button size="sm" variant="ghost" onClick={() => handleEdit(service)} className="text-xs h-8">
+                        <Edit2 size={14} className="mr-1" /> Editar
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => handleDelete(service.id)} className="text-xs h-8 hover:!text-red-500">
+                        <Trash2 size={14} />
+                      </Button>
+                    </div>
+                  </Card>
+                ))
+              )}
             </div>
           )}
 
-          <div className="flex gap-4 mb-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-2.5 text-[var(--text-subtle)]" size={18} />
-              <input
-                type="text"
-                placeholder="Buscar produto..."
-                className="w-full bg-[var(--surface-card)] border border-[var(--border-default)] text-[var(--text-primary)] pl-10 pr-4 py-2 rounded-lg focus:border-[var(--brand-primary)] outline-none"
-              />
-            </div>
-            <button className="bg-[var(--surface-card)] hover:bg-[var(--surface-subtle)] text-[var(--text-primary)] p-2 rounded-lg border border-[var(--border-default)]">
-              <Filter size={20} />
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {products.length === 0 ? (
-              <div className="col-span-full p-12 text-center border-2 border-dashed border-[var(--border-default)] rounded-xl">
-                <div className="flex flex-col items-center gap-3 text-[var(--text-subtle)]">
-                  <Package size={48} className="opacity-20" />
-                  <p className="text-lg font-medium">Você ainda não tem nenhum produto cadastrado</p>
-                  <p className="text-sm text-[var(--text-subtle)]">Clique em"Novo Produto" para começar</p>
-                </div>
+          {/* LIST VIEW */}
+          {viewMode === 'list' && (
+            <div className="flex flex-col gap-3">
+              {/* Desktop Header */}
+              <div className="hidden md:grid grid-cols-12 gap-4 px-4 py-2 text-xs font-bold text-[var(--dark-services-list-header-text)] uppercase tracking-wider bg-[var(--dark-services-list-header-bg)] rounded-lg border border-transparent">
+                <div className="col-span-4">Serviço</div>
+                <div className="col-span-2">Categoria</div>
+                <div className="col-span-2">Preço / Duração</div>
+                <div className="col-span-2">Status</div>
+                <div className="col-span-2 text-right">Ações</div>
               </div>
-            ) : (
-              products.map(product => (
-                <div key={product.id} className={`bg-[var(--surface-card)] border rounded-xl p-5 shadow-lg group transition-all relative ${product.stock <= product.minStock ? 'border-red-500/30 shadow-[0_0_10px_rgba(239,68,68,0.1)]' : 'border-[var(--border-default)] hover:border-[var(--border-strong)]'}`}>
 
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="p-3 bg-[var(--surface-subtle)] rounded-lg border border-[var(--border-default)]">
-                      <Package size={24} className="text-[var(--brand-primary)]" />
+              {filteredServices.map(service => (
+                <div
+                  key={service.id}
+                  className={`bg-[var(--dark-services-list-item-bg)] border border-[var(--dark-services-list-item-border)] hover:border-[var(--dark-services-list-item-border-hover)] rounded-xl p-4 flex flex-col md:grid md:grid-cols-12 gap-4 items-center transition-all duration-200 group ${service.is_active === false ? 'opacity-60' : ''}`}
+                >
+                  {/* Name */}
+                  <div className="w-full md:col-span-4 flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-[var(--dark-services-list-icon-bg)] flex items-center justify-center text-[var(--dark-services-list-icon-text)]">
+                      <Scissors size={14} />
                     </div>
-                    <div className={`px-2 py-1 rounded text-xs font-bold ${product.stock <= product.minStock ? 'bg-red-500/20 text-red-500' : 'bg-green-500/20 text-[var(--status-success)]'}`}>
-                      {product.stock} un
-                    </div>
-                  </div>
-
-                  <h3 className="font-bold text-[var(--text-primary)] mb-1 truncate">{product.name}</h3>
-                  <p className="text-xs text-[var(--text-subtle)] mb-4">{product.category}</p>
-
-                  <div className="flex justify-between items-end border-t border-[var(--border-default)] pt-4">
-                    <div>
-                      <div className="text-xs text-[var(--text-subtle)]">Preço Venda</div>
-                      <div className="text-lg font-bold text-[var(--text-primary)]">R$ {product.price.toFixed(2)}</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-xs text-[var(--text-subtle)]">Comissão</div>
-                      <div className="text-sm font-medium text-blue-400">{product.commissionRate || 0}%</div>
+                    <div className="min-w-0">
+                      <div className="font-bold text-[var(--dark-services-name)] text-sm truncate">{service.name}</div>
                     </div>
                   </div>
 
-                  {product.stock <= product.minStock && (
-                    <div className="mt-4 bg-red-500/10 border border-red-500/20 rounded p-2 flex items-center gap-2 text-xs text-[var(--status-error)]">
-                      <AlertTriangle size={12} /> Estoque Baixo (Min: {product.minStock})
-                    </div>
-                  )}
+                  {/* Category */}
+                  <div className="w-full md:col-span-2">
+                    <Badge variant="outline" size="sm">{service.category || 'Geral'}</Badge>
+                  </div>
 
-                  <div className="mt-4 flex gap-2">
-                    <button className="flex-1 bg-[var(--surface-subtle)] hover:bg-[var(--surface-hover)] text-[var(--text-primary)] text-xs font-bold py-2 rounded transition-colors">Editar</button>
-                    <button className="flex-1 bg-[var(--brand-primary)] hover:bg-[var(--brand-hover)] text-black text-xs font-bold py-2 rounded transition-colors">Vender</button>
+                  {/* Price/Duration */}
+                  <div className="w-full md:col-span-2 flex items-center justify-between md:block">
+                    <div className="text-sm font-bold text-[var(--dark-services-price-value)]">R$ {service.price.toFixed(2)}</div>
+                    <div className="text-xs text-[var(--dark-text-muted)] flex items-center gap-1 mt-0.5">
+                      <Clock size={10} /> {service.duration_minutes} min
+                    </div>
+                  </div>
+
+                  {/* Status */}
+                  <div className="w-full md:col-span-2 flex items-center justify-between md:justify-start">
+                    <span className="md:hidden text-xs font-bold text-[var(--dark-text-muted)] uppercase">Status</span>
+                    <Switch
+                      checked={service.is_active !== false}
+                      onCheckedChange={() => { }}
+                    />
+                  </div>
+
+                  {/* Actions */}
+                  <div className="w-full md:col-span-2 flex items-center justify-end gap-2 mt-2 md:mt-0 pt-2 md:pt-0 border-t border-[var(--dark-services-divider)] md:border-0">
+                    <Button size="icon" variant="ghost" onClick={() => handleEdit(service)} title="Editar" className="h-8 w-8">
+                      <Edit2 size={14} />
+                    </Button>
+                    <Button size="icon" variant="ghost" onClick={() => handleDelete(service.id)} className="h-8 w-8 hover:!text-red-500" title="Excluir">
+                      <Trash2 size={14} />
+                    </Button>
                   </div>
                 </div>
-              ))
-            )}
-          </div>
+              ))}
+            </div>
+          )}
         </>
+      ) : (
+        /* PRODUCT LIST (Placeholder styled) */
+        <div className="flex flex-col items-center justify-center py-20 bg-[var(--dark-services-products-bg)] border border-[var(--dark-services-products-border)] border-dashed rounded-xl">
+          <div className="w-16 h-16 bg-[var(--dark-services-products-icon-bg)] rounded-full flex items-center justify-center mb-4 border border-[var(--dark-services-products-icon-border)]">
+            <Package size={24} className="text-[var(--dark-services-products-icon-text)]" />
+          </div>
+          <h3 className="text-xl font-bold text-[var(--dark-services-products-title)]">Módulo em Desenvolvimento</h3>
+          <p className="text-[var(--dark-services-products-text)] mt-2 text-sm">A gestão de estoque e produtos estará disponível na próxima atualização.</p>
+          <Button className="mt-6" variant="outline" disabled>Notificar quando disponível</Button>
+        </div>
       )}
 
-      {/* Service Modal */}
-      {
-        showServiceModal && (
-          <ServiceModal
-            service={editingService}
-            onClose={() => setShowServiceModal(false)}
-            onSuccess={handleServiceSuccess}
-            existingCategories={Array.from(new Set(services.map(s => s.category).filter(Boolean)))}
-          />
-        )
-      }
+      {/* ========== SERVICE MODAL (Using existing ServiceModal) ========== */}
+      {showServiceModal && (
+        <ServiceModal
+          service={editingService}
+          onClose={() => setShowServiceModal(false)}
+          onSuccess={handleServiceSuccess}
+          existingCategories={Array.from(new Set(services.map(s => s.category).filter(Boolean)))}
+        />
+      )}
 
-      {/* Sync Modal */}
+      {/* ========== SYNC MODAL ========== */}
       {showSyncModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-[var(--surface-card)] border border-[var(--border-default)] rounded-xl p-6 max-w-md w-full shadow-2xl">
+        <div className="fixed inset-0 bg-[var(--dark-services-sync-overlay)] backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-[var(--dark-services-sync-bg)] border border-[var(--dark-services-sync-border)] rounded-xl p-6 max-w-md w-full shadow-2xl">
             <div className="flex justify-between items-start mb-4">
-              <h3 className="text-xl font-bold text-[var(--text-primary)] flex items-center gap-2">
+              <h3 className="text-xl font-bold text-[var(--dark-services-sync-title)] flex items-center gap-2">
                 {isSyncing ? (
                   <>
-                    <Loader className="animate-spin text-[#635BFF]" size={24} />
+                    <Loader className="animate-spin text-[var(--dark-services-stripe-color)]" size={24} />
                     Sincronizando...
                   </>
                 ) : syncResult?.success || syncResult?.created > 0 || syncResult?.updated > 0 ? (
                   <>
-                    <CheckCircle2 className="text-[var(--status-success)]" size={24} />
+                    <CheckCircle2 className="text-[var(--dark-services-sync-success-icon)]" size={24} />
                     Sincronização Completa!
                   </>
                 ) : (
                   <>
-                    <AlertTriangle className="text-red-500" size={24} />
+                    <AlertTriangle className="text-[var(--dark-services-sync-error-icon)]" size={24} />
                     Erro na Sincronização
                   </>
                 )}
@@ -524,7 +502,7 @@ const Services: React.FC<ServicesProps> = () => {
               {!isSyncing && (
                 <button
                   onClick={() => setShowSyncModal(false)}
-                  className="text-[var(--text-[var(--text-muted)])] hover:text-[var(--text-primary)] transition-colors"
+                  className="text-[var(--dark-services-sync-close-text)] hover:text-[var(--dark-services-sync-close-hover)] transition-colors"
                 >
                   <X size={20} />
                 </button>
@@ -533,34 +511,34 @@ const Services: React.FC<ServicesProps> = () => {
 
             {isSyncing ? (
               <div className="space-y-3">
-                <p className="text-[var(--text-[var(--text-muted)])]">Buscando produtos do Stripe...</p>
-                <div className="bg-[var(--surface-subtle)] rounded-lg p-4">
-                  <div className="h-2 bg-[var(--surface-subtle)] rounded-full overflow-hidden">
-                    <div className="h-full bg-[#635BFF] animate-pulse" style={{ width: '60%' }}></div>
+                <p className="text-[var(--dark-services-sync-text)]">Buscando produtos do Stripe...</p>
+                <div className="bg-[var(--dark-services-sync-loading-bg)] rounded-lg p-4">
+                  <div className="h-2 bg-[var(--dark-services-sync-loading-track)] rounded-full overflow-hidden">
+                    <div className="h-full bg-[var(--dark-services-sync-loading-fill)] animate-pulse" style={{ width: '60%' }}></div>
                   </div>
                 </div>
               </div>
             ) : syncResult ? (
               <div className="space-y-4">
                 <div className="grid grid-cols-3 gap-3">
-                  <div className="bg-[var(--surface-subtle)] border border-[var(--border-default)] rounded-lg p-3 text-center">
-                    <div className="text-2xl font-bold text-[var(--text-primary)]">{syncResult.total}</div>
-                    <div className="text-xs text-[var(--text-[var(--text-muted)])] mt-1">Total</div>
+                  <div className="bg-[var(--dark-services-sync-total-bg)] border border-[var(--dark-services-sync-total-border)] rounded-lg p-3 text-center">
+                    <div className="text-2xl font-bold text-[var(--dark-services-sync-total-text)]">{syncResult.total}</div>
+                    <div className="text-xs text-[var(--dark-services-sync-total-label)] mt-1">Total</div>
                   </div>
-                  <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3 text-center">
-                    <div className="text-2xl font-bold text-[var(--status-success)]">{syncResult.created}</div>
-                    <div className="text-xs text-[var(--status-success)] mt-1">Criados</div>
+                  <div className="bg-[var(--dark-services-sync-created-bg)] border border-[var(--dark-services-sync-created-border)] rounded-lg p-3 text-center">
+                    <div className="text-2xl font-bold text-[var(--dark-services-sync-created-text)]">{syncResult.created}</div>
+                    <div className="text-xs text-[var(--dark-services-sync-created-text)] mt-1">Criados</div>
                   </div>
-                  <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 text-center">
-                    <div className="text-2xl font-bold text-[var(--status-info)]">{syncResult.updated}</div>
-                    <div className="text-xs text-blue-400 mt-1">Atualizados</div>
+                  <div className="bg-[var(--dark-services-sync-updated-bg)] border border-[var(--dark-services-sync-updated-border)] rounded-lg p-3 text-center">
+                    <div className="text-2xl font-bold text-[var(--dark-services-sync-updated-text)]">{syncResult.updated}</div>
+                    <div className="text-xs text-[var(--dark-services-sync-updated-text)] mt-1">Atualizados</div>
                   </div>
                 </div>
 
                 {syncResult.errors && syncResult.errors.length > 0 && (
-                  <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
-                    <h4 className="text-red-500 font-bold text-sm mb-2">Erros:</h4>
-                    <ul className="text-xs text-[var(--status-error)] space-y-1">
+                  <div className="bg-[var(--dark-services-sync-error-bg)] border border-[var(--dark-services-sync-error-border)] rounded-lg p-3">
+                    <h4 className="text-[var(--dark-services-sync-error-title)] font-bold text-sm mb-2">Erros:</h4>
+                    <ul className="text-xs text-[var(--dark-services-sync-error-text)] space-y-1">
                       {syncResult.errors.map((error: string, index: number) => (
                         <li key={index}>• {error}</li>
                       ))}
@@ -570,7 +548,7 @@ const Services: React.FC<ServicesProps> = () => {
 
                 <button
                   onClick={() => setShowSyncModal(false)}
-                  className="w-full bg-[var(--brand-primary)] hover:bg-[var(--brand-hover)] text-black font-bold py-2.5 rounded-lg transition-colors"
+                  className="w-full bg-[var(--dark-services-sync-close-btn-bg)] hover:bg-[var(--dark-services-sync-close-btn-hover)] text-[var(--dark-services-sync-close-btn-text)] font-bold py-2.5 rounded-lg transition-colors"
                 >
                   Fechar
                 </button>
@@ -579,7 +557,7 @@ const Services: React.FC<ServicesProps> = () => {
           </div>
         </div>
       )}
-    </div >
+    </div>
   );
 };
 

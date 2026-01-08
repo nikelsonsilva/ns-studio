@@ -34,17 +34,17 @@
    Aplicado via atributo data-mode='light' no body
    ------------------------------------------------ */
 [data-mode='light'] {
-  /* Fundos - Escala Slate Claro */
+  /* Fundos - Escala Slate Claro para um visual limpo e moderno */
   --color-background: 241 245 249;  /* Slate 100 */
   --color-surface: 255 255 255;     /* Branco */
   --color-surface-hover: 248 250 252; /* Slate 50 */
   --color-border: 203 213 225;      /* Slate 300 */
-  --color-input: 255 255 255;       /* Branco */
+  --color-input: 241 245 249;       /* Slate 100 (Input levemente mais escuro que o card) */
 
   /* Texto */
-  --color-text-main: 15 23 42;      /* Slate 900 */
+  --color-text-main: 15 23 42;      /* Slate 900 (Quase preto) */
   --color-text-muted: 100 116 139;  /* Slate 500 */
-  --color-text-inverted: 255 255 255; /* Branco (para contraste na cor primária roxa) ou Preto no Dourado */
+  --color-text-inverted: 0 0 0;     /* Preto no Dourado */
 }
 
 /* ------------------------------------------------

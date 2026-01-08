@@ -349,12 +349,12 @@ const Team: React.FC<TeamProps> = ({ barbers: initialBarbers, services }) => {
                           </button>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <Input label="Nome Completo" value={target.name} onChange={e => setTarget({...target, name: e.target.value})} icon={<User size={16}/>} />
-                        <Input label="Especialidade" value={target.specialty} onChange={e => setTarget({...target, specialty: e.target.value})} icon={<Scissors size={16}/>} />
-                        <Input label="E-mail" type="email" value={target.email} onChange={e => setTarget({...target, email: e.target.value})} icon={<Mail size={16}/>} />
-                        <Input label="Telefone" type="tel" value={target.phone} onChange={e => setTarget({...target, phone: e.target.value})} icon={<Phone size={16}/>} />
-                        <Input label="CPF" value={target.cpf || ''} onChange={e => setTarget({...target, cpf: e.target.value})} icon={<FileText size={16}/>} placeholder="000.000.000-00" />
-                        <Input label="Data de Nascimento" type="date" value={target.birthDate || ''} onChange={e => setTarget({...target, birthDate: e.target.value})} icon={<Calendar size={16}/>} />
+                        <Input label="Nome Completo" value={target.name} onChange={e => (setTarget as any)({...target, name: e.target.value})} icon={<User size={16}/>} />
+                        <Input label="Especialidade" value={target.specialty} onChange={e => (setTarget as any)({...target, specialty: e.target.value})} icon={<Scissors size={16}/>} />
+                        <Input label="E-mail" type="email" value={target.email} onChange={e => (setTarget as any)({...target, email: e.target.value})} icon={<Mail size={16}/>} />
+                        <Input label="Telefone" type="tel" value={target.phone} onChange={e => (setTarget as any)({...target, phone: e.target.value})} icon={<Phone size={16}/>} />
+                        <Input label="CPF" value={target.cpf || ''} onChange={e => (setTarget as any)({...target, cpf: e.target.value})} icon={<FileText size={16}/>} placeholder="000.000.000-00" />
+                        <Input label="Data de Nascimento" type="date" value={target.birthDate || ''} onChange={e => (setTarget as any)({...target, birthDate: e.target.value})} icon={<Calendar size={16}/>} />
                       </div>
                   </div>
               );
@@ -371,8 +371,8 @@ const Team: React.FC<TeamProps> = ({ barbers: initialBarbers, services }) => {
               return (
                   <div className="space-y-6 animate-fade-in">
                       <div className="grid grid-cols-2 gap-4">
-                        <Input label="Meta Mensal (R$)" type="number" value={target.goal} onChange={e => setTarget({...target, goal: Number(e.target.value)})} icon={<Target size={16}/>} />
-                        <Input label="Comissão (%)" type="number" value={target.commissionRate} onChange={e => setTarget({...target, commissionRate: Number(e.target.value)})} icon={<Banknote size={16}/>} />
+                        <Input label="Meta Mensal (R$)" type="number" value={target.goal} onChange={e => (setTarget as any)({...target, goal: Number(e.target.value)})} icon={<Target size={16}/>} />
+                        <Input label="Comissão (%)" type="number" value={target.commissionRate} onChange={e => (setTarget as any)({...target, commissionRate: Number(e.target.value)})} icon={<Banknote size={16}/>} />
                       </div>
                       
                       {/* New Financial Summary Section */}

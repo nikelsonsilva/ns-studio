@@ -131,7 +131,9 @@ const ClientDetailsModal: React.FC<ClientDetailsModalProps> = ({
   const [isUploading, setIsUploading] = useState(false);
   const [newPhotoDescription, setNewPhotoDescription] = useState('');
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [showPhotoMenu, setShowPhotoMenu] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   // Business settings for feature toggles
   const [businessSettings, setBusinessSettings] = useState<BusinessSettings | null>(null);
@@ -181,10 +183,10 @@ const ClientDetailsModal: React.FC<ClientDetailsModalProps> = ({
 
   const getTierStyles = (t: LoyaltyTier) => {
     switch (t) {
-      case 'Diamante': return { bg: 'bg-cyan-500/10', border: 'border-cyan-500', text: 'text-cyan-500', icon: Crown, shadow: 'shadow-cyan-500/20' };
-      case 'Ouro': return { bg: 'bg-yellow-500/10', border: 'border-yellow-500', text: 'text-yellow-500', icon: Award, shadow: 'shadow-yellow-500/20' };
-      case 'Prata': return { bg: 'bg-gray-400/10', border: 'border-gray-400', text: 'text-gray-400', icon: Award, shadow: 'shadow-gray-500/20' };
-      default: return { bg: 'bg-orange-700/10', border: 'border-orange-800', text: 'text-orange-700', icon: Award, shadow: 'shadow-orange-500/20' };
+      case 'Diamante': return { bg: 'bg-[var(--dark-client-tier-diamante-bg)]', border: 'border-[var(--dark-client-tier-diamante-border)]', text: 'text-[var(--dark-client-tier-diamante)]', icon: Crown, shadow: 'shadow-[var(--dark-client-tier-diamante-shadow)]' };
+      case 'Ouro': return { bg: 'bg-[var(--dark-client-tier-ouro-bg)]', border: 'border-[var(--dark-client-tier-ouro-border)]', text: 'text-[var(--dark-client-tier-ouro)]', icon: Award, shadow: 'shadow-[var(--dark-client-tier-ouro-shadow)]' };
+      case 'Prata': return { bg: 'bg-[var(--dark-client-tier-prata-bg)]', border: 'border-[var(--dark-client-tier-prata-border)]', text: 'text-[var(--dark-client-tier-prata)]', icon: Award, shadow: 'shadow-[var(--dark-client-tier-prata-shadow)]' };
+      default: return { bg: 'bg-[var(--dark-client-tier-bronze-bg)]', border: 'border-[var(--dark-client-tier-bronze-border)]', text: 'text-[var(--dark-client-tier-bronze)]', icon: Award, shadow: 'shadow-[var(--dark-client-tier-bronze-shadow)]' };
     }
   };
 
@@ -194,9 +196,9 @@ const ClientDetailsModal: React.FC<ClientDetailsModalProps> = ({
   // Helper for Origin Info
   const getOriginInfo = (origin?: string) => {
     switch (origin) {
-      case 'public_link': return { label: 'Via Link', icon: Globe, color: 'text-blue-400' };
-      case 'whatsapp': return { label: 'Via WhatsApp', icon: MessageCircle, color: 'text-green-500' };
-      default: return { label: 'Balcão/Manual', icon: Store, color: 'text-zinc-400' };
+      case 'public_link': return { label: 'Via Link', icon: Globe, color: 'text-[var(--dark-client-origin-link)]' };
+      case 'whatsapp': return { label: 'Via WhatsApp', icon: MessageCircle, color: 'text-[var(--dark-client-origin-whatsapp)]' };
+      default: return { label: 'Balcão/Manual', icon: Store, color: 'text-[var(--dark-client-origin-manual)]' };
     }
   };
 
@@ -350,15 +352,12 @@ const ClientDetailsModal: React.FC<ClientDetailsModalProps> = ({
     }
 
     // Upload to database
-    console.log('📸 [handleConfirmUpload] Calling saveClientPhotos...');
     const savedPhotos = await saveClientPhotos(
       businessId,
       client.id,
       pendingFiles,
       newPhotoDescription || undefined
     );
-
-    console.log('📸 [handleConfirmUpload] Result:', savedPhotos);
 
     if (savedPhotos.length > 0) {
       setPhotos(prev => [...savedPhotos, ...prev]);
@@ -450,15 +449,15 @@ const ClientDetailsModal: React.FC<ClientDetailsModalProps> = ({
               <div>
                 <h3 className="text-xl font-bold text-white leading-none flex items-center gap-2">
                   {client.name}
-                  {tags.includes('VIP') && <Crown size={16} className="text-amber-500 fill-amber-500" />}
+                  {tags.includes('VIP') && <Crown size={16} className="text-[var(--dark-client-vip-crown)] fill-[var(--dark-client-vip-crown)]" />}
                 </h3>
                 <div className="flex items-center gap-3 mt-1.5">
                   <Badge size="sm" className={`${tierStyle.bg} ${tierStyle.text} border-none font-bold`}>
                     {tier}
                   </Badge>
                   <div className="h-3 w-px bg-zinc-700"></div>
-                  <span className={`text-xs flex items-center gap-1 font-medium ${getOriginInfo().color}`}>
-                    {React.createElement(getOriginInfo().icon, { size: 12 })} {getOriginInfo().label}
+                  <span className={`text-xs flex items-center gap-1 font-medium ${getOriginInfo(client.source).color}`}>
+                    {React.createElement(getOriginInfo(client.source).icon, { size: 12 })} {getOriginInfo(client.source).label}
                   </span>
                 </div>
               </div>
@@ -467,7 +466,7 @@ const ClientDetailsModal: React.FC<ClientDetailsModalProps> = ({
             {/* Header Actions */}
             {!isEditingProfile && (
               <div className="flex items-center gap-3 pl-6 border-l border-zinc-800 ml-6">
-                <button onClick={handleWhatsApp} className="w-8 h-8 rounded-lg bg-green-500/10 hover:bg-green-500/20 text-green-500 flex items-center justify-center transition-colors" title="WhatsApp">
+                <button onClick={handleWhatsApp} className="w-8 h-8 rounded-lg bg-[var(--dark-client-whatsapp-bg)] hover:bg-[var(--dark-client-whatsapp-hover)] text-[var(--dark-client-whatsapp-text)] flex items-center justify-center transition-colors" title="WhatsApp">
                   <MessageCircle size={16} />
                 </button>
                 <button className="w-8 h-8 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white flex items-center justify-center transition-colors" title="Ligar">
@@ -553,7 +552,7 @@ const ClientDetailsModal: React.FC<ClientDetailsModalProps> = ({
                 </button>
                 <button
                   onClick={() => setActiveTab('noshow')}
-                  className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'noshow' ? 'bg-red-500/10 text-red-500 shadow' : 'text-zinc-400 hover:text-red-400'}`}
+                  className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'noshow' ? 'bg-[var(--dark-client-noshow-active-bg)] text-[var(--dark-client-noshow-active-text)] shadow' : 'text-zinc-400 hover:text-[var(--dark-client-noshow-hover-text)]'}`}
                 >
                   Histórico & No-Show
                 </button>
@@ -571,24 +570,24 @@ const ClientDetailsModal: React.FC<ClientDetailsModalProps> = ({
                     </Card>
                     <Card noPadding className="p-4 bg-zinc-900/50 border-zinc-800">
                       <div className="text-zinc-400 text-xs font-bold uppercase mb-1">LTV (Gasto)</div>
-                      <div className="text-2xl font-bold text-emerald-500 flex items-center gap-2">
+                      <div className="text-2xl font-bold text-[var(--dark-client-ltv-text)] flex items-center gap-2">
                         R$ {clientStats.lifetimeValue.toLocaleString('pt-BR')} <DollarSign size={16} />
                       </div>
                     </Card>
                     <Card noPadding className="p-4 bg-zinc-900/50 border-zinc-800">
                       <div className="text-zinc-400 text-xs font-bold uppercase mb-1">Fidelidade</div>
-                      <div className="text-2xl font-bold text-sky-500 flex items-center gap-2">
+                      <div className="text-2xl font-bold text-[var(--dark-client-fidelity-text)] flex items-center gap-2">
                         {points}/{maxPoints} <span className="text-xs text-zinc-400">pts</span>
                       </div>
                     </Card>
                   </div>
 
                   {/* Last Service Card */}
-                  <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 flex items-center justify-between relative overflow-hidden group hover:border-blue-500/50 transition-colors">
-                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500"></div>
+                  <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 flex items-center justify-between relative overflow-hidden group hover:border-[var(--dark-client-service-hover)] transition-colors">
+                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-[var(--dark-client-service-accent)]"></div>
                     <div>
                       <h4 className="text-xs font-bold text-zinc-400 uppercase flex items-center gap-2 mb-1">
-                        <Scissors size={14} className="text-blue-500" /> Último Serviço Realizado
+                        <Scissors size={14} className="text-[var(--dark-client-service-accent)]" /> Último Serviço Realizado
                       </h4>
                       <div className="text-lg font-bold text-white leading-tight">
                         {historyData.length > 0 ? historyData[0].service_name : 'Sem registro recente'}
@@ -599,7 +598,7 @@ const ClientDetailsModal: React.FC<ClientDetailsModalProps> = ({
                         <span className="flex items-center gap-1"><User size={12} /> Com: {historyData.length > 0 ? historyData[0].professional_name : 'Profissional'}</span>
                       </div>
                     </div>
-                    <Button size="sm" variant="secondary" className="hover:bg-blue-600 hover:text-white transition-colors shrink-0 ml-2">Repetir</Button>
+                    <Button size="sm" variant="secondary" className="hover:bg-[var(--dark-client-service-accent)] hover:text-white transition-colors shrink-0 ml-2">Repetir</Button>
                   </div>
 
                   {/* Loyalty Card Visual */}
@@ -610,23 +609,25 @@ const ClientDetailsModal: React.FC<ClientDetailsModalProps> = ({
                       </div>
 
                       <div className="flex justify-between items-center mb-4 relative z-10">
-                        <h4 className="text-sm font-bold text-amber-500 uppercase tracking-widest flex items-center gap-2">
+                        <h4 className="text-sm font-bold text-[var(--dark-client-loyalty-filled)] uppercase tracking-widest flex items-center gap-2">
                           <Award size={16} /> Cartão Fidelidade
                         </h4>
                         <span className="text-xs text-zinc-400 font-medium bg-zinc-800 px-2 py-1 rounded">
-                          Resgate: Corte Grátis
+                          Resgate: {businessSettings.loyalty_reward_description || 'Corte Grátis'}
                         </span>
                       </div>
 
                       <div className="flex justify-between items-center gap-2 relative z-10">
-                        {Array.from({ length: maxPoints }).map((_, i) => {
-                          const isFilled = i < points;
+                        {Array.from({ length: businessSettings.loyalty_visits_for_reward || 10 }).map((_, i) => {
+                          const currentPoints = client.loyalty_points || (clientStats.totalVisits % (businessSettings.loyalty_visits_for_reward || 10));
+                          const isFilled = i < currentPoints;
+                          const isLast = i === (businessSettings.loyalty_visits_for_reward || 10) - 1;
                           return (
                             <div key={i} className="flex flex-col items-center gap-1 flex-1">
-                              <div className={`w-full aspect-square rounded-full flex items-center justify-center border-2 transition-all duration-500 ${isFilled ? 'bg-amber-500 border-amber-500 text-black shadow-[0_0_10px_rgba(245,158,11,0.4)] scale-105' : 'bg-transparent border-zinc-700 text-zinc-700'}`}>
+                              <div className={`w-full aspect-square rounded-full flex items-center justify-center border-2 transition-all duration-500 ${isFilled ? 'bg-[var(--dark-client-loyalty-filled)] border-[var(--dark-client-loyalty-filled)] text-black shadow-[var(--dark-client-loyalty-glow)] scale-105' : 'bg-transparent border-[var(--dark-client-loyalty-empty)] text-[var(--dark-client-loyalty-empty)]'}`}>
                                 {isFilled ? (
                                   <Check size={14} strokeWidth={4} />
-                                ) : i === maxPoints - 1 ? (
+                                ) : isLast ? (
                                   <Gift size={14} />
                                 ) : (
                                   <span className="text-[10px] font-bold opacity-50">{i + 1}</span>
@@ -639,7 +640,7 @@ const ClientDetailsModal: React.FC<ClientDetailsModalProps> = ({
 
                       <div className="mt-4 text-center relative z-10">
                         <p className="text-xs text-gray-400">
-                          Faltam <strong className="text-white">{maxPoints - points}</strong> visitas para ganhar o prêmio!
+                          Faltam <strong className="text-white">{(businessSettings.loyalty_visits_for_reward || 10) - (client.loyalty_points || (clientStats.totalVisits % (businessSettings.loyalty_visits_for_reward || 10)))}</strong> visitas para ganhar: <span className="text-amber-500 font-bold">{businessSettings.loyalty_reward_description || 'Corte Grátis'}</span>!
                         </p>
                       </div>
                     </div>
@@ -744,7 +745,8 @@ const ClientDetailsModal: React.FC<ClientDetailsModalProps> = ({
                         </h3>
                         <p className="text-zinc-400 text-xs mt-1">Registre o progresso e estilos do cliente.</p>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 relative">
+                        {/* Hidden file inputs */}
                         <input
                           type="file"
                           multiple
@@ -753,9 +755,58 @@ const ClientDetailsModal: React.FC<ClientDetailsModalProps> = ({
                           ref={fileInputRef}
                           onChange={handleFileSelect}
                         />
-                        <Button size="sm" onClick={() => fileInputRef.current?.click()} leftIcon={<Plus size={16} />}>
+                        {/* Camera input with capture attribute for mobile */}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          capture="environment"
+                          className="hidden"
+                          ref={cameraInputRef}
+                          onChange={handleFileSelect}
+                        />
+
+                        <Button
+                          size="sm"
+                          onClick={() => setShowPhotoMenu(!showPhotoMenu)}
+                          leftIcon={<Plus size={16} />}
+                        >
                           Novo Registro
                         </Button>
+
+                        {/* Photo Menu Popup */}
+                        {showPhotoMenu && (
+                          <>
+                            {/* Backdrop to close menu */}
+                            <div
+                              className="fixed inset-0 z-40"
+                              onClick={() => setShowPhotoMenu(false)}
+                            />
+                            <div className="absolute right-0 top-full mt-2 bg-zinc-900 border border-zinc-800 rounded-xl shadow-xl z-50 overflow-hidden min-w-[180px] animate-fade-in">
+                              {/* Camera option - mobile */}
+                              <button
+                                onClick={() => {
+                                  cameraInputRef.current?.click();
+                                  setShowPhotoMenu(false);
+                                }}
+                                className="w-full px-4 py-3 text-left text-sm text-white hover:bg-zinc-800 flex items-center gap-3 transition-colors border-b border-zinc-800"
+                              >
+                                <Camera size={18} className="text-[var(--dark-brand-primary)]" />
+                                <span>Tirar Foto</span>
+                              </button>
+                              {/* Gallery option */}
+                              <button
+                                onClick={() => {
+                                  fileInputRef.current?.click();
+                                  setShowPhotoMenu(false);
+                                }}
+                                className="w-full px-4 py-3 text-left text-sm text-white hover:bg-zinc-800 flex items-center gap-3 transition-colors"
+                              >
+                                <ImageIcon size={18} className="text-[var(--dark-brand-primary)]" />
+                                <span>Escolher da Galeria</span>
+                              </button>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
 
@@ -827,7 +878,10 @@ const ClientDetailsModal: React.FC<ClientDetailsModalProps> = ({
                     <div className="space-y-6">
                       {groupedPhotos.map(([date, groupPhotos], groupIndex) => {
                         const isFirst = groupIndex === 0;
-                        const displayDate = new Date(date).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' });
+                        // Parse date as local (YYYY-MM-DD) - avoid UTC interpretation
+                        const [year, month, day] = date.split('-').map(Number);
+                        const localDate = new Date(year, month - 1, day); // month is 0-indexed
+                        const displayDate = localDate.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' });
                         const description = groupPhotos[0].notes || 'Sem descrição';
 
                         return (

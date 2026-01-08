@@ -7,6 +7,7 @@ interface CardProps {
     hoverEffect?: boolean;
     onClick?: () => void;
     noPadding?: boolean;
+    noBorder?: boolean;
     style?: React.CSSProperties;
 }
 
@@ -16,9 +17,10 @@ const Card: React.FC<CardProps> = ({
     hoverEffect = false,
     onClick,
     noPadding = false,
+    noBorder = false,
     style
 }) => {
-    const baseStyle = "bg-barber-900 border border-barber-800 rounded-xl shadow-sm overflow-hidden";
+    const baseStyle = `bg-barber-900 ${noBorder ? '' : 'border border-barber-800'} rounded-xl shadow-sm overflow-hidden`;
     const hoverStyle = hoverEffect ? "transition-all duration-300 ease-in-out hover:border-barber-gold/50 cursor-pointer hover:shadow-xl hover:-translate-y-0.5" : "";
     const paddingStyle = noPadding ? "" : "p-6";
 

@@ -56,29 +56,33 @@ const ClientAvatar = ({ client, size = 'md', className = '' }: { client: Partial
     xl: 'w-16 h-16 text-lg'
   };
 
-  // Generate consistent color based on client name
-  const getColor = (name: string) => {
-    const colors = [
-      'from-blue-600 to-blue-800',
-      'from-emerald-600 to-emerald-800',
-      'from-purple-600 to-purple-800',
-      'from-amber-600 to-amber-800',
-      'from-rose-600 to-rose-800',
-      'from-indigo-600 to-indigo-800'
+  // Generate consistent color based on client name using CSS variables
+  const getGradientStyle = (name: string): React.CSSProperties => {
+    const gradients = [
+      'var(--dark-avatar-gradient-blue)',
+      'var(--dark-avatar-gradient-emerald)',
+      'var(--dark-avatar-gradient-purple)',
+      'var(--dark-avatar-gradient-amber)',
+      'var(--dark-avatar-gradient-rose)',
+      'var(--dark-avatar-gradient-indigo)'
     ];
     let hash = 0;
     for (let i = 0; i < name.length; i++) {
       hash = name.charCodeAt(i) + ((hash << 5) - hash);
     }
-    return colors[Math.abs(hash) % colors.length];
+    return { background: gradients[Math.abs(hash) % gradients.length] };
   };
 
   return (
-    <div className={`rounded-full flex items-center justify-center font-bold text-white shadow-inner bg-gradient-to-br ${getColor(client.name || '')} border border-white/10 ${sizeClasses[size]} ${className}`}>
+    <div
+      className={`rounded-full flex items-center justify-center font-bold text-white shadow-inner border border-white/10 ${sizeClasses[size]} ${className}`}
+      style={getGradientStyle(client.name || '')}
+    >
       {getInitials(client.name || '')}
     </div>
   );
 };
+
 
 const Clients: React.FC = () => {
   // ========== LOGIC - DO NOT MODIFY ==========
@@ -261,7 +265,7 @@ const Clients: React.FC = () => {
             <p className="text-sm text-[var(--dark-text-muted)] mt-1">Gerencie perfis, fidelidade e LTV.</p>
           </div>
           <div className="flex gap-2 w-full sm:w-auto">
-            <Button onClick={handleCreateClient} leftIcon={<Plus size={18} />} className="w-full sm:w-auto justify-center">
+            <Button onClick={handleCreateClient} leftIcon={<Plus size={18} />} className="w-full sm:w-auto justify-center whitespace-nowrap">
               Novo Cliente
             </Button>
           </div>
@@ -275,10 +279,10 @@ const Clients: React.FC = () => {
           </div>
         </Card>
 
-        <Card noPadding className="col-span-1 p-4 flex flex-col justify-center border-l-4 border-l-emerald-500">
+        <Card noPadding className="col-span-1 p-4 flex flex-col justify-center border-l-4 border-l-[var(--dark-client-accent-emerald)]">
           <span className="text-[10px] sm:text-xs font-bold uppercase text-[var(--dark-text-muted)] tracking-wider truncate">LTV Médio</span>
           <div className="text-xl sm:text-2xl font-bold text-[var(--dark-text-main)] mt-1">R$ {clientStats.avgLtv.toFixed(0)}</div>
-          <div className="text-[9px] sm:text-[10px] text-emerald-500 font-bold mt-1 truncate">
+          <div className="text-[9px] sm:text-[10px] text-[var(--dark-client-ltv-text)] font-bold mt-1 truncate">
             Ticket Médio OK
           </div>
         </Card>
@@ -354,7 +358,7 @@ const Clients: React.FC = () => {
             </button>
             <button
               onClick={() => setClientTypeFilter('new')}
-              className={`flex-1 lg:flex-none px-4 py-2 rounded-md text-xs font-bold whitespace-nowrap transition-all ${clientTypeFilter === 'new' ? 'bg-blue-600/20 text-blue-400 border border-blue-600/30' : 'text-[var(--dark-text-muted)] hover:text-white'}`}
+              className={`flex-1 lg:flex-none px-4 py-2 rounded-md text-xs font-bold whitespace-nowrap transition-all ${clientTypeFilter === 'new' ? 'bg-[var(--dark-filter-new-active-bg)] text-[var(--dark-filter-new-active-text)] border border-[var(--dark-filter-new-active-border)]' : 'text-[var(--dark-text-muted)] hover:text-white'}`}
             >
               Novos
             </button>
@@ -429,10 +433,10 @@ const Clients: React.FC = () => {
                       <h4 className="font-bold text-[var(--dark-text-main)] text-sm truncate">{client.name}</h4>
                     </div>
                     <div className="text-[10px] flex items-center gap-2 mt-0.5 text-[var(--dark-text-muted)] truncate">
-                      {client.loyalty_tier === 'Diamante' && <span className="text-cyan-400 flex items-center gap-1 font-bold"><Users size={10} /> Diamante</span>}
-                      {client.loyalty_tier === 'Ouro' && <span className="text-yellow-500 flex items-center gap-1 font-bold"><Users size={10} /> Ouro</span>}
-                      {client.loyalty_tier === 'Prata' && <span className="text-gray-400 flex items-center gap-1 font-bold"><Users size={10} /> Prata</span>}
-                      {client.loyalty_tier === 'Bronze' && <span className="text-orange-700 flex items-center gap-1 font-bold"><Users size={10} /> Bronze</span>}
+                      {client.loyalty_tier === 'Diamante' && <span className="text-[var(--dark-client-tier-diamante-light)] flex items-center gap-1 font-bold"><Users size={10} /> Diamante</span>}
+                      {client.loyalty_tier === 'Ouro' && <span className="text-[var(--dark-client-tier-ouro)] flex items-center gap-1 font-bold"><Users size={10} /> Ouro</span>}
+                      {client.loyalty_tier === 'Prata' && <span className="text-[var(--dark-client-tier-prata)] flex items-center gap-1 font-bold"><Users size={10} /> Prata</span>}
+                      {client.loyalty_tier === 'Bronze' && <span className="text-[var(--dark-client-tier-bronze)] flex items-center gap-1 font-bold"><Users size={10} /> Bronze</span>}
                       <span className="hidden sm:inline">•</span>
                       <span>{client.total_visits || 0} visitas</span>
                     </div>
@@ -508,8 +512,8 @@ const Clients: React.FC = () => {
                           {client.name}
                         </h3>
                         <div className="flex items-center gap-1 text-xs text-[var(--dark-text-muted)] mt-1">
-                          <span className={`w-2 h-2 rounded-full ${client.loyalty_tier === 'Diamante' ? 'bg-cyan-500' :
-                            client.loyalty_tier === 'Ouro' ? 'bg-yellow-500' : 'bg-zinc-600'
+                          <span className={`w-2 h-2 rounded-full ${client.loyalty_tier === 'Diamante' ? 'bg-[var(--dark-client-tier-diamante)]' :
+                            client.loyalty_tier === 'Ouro' ? 'bg-[var(--dark-client-tier-ouro)]' : 'bg-zinc-600'
                             }`}></span>
                           {client.loyalty_tier || 'Bronze'}
                         </div>
@@ -540,7 +544,7 @@ const Clients: React.FC = () => {
                     <div className="grid grid-cols-2 gap-2 border-t border-zinc-800 pt-3">
                       <div className="text-center p-2 bg-zinc-950 rounded-lg">
                         <div className="text-[10px] text-[var(--dark-text-muted)] uppercase font-bold">LTV</div>
-                        <div className="text-sm font-bold text-emerald-500">R$ {client.lifetime_value || 0}</div>
+                        <div className="text-sm font-bold text-[var(--dark-client-ltv-text)]">R$ {client.lifetime_value || 0}</div>
                       </div>
                       <div className="text-center p-2 bg-zinc-950 rounded-lg">
                         <div className="text-[10px] text-[var(--dark-text-muted)] uppercase font-bold">Visitas</div>

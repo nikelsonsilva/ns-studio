@@ -67,6 +67,7 @@ const ClientModal: React.FC<ClientModalProps> = ({ client, onClose, onSuccess })
                 phone: formData.phone || null,
                 preferences: formData.preferences || null,
                 tags: tagsArray.length > 0 ? tagsArray : null,
+                source: 'manual' as const, // Balcão/Manual
             };
 
             if (client) {

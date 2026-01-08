@@ -1,9 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
-import { Calendar as CalendarIcon, Clock, Scissors, User, ChevronRight, CheckCircle2, MapPin, ArrowLeft, Check, ChevronLeft, X, CreditCard, QrCode, Copy, ShieldCheck, Loader2, Crown, Star, Sparkles, Zap } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, Scissors, User, ChevronRight, CheckCircle2, MapPin, ArrowLeft, Check, ChevronLeft, X, CreditCard, QrCode, Copy, ShieldCheck, Loader2, Crown, Star, Sparkles, Zap, Flame, Percent } from 'lucide-react';
 import { format, addMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isSameDay, isToday, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Service, Barber, MembershipPlan } from '../types';
+import Modal from './ui/Modal'; // Using existing Modal for cleaner UI
+import Button from './ui/Button'; // Using existing Button
 
 interface PublicBookingProps {
   services: Service[];
@@ -36,6 +38,11 @@ const PublicBooking: React.FC<PublicBookingProps> = ({ services, barbers, member
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [calendarViewDate, setCalendarViewDate] = useState(new Date());
 
+  // --- ORDER BUMP STATES ---
+  const [showBumpModal, setShowBumpModal] = useState(false);
+  const [bumpService, setBumpService] = useState<Service | null>(null);
+  const [discountValue, setDiscountValue] = useState(0);
+
   // Dynamic Dates (Next 7 days)
   const today = new Date();
   const nextDays = Array.from({ length: 7 }).map((_, i) => {
@@ -63,12 +70,69 @@ const PublicBooking: React.FC<PublicBookingProps> = ({ services, barbers, member
   const currentHour = new Date().getHours();
   const nextSlotTime = `${currentHour + 1}:00`;
 
-  const handleNext = () => setStep(step + 1);
-  const handleBack = () => setStep(step - 1);
+  // --- ORDER BUMP LOGIC ---
+  const checkForOrderBump = () => {
+      // Find a service in the cart that has an active order bump configured
+      // And check if the target service is NOT already in the cart
+      const bumpTrigger = selectedServices.find(s => 
+          s.orderBump?.active && 
+          s.orderBump.targetServiceId &&
+          !selectedServices.some(existing => existing.id === s.orderBump?.targetServiceId)
+      );
+
+      if (bumpTrigger && bumpTrigger.orderBump) {
+          const targetService = services.find(s => s.id === bumpTrigger.orderBump?.targetServiceId);
+          
+          if (targetService) {
+              setBumpService(targetService);
+              // Calculate discount based on percentage configured
+              const discountAmount = targetService.price * (bumpTrigger.orderBump.discountPercent / 100);
+              setDiscountValue(discountAmount);
+              setShowBumpModal(true);
+              return true; // Intercepted
+          }
+      }
+      return false; 
+  };
+
+  const handleAcceptBump = () => {
+      if (bumpService) {
+          setSelectedServices([...selectedServices, bumpService]);
+          // discountValue is already calculated in checkForOrderBump
+      }
+      setShowBumpModal(false);
+      setStep(4); // Vai para revisão
+  };
+
+  const handleDeclineBump = () => {
+      setShowBumpModal(false);
+      setStep(4); // Vai para revisão sem adicionar
+  };
+
+  const handleNext = () => {
+      // Interceptação entre passo 3 (Barbeiro) e 4 (Revisão)
+      if (step === 3) {
+          const intercepted = checkForOrderBump();
+          if (intercepted) return;
+      }
+      setStep(step + 1);
+  };
+
+  const handleBack = () => {
+      if (step === 4) {
+          // Se voltar da revisão, removemos o desconto e o serviço de bump para evitar duplicação ou estados inconsistentes
+          setDiscountValue(0);
+          if (bumpService && selectedServices.includes(bumpService)) {
+              setSelectedServices(selectedServices.filter(s => s.id !== bumpService.id));
+          }
+      }
+      setStep(step - 1);
+  };
 
   const toggleService = (service: Service) => {
     // If selecting a service, clear plan selection
     if (selectedPlan) setSelectedPlan(null);
+    setDiscountValue(0); // Reset discount if modifying cart
     
     if (selectedServices.find(s => s.id === service.id)) {
       setSelectedServices(selectedServices.filter(s => s.id !== service.id));
@@ -80,6 +144,7 @@ const PublicBooking: React.FC<PublicBookingProps> = ({ services, barbers, member
   const handleSelectPlan = (plan: MembershipPlan) => {
      setSelectedPlan(plan);
      setSelectedServices([]); // Clear services if buying a plan
+     setDiscountValue(0);
      handleNext(); // Go straight to next steps (or customized flow)
   };
 
@@ -105,12 +170,19 @@ const PublicBooking: React.FC<PublicBookingProps> = ({ services, barbers, member
       setSelectedDate(nextDays[0].dateFormatted);
       setSelectedTime(nextSlotTime); // Mock next immediate slot
       setSelectedBarber(barber);
-      setStep(4); // Skip "Select Professional" step
+      
+      // Check bump before skipping steps
+      const intercepted = checkForOrderBump();
+      if (!intercepted) {
+          setStep(4); 
+      }
   };
 
-  const totalPrice = selectedPlan 
+  const subTotal = selectedPlan 
      ? selectedPlan.price 
      : selectedServices.reduce((acc, curr) => acc + curr.price, 0);
+  
+  const totalPrice = Math.max(0, subTotal - discountValue);
   
   const totalDuration = selectedServices.reduce((acc, curr) => acc + curr.duration, 0);
 
@@ -423,12 +495,19 @@ const PublicBooking: React.FC<PublicBookingProps> = ({ services, barbers, member
             {/* Step 4: Details & Review */}
             {step === 4 && (
                <div className="p-6">
-                 <div className="flex items-center gap-2 mb-6 cursor-pointer text-gray-400 hover:text-white" onClick={() => setStep(selectedBarber && selectedDate === nextDays[0].dateFormatted && selectedTime === nextSlotTime ? 2 : 3)}>
+                 <div className="flex items-center gap-2 mb-6 cursor-pointer text-gray-400 hover:text-white" onClick={handleBack}>
                    <ArrowLeft size={16} /> <span className="text-xs uppercase font-bold">Voltar</span>
                  </div>
                  <h2 className="text-xl font-bold mb-6">Seus Dados</h2>
 
-                 <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4 mb-6 space-y-3">
+                 <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4 mb-6 space-y-3 relative overflow-hidden">
+                    {/* Discount Badge if Bump Accepted */}
+                    {discountValue > 0 && (
+                        <div className="absolute top-0 right-0 bg-green-500 text-black text-[10px] font-bold px-3 py-1 rounded-bl-xl shadow-lg">
+                            COMBO ATIVO
+                        </div>
+                    )}
+
                     <div className="border-b border-zinc-800 pb-3 mb-3">
                       <span className="text-gray-500 text-sm block mb-2">Resumo do Pedido</span>
                       {selectedPlan ? (
@@ -456,6 +535,14 @@ const PublicBooking: React.FC<PublicBookingProps> = ({ services, barbers, member
                        <span className="text-gray-500 text-sm">Data/Hora</span>
                        <span className="font-bold">{selectedDate} às {selectedTime}</span>
                     </div>
+                    
+                    {discountValue > 0 && (
+                        <div className="flex justify-between items-center text-sm text-green-500">
+                            <span className="flex items-center gap-1"><Percent size={12} /> Desconto Combo</span>
+                            <span>- R$ {discountValue.toFixed(2)}</span>
+                        </div>
+                    )}
+
                     <div className="border-t border-zinc-800 pt-3 flex justify-between items-center">
                        <span className="text-white font-bold">Total a Pagar</span>
                        <span className="text-barber-gold font-bold text-xl">R$ {totalPrice.toFixed(2)}</span>
@@ -733,6 +820,53 @@ const PublicBooking: React.FC<PublicBookingProps> = ({ services, barbers, member
             </div>
           </div>
         </div>
+      )}
+
+      {/* ORDER BUMP MODAL */}
+      {showBumpModal && bumpService && (
+          <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm animate-fade-in">
+              <div className="bg-gradient-to-br from-zinc-900 to-black w-full max-w-sm rounded-2xl border-2 border-barber-gold/50 shadow-2xl relative overflow-hidden animate-slide-up">
+                  {/* Decorative Flame */}
+                  <div className="absolute -top-10 -right-10 w-32 h-32 bg-barber-gold/20 blur-3xl rounded-full pointer-events-none"></div>
+                  
+                  <div className="p-6 text-center relative z-10">
+                      <div className="w-16 h-16 bg-barber-gold rounded-full flex items-center justify-center mx-auto mb-4 shadow-[0_0_20px_rgba(245,158,11,0.5)] animate-bounce">
+                          <Flame size={32} className="text-black fill-black" />
+                      </div>
+                      
+                      <h3 className="text-2xl font-black text-white mb-2 uppercase italic tracking-wider">Oferta Especial!</h3>
+                      <p className="text-gray-300 mb-6 text-sm">
+                          Já que vai fazer <strong>{selectedServices.find(s => s.orderBump?.active)?.name}</strong>, que tal aproveitar:
+                      </p>
+
+                      <div className="bg-zinc-800/50 p-4 rounded-xl border border-zinc-700 mb-6">
+                          <div className="font-bold text-white text-lg">{bumpService.name}</div>
+                          <div className="flex items-center justify-center gap-3 mt-2">
+                              <span className="text-gray-500 line-through text-sm">R$ {bumpService.price.toFixed(2)}</span>
+                              <span className="text-barber-gold font-bold text-xl">R$ {(bumpService.price - discountValue).toFixed(2)}</span>
+                          </div>
+                          <span className="text-[10px] text-green-500 bg-green-500/10 px-2 py-0.5 rounded mt-2 inline-block font-bold uppercase">
+                              Economize R$ {discountValue.toFixed(2)}
+                          </span>
+                      </div>
+
+                      <div className="space-y-3">
+                          <button 
+                              onClick={handleAcceptBump}
+                              className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-green-900/20 transform transition-all active:scale-95 flex items-center justify-center gap-2"
+                          >
+                              <CheckCircle2 size={18} /> Sim! Adicionar ao pedido
+                          </button>
+                          <button 
+                              onClick={handleDeclineBump}
+                              className="w-full bg-transparent text-gray-500 hover:text-white text-sm font-medium py-2 transition-colors"
+                          >
+                              Não, obrigado.
+                          </button>
+                      </div>
+                  </div>
+              </div>
+          </div>
       )}
 
     </div>

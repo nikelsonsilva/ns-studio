@@ -1713,6 +1713,35 @@ const Calendar: React.FC<CalendarProps> = ({ initialDate, isFocusMode = false, s
                 )
               })}
             </div>
+          ) : isBusinessClosed() ? (
+            /* ===== CLOSED DAY OVERLAY ===== */
+            <div className="w-full h-full flex items-center justify-center min-h-[60vh]">
+              <div className="flex flex-col items-center justify-center text-center p-8 max-w-md">
+                <div className="w-20 h-20 rounded-full bg-zinc-800 flex items-center justify-center mb-6 border border-zinc-700">
+                  <Store size={40} className="text-zinc-500" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2">Estabelecimento Fechado</h3>
+                <p className="text-zinc-400 text-sm mb-6">
+                  O estabelecimento não funciona em {format(currentDate, "EEEE, dd 'de' MMMM", { locale: ptBR })}.
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={handlePrevDay}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors border border-zinc-700"
+                  >
+                    <ChevronLeft size={16} />
+                    Dia Anterior
+                  </button>
+                  <button
+                    onClick={handleNextDay}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-lg transition-colors"
+                  >
+                    Próximo Dia
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
+              </div>
+            </div>
           ) : (
             <div className="w-full relative">
               {/* ===== STICKY HEADER WITH GLASSMORPHISM ===== */}

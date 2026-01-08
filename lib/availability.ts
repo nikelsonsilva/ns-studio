@@ -584,7 +584,8 @@ export async function createPublicAppointment(
                     business_id: businessId,
                     name: appointmentData.client_name,
                     phone: appointmentData.client_phone,
-                    email: appointmentData.client_email
+                    email: appointmentData.client_email,
+                    source: 'public_link' // Cliente criado via link público
                 })
                 .select('id')
                 .single();
@@ -617,7 +618,7 @@ export async function createPublicAppointment(
                 amount_paid: service.price,
                 notes: appointmentData.notes,
                 customer_name: appointmentData.client_name, // Nome do cliente para exibição
-                source: 'public' // Agendamento feito pelo link público
+                source: 'public_link' // Agendamento feito pelo link público
             })
             .select('id')
             .single();

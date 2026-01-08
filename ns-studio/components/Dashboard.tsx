@@ -171,12 +171,13 @@ const GoalGauge = ({ percentage }: { percentage: number }) => {
         <div className="relative flex items-center justify-center w-24 h-24">
             <svg height={radius * 2} width={radius * 2} className="rotate-[-90deg]">
                 <circle
-                    stroke="#27272a"
+                    stroke="currentColor"
                     strokeWidth={stroke}
                     fill="transparent"
                     r={normalizedRadius}
                     cx={radius}
                     cy={radius}
+                    className="text-barber-800"
                 />
                 <circle
                     stroke="url(#gradGoal)"
@@ -196,7 +197,7 @@ const GoalGauge = ({ percentage }: { percentage: number }) => {
                     </linearGradient>
                 </defs>
             </svg>
-            <div className="absolute flex items-center justify-center text-lg font-bold text-white">
+            <div className="absolute flex items-center justify-center text-lg font-bold text-main">
                 {percentage}%
             </div>
         </div>
@@ -229,19 +230,19 @@ const Dashboard: React.FC<DashboardProps> = ({ settings, onGoToSettings, onGoToC
              <div className="flex bg-barber-950 p-1 rounded-xl border border-barber-800">
                 <button 
                   onClick={() => setFilterDate('today')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${filterDate === 'today' ? 'bg-barber-800 text-white shadow' : 'text-muted hover:text-white'}`}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${filterDate === 'today' ? 'bg-barber-800 text-white shadow' : 'text-muted hover:text-main'}`}
                 >
                    Hoje
                 </button>
                 <button 
                   onClick={() => setFilterDate('tomorrow')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${filterDate === 'tomorrow' ? 'bg-barber-800 text-white shadow' : 'text-muted hover:text-white'}`}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${filterDate === 'tomorrow' ? 'bg-barber-800 text-white shadow' : 'text-muted hover:text-main'}`}
                 >
                    Amanhã
                 </button>
                 <button 
                   onClick={() => setFilterDate('week')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${filterDate === 'week' ? 'bg-barber-800 text-white shadow' : 'text-muted hover:text-white'}`}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${filterDate === 'week' ? 'bg-barber-800 text-white shadow' : 'text-muted hover:text-main'}`}
                 >
                    Semana
                 </button>
@@ -273,7 +274,7 @@ const Dashboard: React.FC<DashboardProps> = ({ settings, onGoToSettings, onGoToC
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           
           {/* 1) PRÓXIMO ATENDIMENTO (Mantido) */}
-          <Card noPadding className="relative overflow-hidden group hover:border-barber-gold/50 transition-all border-l-4 border-l-barber-gold">
+          <Card noPadding className="relative overflow-hidden group hover:border-barber-gold/50 transition-all border-l-4 border-l-barber-gold bg-barber-900">
               <div className="p-5 flex flex-col h-full justify-between relative z-10">
                   <div className="flex justify-between items-start mb-4">
                       <div className="flex items-center gap-3">
@@ -300,7 +301,7 @@ const Dashboard: React.FC<DashboardProps> = ({ settings, onGoToSettings, onGoToC
                       <Button size="sm" variant="secondary" className="col-span-1" onClick={() => toast.success('Check-in realizado!')} title="Realizar Check-in">
                           <CheckCircle2 size={16} /> Check-in
                       </Button>
-                      <Button size="sm" variant="secondary" className="col-span-1 bg-green-600/10 text-green-500 hover:bg-green-600 hover:text-white border-green-600/20" onClick={() => handleWhatsApp(nextAppointment.phone)}>
+                      <Button size="sm" variant="secondary" className="col-span-1 bg-green-600/10 text-green-600 dark:text-green-500 hover:bg-green-600 hover:text-white border-green-600/20" onClick={() => handleWhatsApp(nextAppointment.phone)}>
                           <MessageCircle size={16} /> Whats
                       </Button>
                       <Button size="sm" variant="outline" className="col-span-1" onClick={onGoToCalendar}>
@@ -309,7 +310,7 @@ const Dashboard: React.FC<DashboardProps> = ({ settings, onGoToSettings, onGoToC
                   </div>
               </div>
               <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
-                  <Clock size={100} />
+                  <Clock size={100} className="text-main" />
               </div>
           </Card>
 
@@ -328,8 +329,8 @@ const Dashboard: React.FC<DashboardProps> = ({ settings, onGoToSettings, onGoToC
                           <div className="flex justify-between items-start">
                               <div>
                                   <div className="flex items-center gap-2">
-                                      <span className="font-bold text-white text-sm">{req.name}</span>
-                                      {req.isNew && <span className="text-[9px] font-bold bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded border border-blue-500/20 uppercase">Novo</span>}
+                                      <span className="font-bold text-main text-sm">{req.name}</span>
+                                      {req.isNew && <span className="text-[9px] font-bold bg-blue-500/20 text-blue-500 px-1.5 py-0.5 rounded border border-blue-500/20 uppercase">Novo</span>}
                                   </div>
                                   <div className="text-[10px] text-muted flex items-center gap-1 mt-0.5">
                                       <Clock size={10} /> {req.time} • {req.source}
@@ -342,7 +343,7 @@ const Dashboard: React.FC<DashboardProps> = ({ settings, onGoToSettings, onGoToC
                               )}
                           </div>
                           
-                          <div className="flex justify-between items-end border-t border-barber-800/50 pt-2 mt-1">
+                          <div className="flex justify-between items-end border-t border-barber-800 pt-2 mt-1">
                               <span className="text-xs text-muted font-medium">{req.service}</span>
                               <button className="flex items-center gap-1 text-[10px] font-bold text-emerald-500 hover:text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 px-2 py-1 rounded transition-colors">
                                   <Check size={12} /> Confirmar
@@ -354,8 +355,8 @@ const Dashboard: React.FC<DashboardProps> = ({ settings, onGoToSettings, onGoToC
           </Card>
 
           {/* 3) ALERTAS E AÇÕES (Restaurado) */}
-          <Card noPadding className="flex flex-col bg-gradient-to-br from-barber-900 to-red-950/20 border-red-900/30">
-              <div className="p-5 border-b border-barber-800/50 flex justify-between items-center">
+          <Card noPadding className="flex flex-col bg-gradient-to-br from-barber-900 to-red-500/5 border-red-500/20">
+              <div className="p-5 border-b border-barber-800 flex justify-between items-center">
                   <h3 className="font-bold text-main flex items-center gap-2 text-sm">
                       <AlertCircle size={18} className="text-rose-500" /> Alertas e Ações
                   </h3>
@@ -366,7 +367,7 @@ const Dashboard: React.FC<DashboardProps> = ({ settings, onGoToSettings, onGoToC
                       <div key={alert.id} className="bg-barber-950/50 border border-barber-800 rounded-lg p-3 flex items-start justify-between gap-3 group hover:border-barber-700 transition-colors">
                           <div className="flex items-start gap-3">
                               <div className={`mt-0.5 w-2 h-2 rounded-full ${alert.type === 'danger' ? 'bg-rose-500' : 'bg-amber-500'} animate-pulse`}></div>
-                              <span className="text-xs text-gray-300 font-medium leading-tight">{alert.text}</span>
+                              <span className="text-xs text-muted font-medium leading-tight">{alert.text}</span>
                           </div>
                           <button className="text-[10px] font-bold text-barber-gold hover:underline whitespace-nowrap">Resolver</button>
                       </div>
@@ -387,7 +388,7 @@ const Dashboard: React.FC<DashboardProps> = ({ settings, onGoToSettings, onGoToC
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
           {/* 4) CADEIRAS (Novo Widget) */}
-          <Card noPadding className="flex flex-col">
+          <Card noPadding className="flex flex-col bg-barber-900">
               <div className="p-4 border-b border-barber-800 bg-barber-950/30 flex justify-between items-center">
                   <h3 className="font-bold text-main flex items-center gap-2 text-sm">
                       <Armchair size={16} className="text-sky-500" /> Cadeiras
@@ -400,13 +401,13 @@ const Dashboard: React.FC<DashboardProps> = ({ settings, onGoToSettings, onGoToC
               <div className="flex-1 p-4 space-y-3">
                   {chairsStatus.map(chair => (
                       <div key={chair.id} className="bg-barber-950/50 border border-barber-800 rounded-xl p-3 flex items-center gap-4">
-                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold text-sm shrink-0 shadow-lg ${chair.status === 'occupied' ? 'bg-barber-gold text-black' : 'bg-zinc-800 text-zinc-500'}`}>
+                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold text-sm shrink-0 shadow-lg ${chair.status === 'occupied' ? 'bg-barber-gold text-black' : 'bg-barber-800 text-muted'}`}>
                               {chair.id}
                           </div>
                           
                           <div className="flex-1 min-w-0">
                               <div className="flex justify-between items-center mb-1.5">
-                                  <span className={`text-sm font-bold truncate ${chair.status === 'occupied' ? 'text-white' : 'text-muted'}`}>
+                                  <span className={`text-sm font-bold truncate ${chair.status === 'occupied' ? 'text-main' : 'text-muted'}`}>
                                       {chair.barber}
                                   </span>
                                   {chair.status === 'occupied' && (
@@ -415,11 +416,11 @@ const Dashboard: React.FC<DashboardProps> = ({ settings, onGoToSettings, onGoToC
                               </div>
                               
                               {chair.status === 'occupied' ? (
-                                  <div className="h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden">
+                                  <div className="h-1.5 w-full bg-barber-800 rounded-full overflow-hidden">
                                       <div className="h-full bg-sky-500 rounded-full" style={{ width: `${chair.progress}%` }}></div>
                                   </div>
                               ) : (
-                                  <div className="text-[10px] text-zinc-600 italic">Aguardando cliente...</div>
+                                  <div className="text-[10px] text-muted italic">Aguardando cliente...</div>
                               )}
                           </div>
                       </div>
@@ -428,7 +429,7 @@ const Dashboard: React.FC<DashboardProps> = ({ settings, onGoToSettings, onGoToC
           </Card>
 
           {/* 5) AGENDA DE HOJE (Mantido) */}
-          <Card noPadding className="flex flex-col">
+          <Card noPadding className="flex flex-col bg-barber-900">
               <div className="p-4 border-b border-barber-800 flex justify-between items-center bg-barber-950/30">
                   <h3 className="font-bold text-main flex items-center gap-2 text-sm">
                       <CalendarIcon size={16} className="text-sky-500" /> Agenda de Hoje
@@ -463,12 +464,12 @@ const Dashboard: React.FC<DashboardProps> = ({ settings, onGoToSettings, onGoToC
           </Card>
 
           {/* 6) EQUIPE ONLINE (Restaurado) */}
-          <Card noPadding>
+          <Card noPadding className="bg-barber-900">
               <div className="p-4 border-b border-barber-800 bg-barber-950/30 flex justify-between items-center">
                   <h3 className="font-bold text-main text-sm flex items-center gap-2">
                       <Users size={16} className="text-indigo-400" /> Equipe Online
                   </h3>
-                  <button className="text-[10px] font-bold text-muted hover:text-white flex items-center gap-1">
+                  <button className="text-[10px] font-bold text-muted hover:text-main flex items-center gap-1">
                       Escala <ArrowRight size={10} />
                   </button>
               </div>
@@ -510,7 +511,7 @@ const Dashboard: React.FC<DashboardProps> = ({ settings, onGoToSettings, onGoToC
                       <div className="text-[10px] text-muted font-bold uppercase tracking-wider mb-1 flex items-center gap-1">
                           <Target size={12} /> Meta Mensal
                       </div>
-                      <div className="text-2xl font-bold text-white">R$ {monthlyGoalData.current.toLocaleString('pt-BR')}</div>
+                      <div className="text-2xl font-bold text-main">R$ {monthlyGoalData.current.toLocaleString('pt-BR')}</div>
                       <div className="text-xs text-muted">de R$ {monthlyGoalData.target.toLocaleString('pt-BR')}</div>
                   </div>
               </div>
@@ -527,16 +528,16 @@ const Dashboard: React.FC<DashboardProps> = ({ settings, onGoToSettings, onGoToC
           </Card>
 
           {/* 8) FINANCEIRO DO DIA (Mantido) */}
-          <Card noPadding className="bg-gradient-to-br from-barber-900 to-emerald-950/10 border-emerald-900/30">
+          <Card noPadding className="bg-gradient-to-br from-barber-900 to-emerald-500/5 border-emerald-500/20">
               <div className="p-5 flex justify-between items-start">
                   <div>
                       <h3 className="text-sm font-bold text-muted uppercase flex items-center gap-2">
                           <DollarSign size={16} className="text-emerald-500" /> Caixa do Dia
                       </h3>
-                      <div className="text-3xl font-bold text-white mt-2">
+                      <div className="text-3xl font-bold text-main mt-2">
                           R$ {financeToday.received.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </div>
-                      <div className="text-xs text-emerald-400 mt-1 font-medium">
+                      <div className="text-xs text-emerald-500 mt-1 font-medium">
                           + R$ {financeToday.pending.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} a receber
                       </div>
                   </div>
@@ -545,18 +546,18 @@ const Dashboard: React.FC<DashboardProps> = ({ settings, onGoToSettings, onGoToC
                   </div>
               </div>
               <div className="px-5 pb-5">
-                  <div className="h-1.5 w-full bg-barber-950 rounded-full overflow-hidden flex">
+                  <div className="h-1.5 w-full bg-barber-950 rounded-full overflow-hidden flex border border-barber-800">
                       <div className="h-full bg-emerald-500" style={{ width: `${(financeToday.received / (financeToday.received + financeToday.pending)) * 100}%` }}></div>
                   </div>
                   <div className="flex justify-between mt-2">
                       <span className="text-[10px] text-muted">Meta Diária: R$ 2.000</span>
-                      <span className="text-[10px] font-bold text-white">Proj: R$ {financeToday.projected}</span>
+                      <span className="text-[10px] font-bold text-main">Proj: R$ {financeToday.projected}</span>
                   </div>
               </div>
           </Card>
 
           {/* 9) TOP SERVIÇOS (Restaurado) */}
-          <Card noPadding>
+          <Card noPadding className="bg-barber-900">
               <div className="p-4 border-b border-barber-800 bg-barber-950/30">
                   <h3 className="font-bold text-main text-sm">Top Serviços (Vol.)</h3>
               </div>
@@ -569,7 +570,7 @@ const Dashboard: React.FC<DashboardProps> = ({ settings, onGoToSettings, onGoToC
                                   <span className="text-main font-bold">{service.name}</span>
                                   <span className="text-muted">{service.count}</span>
                               </div>
-                              <div className="h-1.5 w-full bg-barber-950 rounded-full overflow-hidden">
+                              <div className="h-1.5 w-full bg-barber-950 rounded-full overflow-hidden border border-barber-800">
                                   <div 
                                     className="h-full rounded-full" 
                                     style={{ width: `${(service.count / 50) * 100}%`, backgroundColor: service.color }}
@@ -586,7 +587,7 @@ const Dashboard: React.FC<DashboardProps> = ({ settings, onGoToSettings, onGoToC
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
           {/* 10) RESUMO 7 DIAS (Mantido) */}
-          <Card noPadding className="relative group">
+          <Card noPadding className="relative group bg-barber-900">
               <div className="p-4 border-b border-barber-800 bg-barber-950/30 flex justify-between items-center">
                   <h3 className="font-bold text-main text-sm">Performance 7 Dias</h3>
                   <Badge variant="outline" size="sm">+12% vs semana ant.</Badge>
@@ -601,8 +602,8 @@ const Dashboard: React.FC<DashboardProps> = ({ settings, onGoToSettings, onGoToC
                               </linearGradient>
                           </defs>
                           <Tooltip 
-                              contentStyle={{ backgroundColor: '#09090b', borderColor: '#27272a', borderRadius: '8px', fontSize: '12px' }}
-                              itemStyle={{ color: '#fff' }}
+                              contentStyle={{ backgroundColor: 'rgb(var(--color-surface))', borderColor: 'rgb(var(--color-border))', borderRadius: '8px', fontSize: '12px', color: 'rgb(var(--color-text-main))' }}
+                              itemStyle={{ color: 'rgb(var(--color-text-main))' }}
                           />
                           <Area type="monotone" dataKey="value" stroke="#f59e0b" strokeWidth={2} fillOpacity={1} fill="url(#colorVal)" />
                       </AreaChart>
@@ -611,7 +612,7 @@ const Dashboard: React.FC<DashboardProps> = ({ settings, onGoToSettings, onGoToC
           </Card>
 
           {/* 11) CLIENTES DE HOJE (Mantido) */}
-          <Card noPadding>
+          <Card noPadding className="bg-barber-900">
               <div className="p-4 border-b border-barber-800 bg-barber-950/30 flex justify-between items-center">
                   <h3 className="font-bold text-main text-sm flex items-center gap-2">
                       <UserPlus size={16} className="text-purple-400" /> Fluxo de Clientes
@@ -619,8 +620,8 @@ const Dashboard: React.FC<DashboardProps> = ({ settings, onGoToSettings, onGoToC
               </div>
               <div className="p-4 grid grid-cols-2 gap-4">
                   <div className="bg-purple-500/10 border border-purple-500/20 rounded-xl p-3 flex flex-col items-center justify-center">
-                      <div className="text-2xl font-bold text-purple-400">{todayClients.new}</div>
-                      <div className="text-[10px] uppercase font-bold text-purple-300">Novos (Hoje)</div>
+                      <div className="text-2xl font-bold text-purple-500">{todayClients.new}</div>
+                      <div className="text-[10px] uppercase font-bold text-purple-400">Novos (Hoje)</div>
                   </div>
                   <div className="bg-barber-950 border border-barber-800 rounded-xl p-3 flex flex-col items-center justify-center">
                       <div className="text-2xl font-bold text-main">{todayClients.recurring}</div>
@@ -635,7 +636,7 @@ const Dashboard: React.FC<DashboardProps> = ({ settings, onGoToSettings, onGoToC
           </Card>
 
           {/* 12) DISPONÍVEIS AGORA (Mantido) */}
-          <Card noPadding>
+          <Card noPadding className="bg-barber-900">
               <div className="p-4 border-b border-barber-800 bg-barber-950/30 flex justify-between items-center">
                   <h3 className="font-bold text-main text-sm flex items-center gap-2">
                       <Zap size={16} className="text-yellow-400" /> Disponíveis Agora
@@ -646,7 +647,7 @@ const Dashboard: React.FC<DashboardProps> = ({ settings, onGoToSettings, onGoToC
                   {availableNow.map(barber => (
                       <div key={barber.id} className="p-3 flex items-center justify-between hover:bg-barber-800/20 transition-colors group cursor-pointer">
                           <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-full bg-barber-800 flex items-center justify-center font-bold text-xs">
+                              <div className="w-8 h-8 rounded-full bg-barber-800 flex items-center justify-center font-bold text-xs border border-barber-700">
                                   {barber.name.charAt(0)}
                               </div>
                               <div>

@@ -58,6 +58,7 @@ export interface MonthlyGoal {
 export interface PendingRequest {
     id: string;
     clientName: string;
+    clientPhone: string | null;
     service: string;
     time: string;
     date: string;
@@ -65,6 +66,14 @@ export interface PendingRequest {
     status: string;
     paymentStatus: string | null;
     startDatetime: string;
+}
+
+export interface NewClientForWelcome {
+    id: string;
+    name: string;
+    phone: string;
+    source?: string;
+    createdAt: string;
 }
 
 export interface TopService {
@@ -90,6 +99,7 @@ export interface DashboardData {
     pendingRequests: PendingRequest[];
     topServices: TopService[];
     recentActivities: RecentActivity[];
+    newClientsForWelcome: NewClientForWelcome[];
     isLoading: boolean;
     error: string | null;
     refresh: () => Promise<void>;
@@ -133,6 +143,7 @@ export function useDashboardData(): DashboardData {
     const [pendingRequests, setPendingRequests] = useState<PendingRequest[]>([]);
     const [topServices, setTopServices] = useState<TopService[]>([]);
     const [recentActivities, setRecentActivities] = useState<RecentActivity[]>([]);
+    const [newClientsForWelcome, setNewClientsForWelcome] = useState<NewClientForWelcome[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -177,7 +188,8 @@ export function useDashboardData(): DashboardData {
                 monthApptsRes,
                 weekApptsRes,
                 pendingApptsRes,
-                recentApptsRes
+                recentApptsRes,
+                newClientsRes
             ] = await Promise.all([
                 // 1. Today's appointments - include service for price
                 supabase
@@ -267,7 +279,7 @@ export function useDashboardData(): DashboardData {
                     .gte('start_datetime', weekStart)
                     .lte('start_datetime', weekEnd),
 
-                // 11. Pending and recent online appointments
+                // 11. Pending and recent online appointments - with phone
                 supabase
                     .from('appointments')
                     .select(`
@@ -275,7 +287,8 @@ export function useDashboardData(): DashboardData {
                         start_datetime,
                         created_at,
                         customer_name,
-                        client:clients(name),
+                        customer_phone,
+                        client:clients(name, phone),
                         service:services(name),
                         source,
                         status,
@@ -303,7 +316,18 @@ export function useDashboardData(): DashboardData {
                     `)
                     .eq('business_id', businessId)
                     .order('updated_at', { ascending: false })
-                    .limit(10)
+                    .limit(10),
+
+                // 13. New clients this month for welcome message
+                supabase
+                    .from('clients')
+                    .select('id, name, phone, source, created_at')
+                    .eq('business_id', businessId)
+                    .gte('created_at', monthStart)
+                    .lte('created_at', monthEnd)
+                    .not('phone', 'is', null)
+                    .order('created_at', { ascending: false })
+                    .limit(20)
             ]);
 
             // =========================================
@@ -464,11 +488,12 @@ export function useDashboardData(): DashboardData {
 
             setWeeklyRevenue(weeklyData);
 
-            // 8. Pending Requests
+            // 8. Pending Requests - with phone
             const pendingApts = pendingApptsRes.data || [];
             const pendingData: PendingRequest[] = pendingApts.map(apt => ({
                 id: apt.id,
                 clientName: apt.customer_name || (apt.client as any)?.name || 'Cliente',
+                clientPhone: (apt as any).customer_phone || (apt.client as any)?.phone || null,
                 service: (apt.service as any)?.name || 'Serviço',
                 time: format(new Date(apt.start_datetime), 'HH:mm'),
                 date: format(new Date(apt.start_datetime), 'dd/MM'),
@@ -553,6 +578,19 @@ export function useDashboardData(): DashboardData {
 
             setRecentActivities(recentActivitiesData);
 
+            // 11. New clients for welcome message
+            const newClients = newClientsRes.data || [];
+            const newClientsData: NewClientForWelcome[] = newClients
+                .filter((c: any) => c.phone) // Only clients with phone
+                .map((c: any) => ({
+                    id: c.id,
+                    name: c.name,
+                    phone: c.phone,
+                    source: c.source,
+                    createdAt: c.created_at
+                }));
+
+            setNewClientsForWelcome(newClientsData);
 
         } catch (err: any) {
             console.error('❌ [Dashboard] Error loading data:', err);
@@ -575,6 +613,7 @@ export function useDashboardData(): DashboardData {
         pendingRequests,
         topServices,
         recentActivities,
+        newClientsForWelcome,
         isLoading,
         error,
         refresh: loadData,
