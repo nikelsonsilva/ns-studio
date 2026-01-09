@@ -37,6 +37,7 @@ import {
    Zap,
    RefreshCw
 } from 'lucide-react';
+import { Unplug } from 'lucide-react';
 import { SystemSettings } from '../types';
 import { getCurrentBusiness, getCurrentBusinessId } from '../lib/database';
 import { checkSlugAvailability, updateBusinessSlug } from '../lib/database';
@@ -133,7 +134,11 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings }) => {
 
    // WhatsApp & AI State
    const [whatsappConnected, setWhatsappConnected] = useState(false);
+   const [instanceExists, setInstanceExists] = useState(false); // Track if instance was created
    const [whatsappLoading, setWhatsappLoading] = useState(false);
+   const [qrCodeBase64, setQrCodeBase64] = useState<string | null>(null);
+   const [checkingStatus, setCheckingStatus] = useState(false);
+   const statusPollingRef = useRef<NodeJS.Timeout | null>(null);
    const [aiEnabled, setAiEnabled] = useState(false);
    const [aiAssistantName, setAiAssistantName] = useState('');
    const [aiTone, setAiTone] = useState<'formal' | 'descontraido' | 'vendedor'>('descontraido');
@@ -452,6 +457,209 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings }) => {
       });
    };
 
+   // Connect WhatsApp Instance
+   const handleConnectWhatsApp = async (reconectar: boolean = false) => {
+      if (!businessInfo.business_name) {
+         toast.error('Nome do estabelecimento não encontrado');
+         return;
+      }
+
+      setWhatsappLoading(true);
+      setQrCodeBase64(null);
+
+      try {
+         const response = await fetch('https://n8ntech.linkarbox.app/webhook/conectarinstancia', {
+            method: 'POST',
+            headers: {
+               'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+               instanceName: businessInfo.business_name.replace(/\s+/g, '_').toLowerCase(),
+               reconectar: reconectar
+            })
+         });
+
+         if (!response.ok) {
+            throw new Error('Erro na requisição');
+         }
+
+         const data = await response.json();
+
+         if (data.base64 || data.qrcode || data.code) {
+            const qrCode = data.base64 || data.qrcode || data.code;
+            setQrCodeBase64(qrCode);
+            toast.success('QR Code gerado! Escaneie com seu WhatsApp.');
+            // Start polling to check if user scanned the QR code
+            startStatusPolling();
+         } else {
+            throw new Error('QR Code não retornado');
+         }
+      } catch (error) {
+         console.error('Erro ao conectar WhatsApp:', error);
+         toast.error('Erro ao conectar instância. Tente novamente.');
+      } finally {
+         setWhatsappLoading(false);
+      }
+   };
+
+   // Check WhatsApp connection status
+   const checkWhatsAppStatus = async () => {
+      if (!businessInfo.business_name) return false;
+
+      try {
+         const response = await fetch('https://n8ntech.linkarbox.app/webhook/statusinstancia', {
+            method: 'POST',
+            headers: {
+               'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+               instanceName: businessInfo.business_name.replace(/\s+/g, '_').toLowerCase()
+            })
+         });
+
+         if (!response.ok) return false;
+
+         const data = await response.json();
+         return data.connected === true || data.status === 'connected' || data.state === 'open' || data.connectionStatus === 'open';
+      } catch (error) {
+         console.error('Erro ao verificar status:', error);
+         return false;
+      }
+   };
+
+   // Start polling for connection status
+   const startStatusPolling = () => {
+      setCheckingStatus(true);
+
+      // Clear any existing interval
+      if (statusPollingRef.current) {
+         clearInterval(statusPollingRef.current);
+      }
+
+      // Poll every 3 seconds
+      statusPollingRef.current = setInterval(async () => {
+         const isConnected = await checkWhatsAppStatus();
+
+         if (isConnected) {
+            setWhatsappConnected(true);
+            setQrCodeBase64(null);
+            stopStatusPolling();
+            toast.success('WhatsApp conectado com sucesso!');
+         }
+      }, 3000);
+
+      // Stop polling after 2 minutes (timeout)
+      setTimeout(() => {
+         if (statusPollingRef.current) {
+            stopStatusPolling();
+         }
+      }, 120000);
+   };
+
+   // Stop polling
+   const stopStatusPolling = () => {
+      if (statusPollingRef.current) {
+         clearInterval(statusPollingRef.current);
+         statusPollingRef.current = null;
+      }
+      setCheckingStatus(false);
+   };
+
+   // Cleanup on unmount
+   useEffect(() => {
+      return () => {
+         if (statusPollingRef.current) {
+            clearInterval(statusPollingRef.current);
+         }
+      };
+   }, []);
+
+   // Handle WhatsApp events (connect, delete, reconnect, disconnect, restart)
+   const [whatsappEventLoading, setWhatsappEventLoading] = useState<string | null>(null);
+
+   const handleWhatsAppEvent = async (event: 'connect' | 'delete' | 'reconnect' | 'disconnect' | 'restart') => {
+      if (!businessInfo.business_name) {
+         toast.error('Nome do estabelecimento não encontrado');
+         return;
+      }
+
+      setWhatsappEventLoading(event);
+
+      try {
+         const response = await fetch('https://n8ntech.linkarbox.app/webhook/conectarinstancia', {
+            method: 'POST',
+            headers: {
+               'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+               instanceName: businessInfo.business_name.replace(/\s+/g, '_').toLowerCase(),
+               event: event
+            })
+         });
+
+         if (!response.ok) {
+            throw new Error('Erro na requisição');
+         }
+
+         // Handle different events
+         const data = await response.json();
+
+         switch (event) {
+            case 'disconnect':
+               // Only disconnect the session, instance still exists
+               setWhatsappConnected(false);
+               // instanceExists stays true - user can reconnect
+               toast.success('WhatsApp desconectado! Use Reconectar para gerar novo QR Code.');
+               break;
+            case 'delete':
+               // Full reset - delete the instance completely
+               setWhatsappConnected(false);
+               setInstanceExists(false); // Instance no longer exists
+               setQrCodeBase64(null);
+               toast.success('Instância deletada com sucesso!');
+               break;
+            case 'restart':
+               toast.success('WhatsApp reiniciado com sucesso!');
+               break;
+            case 'reconnect':
+               // Check if response contains QR code
+               if (data.base64 || data.qrcode || data.code) {
+                  const qrCode = data.base64 || data.qrcode || data.code;
+                  setQrCodeBase64(qrCode);
+                  toast.success('QR Code gerado! Escaneie com seu WhatsApp.');
+                  startStatusPolling();
+               } else {
+                  toast.success('Reconexão iniciada!');
+               }
+               break;
+            case 'connect':
+               // New instance created
+               setInstanceExists(true);
+               if (data.base64 || data.qrcode || data.code) {
+                  const qrCode = data.base64 || data.qrcode || data.code;
+                  setQrCodeBase64(qrCode);
+                  toast.success('QR Code gerado! Escaneie com seu WhatsApp.');
+                  startStatusPolling();
+               } else {
+                  toast.success('Instância criada!');
+               }
+               break;
+         }
+      } catch (error) {
+         console.error(`Erro ao ${event} WhatsApp:`, error);
+         const errorMessages: Record<string, string> = {
+            connect: 'conectar',
+            delete: 'deletar',
+            reconnect: 'reconectar',
+            disconnect: 'desconectar',
+            restart: 'reiniciar'
+         };
+         toast.error(`Erro ao ${errorMessages[event]}. Tente novamente.`);
+      } finally {
+         setWhatsappEventLoading(null);
+      }
+   };
+
    const handleCancelEdit = () => {
       setBusinessInfo({ ...originalBusinessInfo });
       setPhoneValidation({ valid: true });
@@ -564,7 +772,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings }) => {
                   {settings.modules.whatsappAi && (
                      <button
                         onClick={() => setActiveTab('whatsapp')}
-                        className={`flex-1 md:flex-none px-6 py-2 rounded-md text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 ${activeTab === 'whatsapp' ? 'bg-barber-800 text-main shadow' : 'text-muted hover:text-main'}`}
+                        className={`flex-1 md:flex-none px-6 py-2 rounded-md text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 animate-fade-in ${activeTab === 'whatsapp' ? 'bg-[#25D366] text-black shadow' : 'text-muted hover:text-main'}`}
                      >
                         <MessageSquare size={14} /> WhatsApp & IA
                      </button>
@@ -983,7 +1191,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings }) => {
             {activeTab === 'whatsapp' && (
                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 animate-fade-in">
                   {/* Conexão WhatsApp */}
-                  <Card noPadding className="overflow-hidden" style={{ border: '1px solid var(--dark-module-border-emerald)' }}>
+                  <Card noPadding className="overflow-hidden bg-gradient-to-br from-emerald-950/50 to-barber-900" style={{ border: '1px solid var(--dark-module-border-emerald)' }}>
                      <div className="p-6 border-b border-barber-800 flex justify-between items-center">
                         <div className="flex items-center gap-3">
                            <div className="p-2 rounded-lg" style={{ background: 'var(--dark-icon-emerald-bg)' }}>
@@ -999,34 +1207,128 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings }) => {
                         </span>
                      </div>
                      <div className="p-6 flex flex-col items-center justify-center min-h-[280px]">
-                        {!whatsappConnected ? (
-                           <>
-                              <div className="w-32 h-32 rounded-xl flex items-center justify-center mb-6" style={{ background: 'var(--dark-bg-elevated-50)', border: '1px solid var(--dark-border-default)' }}>
-                                 <QrCode size={64} style={{ color: 'var(--dark-text-muted)' }} />
-                              </div>
-                              <p className="text-sm text-muted text-center mb-6">
-                                 Conecte o WhatsApp do seu estabelecimento<br />para ativar a IA de agendamento.
-                              </p>
-                              <Button
-                                 onClick={() => setWhatsappLoading(true)}
-                                 isLoading={whatsappLoading}
-                                 leftIcon={<Zap size={16} />}
-                                 variant="success"
-                              >
-                                 Conectar Instância
-                              </Button>
-                           </>
-                        ) : (
+                        {/* State 1: Connected - Show action buttons */}
+                        {whatsappConnected ? (
                            <div className="text-center">
                               <div className="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto mb-4">
                                  <CheckCircle size={32} className="text-emerald-400" />
                               </div>
-                              <p className="text-main font-bold mb-2">WhatsApp Conectado!</p>
-                              <p className="text-sm text-muted mb-4">Seu número está recebendo mensagens.</p>
-                              <Button variant="outline" size="sm" leftIcon={<RefreshCw size={14} />}>
-                                 Reconectar
-                              </Button>
+                              <p className="text-main font-bold mb-2">Conectado & Atendendo</p>
+                              <p className="text-sm text-muted mb-6">Clientes sendo atendidos com a nossa inteligência artificial humanizada.</p>
+
+                              {/* Action Buttons */}
+                              <div className="flex items-center justify-center gap-3">
+                                 {/* REINICIAR Button */}
+                                 <button
+                                    onClick={() => handleWhatsAppEvent('restart')}
+                                    disabled={whatsappEventLoading === 'restart'}
+                                    className="px-5 py-2.5 rounded-lg bg-barber-800 border border-barber-700 hover:bg-barber-700 text-white text-sm font-bold uppercase tracking-wide transition-colors disabled:opacity-50 flex items-center gap-2"
+                                 >
+                                    {whatsappEventLoading === 'restart' && <Loader2 size={14} className="animate-spin" />}
+                                    REINICIAR
+                                 </button>
+
+                                 {/* DESCONECTAR Button */}
+                                 <button
+                                    onClick={() => handleWhatsAppEvent('disconnect')}
+                                    disabled={whatsappEventLoading === 'disconnect'}
+                                    className="px-5 py-2.5 rounded-lg bg-red-950/80 border border-red-900/50 hover:bg-red-900/60 text-red-400 text-sm font-bold uppercase tracking-wide transition-colors disabled:opacity-50 flex items-center gap-2"
+                                 >
+                                    {whatsappEventLoading === 'disconnect' && <Loader2 size={14} className="animate-spin" />}
+                                    DESCONECTAR
+                                 </button>
+
+                                 {/* DELETAR Button */}
+                                 <button
+                                    onClick={() => handleWhatsAppEvent('delete')}
+                                    disabled={whatsappEventLoading === 'delete'}
+                                    className="px-5 py-2.5 rounded-lg bg-red-950/80 border border-red-900/50 hover:bg-red-900/60 text-red-400 text-sm font-bold uppercase tracking-wide transition-colors disabled:opacity-50 flex items-center gap-2"
+                                 >
+                                    {whatsappEventLoading === 'delete' && <Loader2 size={14} className="animate-spin" />}
+                                    DELETAR
+                                 </button>
+                              </div>
                            </div>
+                        ) : instanceExists ? (
+                           /* State 2: Disconnected but instance exists - Show reconnect button */
+                           <>
+                              <div className="w-48 h-48 rounded-xl flex items-center justify-center mb-6 overflow-hidden" style={{ background: 'var(--dark-bg-elevated-50)', border: '1px solid var(--dark-border-default)' }}>
+                                 {qrCodeBase64 ? (
+                                    <img
+                                       src={qrCodeBase64.startsWith('data:') ? qrCodeBase64 : `data:image/png;base64,${qrCodeBase64}`}
+                                       alt="QR Code WhatsApp"
+                                       className="w-full h-full object-contain p-2"
+                                    />
+                                 ) : (
+                                    <div className="text-center">
+                                       <Unplug size={48} className="text-amber-400 mx-auto mb-2" />
+                                       <p className="text-xs text-amber-400 font-bold">Desconectado</p>
+                                    </div>
+                                 )}
+                              </div>
+                              <p className="text-sm text-muted text-center mb-2">
+                                 {qrCodeBase64
+                                    ? 'Escaneie o QR Code acima com seu WhatsApp.'
+                                    : 'Instância desconectada. Reconecte para gerar um novo QR Code.'}
+                              </p>
+                              {checkingStatus && qrCodeBase64 && (
+                                 <div className="flex items-center justify-center gap-2 mb-4 text-xs text-amber-400">
+                                    <Loader2 size={14} className="animate-spin" />
+                                    <span>Aguardando conexão...</span>
+                                 </div>
+                              )}
+                              <div className="flex gap-3">
+                                 <Button
+                                    onClick={() => handleWhatsAppEvent('reconnect')}
+                                    isLoading={whatsappEventLoading === 'reconnect'}
+                                    leftIcon={<RefreshCw size={16} />}
+                                    variant="success"
+                                 >
+                                    Reconectar
+                                 </Button>
+                                 <Button
+                                    onClick={() => handleWhatsAppEvent('delete')}
+                                    isLoading={whatsappEventLoading === 'delete'}
+                                    variant="danger"
+                                 >
+                                    Deletar Instância
+                                 </Button>
+                              </div>
+                           </>
+                        ) : (
+                           /* State 3: No instance - Show connect button */
+                           <>
+                              <div className="w-48 h-48 rounded-xl flex items-center justify-center mb-6 overflow-hidden" style={{ background: 'var(--dark-bg-elevated-50)', border: '1px solid var(--dark-border-default)' }}>
+                                 {qrCodeBase64 ? (
+                                    <img
+                                       src={qrCodeBase64.startsWith('data:') ? qrCodeBase64 : `data:image/png;base64,${qrCodeBase64}`}
+                                       alt="QR Code WhatsApp"
+                                       className="w-full h-full object-contain p-2"
+                                    />
+                                 ) : (
+                                    <QrCode size={64} style={{ color: 'var(--dark-text-muted)' }} />
+                                 )}
+                              </div>
+                              <p className="text-sm text-muted text-center mb-2">
+                                 {qrCodeBase64
+                                    ? 'Escaneie o QR Code acima com seu WhatsApp.'
+                                    : 'Conecte o WhatsApp do seu estabelecimento para ativar a IA de agendamento.'}
+                              </p>
+                              {checkingStatus && qrCodeBase64 && (
+                                 <div className="flex items-center justify-center gap-2 mb-4 text-xs text-amber-400">
+                                    <Loader2 size={14} className="animate-spin" />
+                                    <span>Aguardando conexão...</span>
+                                 </div>
+                              )}
+                              <Button
+                                 onClick={() => handleWhatsAppEvent('connect')}
+                                 isLoading={whatsappEventLoading === 'connect'}
+                                 leftIcon={<Unplug size={16} />}
+                                 variant="success"
+                              >
+                                 Conectar WhatsApp
+                              </Button>
+                           </>
                         )}
                      </div>
                   </Card>

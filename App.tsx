@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Menu, Bell, CheckCircle2, AlertCircle, X, ShieldCheck, User } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
@@ -22,6 +22,8 @@ import { ThemeProvider } from './lib/ThemeContext';
 import { signOut } from './lib/auth';
 import { Notification, Role, SystemSettings } from './types';
 import { ToastProvider } from './components/ui/Toast';
+import { supabase } from './lib/supabase';
+import { getCurrentBusinessId } from './lib/database';
 
 // Initial Settings
 const initialSettings: SystemSettings = {
@@ -33,6 +35,7 @@ const initialSettings: SystemSettings = {
     aiChatbot: false,
     publicBooking: true,
     loyaltyProgram: true,
+    whatsappAi: false,
   },
   aiConfig: {
     enableInsights: true,
@@ -86,6 +89,75 @@ const App: React.FC = () => {
     stripeKey: ''
   });
 
+  // Load modules from database when authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadModulesFromDatabase();
+    }
+  }, [isAuthenticated]);
+
+  const loadModulesFromDatabase = async () => {
+    try {
+      const businessId = await getCurrentBusinessId();
+      if (!businessId) return;
+
+      const { data, error } = await supabase
+        .from('businesses')
+        .select('settings, business_name')
+        .eq('id', businessId)
+        .single();
+
+      if (error) throw error;
+
+      if (data?.settings?.modules) {
+        setSettings(prev => ({
+          ...prev,
+          businessName: data.business_name || prev.businessName,
+          modules: {
+            ...prev.modules,
+            ...data.settings.modules
+          }
+        }));
+      } else if (data?.business_name) {
+        setSettings(prev => ({
+          ...prev,
+          businessName: data.business_name
+        }));
+      }
+    } catch (error) {
+      console.error('Error loading modules:', error);
+    }
+  };
+
+  // Save modules to database when changed
+  const handleUpdateSettings = async (newSettings: SystemSettings) => {
+    setSettings(newSettings);
+
+    try {
+      const businessId = await getCurrentBusinessId();
+      if (!businessId) return;
+
+      // Get current settings to merge
+      const { data: currentData } = await supabase
+        .from('businesses')
+        .select('settings')
+        .eq('id', businessId)
+        .single();
+
+      const updatedSettings = {
+        ...(currentData?.settings || {}),
+        modules: newSettings.modules
+      };
+
+      await supabase
+        .from('businesses')
+        .update({ settings: updatedSettings })
+        .eq('id', businessId);
+    } catch (error) {
+      console.error('Error saving modules:', error);
+    }
+  };
+
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
   const unreadCount = notifications.filter(n => !n.read).length;
@@ -121,7 +193,7 @@ const App: React.FC = () => {
       case 'clients': return <Clients />;
       case 'finance': return <Finance paymentConfig={paymentConfig} onSaveConfig={setPaymentConfig} userRole={userRole} />;
       case 'team': return <Team />;
-      case 'settings': return <Settings settings={settings} onUpdateSettings={setSettings} />;
+      case 'settings': return <Settings settings={settings} onUpdateSettings={handleUpdateSettings} />;
       default: return <Dashboard settings={settings} />;
     }
   };

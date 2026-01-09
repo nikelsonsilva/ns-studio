@@ -366,6 +366,7 @@ export interface SystemSettings {
     aiChatbot: boolean;
     publicBooking: boolean;
     loyaltyProgram: boolean;
+    whatsappAi: boolean;
   };
   aiConfig: {
     enableInsights: boolean;
