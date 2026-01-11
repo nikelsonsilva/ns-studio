@@ -18,9 +18,22 @@
     "moduleDetection": "force",
     "allowJs": true,
     "jsx": "react-jsx",
+    "baseUrl": ".",
     "paths": {
       "@/*": [
         "./*"
+      ],
+      "@core/*": [
+        "./src/2.core/*"
+      ],
+      "@features/*": [
+        "./src/3.features/*"
+      ],
+      "@app/*": [
+        "./src/1.app/*"
+      ],
+      "@pages/*": [
+        "./src/4.pages/*"
       ]
     },
     "allowImportingTsExtensions": true,
