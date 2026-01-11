@@ -18,6 +18,9 @@ import Input from './ui/Input';
 import Badge from './ui/Badge';
 import { useToast } from './ui/Toast';
 
+// Feature-Sliced Design
+import type { FinanceTab, NfseConfig, NfseEmpresaForm } from '@features/Finance/types';
+
 interface FinanceProps {
   paymentConfig?: {
     isConnected: boolean;

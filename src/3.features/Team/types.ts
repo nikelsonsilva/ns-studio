@@ -15,4 +15,4 @@ export interface ProfessionalWithStats extends Professional {
     stats?: ProfessionalStats;
 }
 
-export type ModalTab = 'dados' | 'horarios' | 'servicos' | 'financeiro';
+export type ModalTab = 'profile' | 'finance' | 'services' | 'schedule';

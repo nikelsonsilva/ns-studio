@@ -42,6 +42,9 @@ import Switch from './ui/Switch';
 import Modal from './ui/Modal';
 import { useToast } from './ui/Toast';
 
+// Feature-Sliced Design
+import type { ModalTab } from '@features/Team/types';
+
 // --- Sub-componente para Avatar Seguro ---
 const BarberAvatar = ({ barber, size = 'md', className = '' }: { barber: Partial<Barber> & { avatar?: string }, size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl', className?: string }) => {
   const [imgError, setImgError] = useState(false);
@@ -83,8 +86,6 @@ interface ProfessionalStats {
   appointments: number;
   avgTicket: number;
 }
-
-type ModalTab = 'profile' | 'finance' | 'services' | 'schedule';
 
 interface TeamProps { }
 
