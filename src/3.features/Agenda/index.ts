@@ -9,4 +9,7 @@ export * from './types';
 export * from './api/agendaService';
 
 // Hooks
-export { useAvailability, useDragDrop } from './hooks';
+export { useAvailability, useDragDrop, useAgendaData } from './hooks';
+
+// Components
+export { CalendarSkeleton, MiniCalendar } from './components';
