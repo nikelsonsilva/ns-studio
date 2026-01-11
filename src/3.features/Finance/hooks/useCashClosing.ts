@@ -4,7 +4,7 @@
  */
 
 import { useState, useCallback } from 'react';
-import { supabase } from './supabase';
+import { supabase } from '@/lib/supabase';
 import { format, startOfDay, endOfDay } from 'date-fns';
 
 // Types

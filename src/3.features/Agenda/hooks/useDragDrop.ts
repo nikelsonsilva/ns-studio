@@ -4,9 +4,10 @@
  * Extraído do Calendar.tsx (linhas 719-835)
  */
 
-import { useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { isSameDay } from 'date-fns';
-import type { Appointment, TimeBlock, PendingDrop } from '../types';
+import type { TimeBlock, PendingDrop } from '../types';
+import type { Appointment } from '@/types';
 import { updateAppointment } from '../api/agendaService';
 import { fromUTC } from '@/lib/timezone';
 
@@ -94,11 +95,12 @@ export function useDragDrop({
         }
 
         // 5. Verificar conflito com outros agendamentos
-        const existingAppointments = appointments.filter(a => {
-            if (a.status === 'cancelled' || a.status === 'no_show') return false;
-            const profId = a.professional_id || (a as any).barberId;
+        const existingAppointments = appointments.filter((a: any) => {
+            if (a.status === 'cancelled' || a.status === 'canceled' || a.status === 'no_show') return false;
+            const profId = a.professional_id || a.barberId;
             if (profId !== professionalId) return false;
-            const d = a.start_datetime ? fromUTC(a.start_datetime) : null;
+            const startDt = a.start_datetime || a.date;
+            const d = startDt ? fromUTC(startDt) : null;
             if (!d || !isSameDay(d, currentDate)) return false;
             const aptHour = d.getHours();
             const [slotHour] = time.split(':').map(Number);

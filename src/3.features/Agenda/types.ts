@@ -71,8 +71,8 @@ export interface TimeSlotProps {
 export interface AppointmentCardProps {
     appointment: Appointment;
     onOpenDetails: (appointment: Appointment) => void;
-    onDragStart?: (e: React.DragEvent, appointment: Appointment) => void;
-    onDragEnd?: (e: React.DragEvent) => void;
+    onDragStart?: (e: DragEvent, appointment: Appointment) => void;
+    onDragEnd?: (e: DragEvent) => void;
 }
 
 /**
