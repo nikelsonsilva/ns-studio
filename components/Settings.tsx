@@ -139,11 +139,16 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings }) => {
    const [qrCodeBase64, setQrCodeBase64] = useState<string | null>(null);
    const [checkingStatus, setCheckingStatus] = useState(false);
    const statusPollingRef = useRef<NodeJS.Timeout | null>(null);
+   const [whatsappEventLoading, setWhatsappEventLoading] = useState<string | null>(null);
    const [aiEnabled, setAiEnabled] = useState(false);
    const [aiAssistantName, setAiAssistantName] = useState('');
    const [aiTone, setAiTone] = useState<'formal' | 'descontraido' | 'vendedor'>('descontraido');
    const [aiAllowCancellations, setAiAllowCancellations] = useState(false);
    const [aiResponseDelay, setAiResponseDelay] = useState(5);
+   const [aiUnderstandsAudio, setAiUnderstandsAudio] = useState(true);
+   const [aiAlwaysOnline, setAiAlwaysOnline] = useState(true);
+   const [aiIncludeName, setAiIncludeName] = useState(true);
+   const [aiAutoReadMessages, setAiAutoReadMessages] = useState(true);
 
    // Stats for Header
    const activeModulesCount = Object.values(settings.modules).filter(Boolean).length;
@@ -195,6 +200,26 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings }) => {
          const fetchedSettings = await fetchBusinessSettings(business.id);
          if (fetchedSettings) {
             setBusinessSettings(fetchedSettings);
+         }
+
+         // Check WhatsApp initial status
+         const instanceName = (businessData.business_name || businessData.name || '').replace(/\s+/g, '_').toLowerCase();
+         if (instanceName) {
+            try {
+               const statusResponse = await fetch('https://n8ntech.linkarbox.app/webhook/statusinstancia', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ instanceName })
+               });
+               if (statusResponse.ok) {
+                  const statusData = await statusResponse.json();
+                  const isConnected = statusData.connected === true || statusData.status === 'connected' || statusData.state === 'open' || statusData.connectionStatus === 'open';
+                  setWhatsappConnected(isConnected);
+                  setInstanceExists(true); // Instance exists if we got a response
+               }
+            } catch (error) {
+               console.log('WhatsApp status check failed:', error);
+            }
          }
       }
       setIsLoading(false);
@@ -575,8 +600,6 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings }) => {
    }, []);
 
    // Handle WhatsApp events (connect, delete, reconnect, disconnect, restart)
-   const [whatsappEventLoading, setWhatsappEventLoading] = useState<string | null>(null);
-
    const handleWhatsAppEvent = async (event: 'connect' | 'delete' | 'reconnect' | 'disconnect' | 'restart') => {
       if (!businessInfo.business_name) {
          toast.error('Nome do estabelecimento não encontrado');
@@ -1383,39 +1406,91 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings }) => {
                            </div>
                         </div>
 
-                        {/* Permitir Cancelamentos */}
-                        <div className="flex items-center justify-between p-4 rounded-lg" style={{ background: 'var(--dark-bg-elevated-50)' }}>
-                           <div>
-                              <h4 className="text-sm font-bold text-main">Permitir Cancelamentos</h4>
-                              <p className="text-xs text-muted mt-0.5">IA pode cancelar horários se o cliente pedir?</p>
+                        {/* Permitir Cancelamentos + Delay de Resposta */}
+                        <div className="rounded-lg overflow-hidden" style={{ background: 'var(--dark-bg-app)', border: '1px solid var(--dark-border-default)' }}>
+                           <div className="flex items-center justify-between p-4" style={{ borderBottom: '1px solid var(--dark-border-default)' }}>
+                              <div>
+                                 <h4 className="text-sm font-bold text-main">Permitir Cancelamentos</h4>
+                                 <p className="text-xs text-muted mt-0.5">IA pode cancelar horários se o cliente pedir?</p>
+                              </div>
+                              <Switch
+                                 checked={aiAllowCancellations}
+                                 onCheckedChange={setAiAllowCancellations}
+                              />
                            </div>
-                           <Switch
-                              checked={aiAllowCancellations}
-                              onCheckedChange={setAiAllowCancellations}
-                           />
+                           <div className="flex items-center justify-between p-4">
+                              <div>
+                                 <h4 className="text-sm font-bold text-main">Delay de Resposta</h4>
+                                 <p className="text-xs text-muted mt-0.5">Tempo simulado de digitação (segundos)</p>
+                              </div>
+                              <input
+                                 type="number"
+                                 min="1"
+                                 max="30"
+                                 value={aiResponseDelay}
+                                 onChange={(e) => setAiResponseDelay(Number(e.target.value))}
+                                 className="w-16 bg-barber-900 border border-barber-800 text-main rounded-lg px-3 py-2 text-center text-sm outline-none focus:border-barber-gold"
+                              />
+                           </div>
                         </div>
 
-                        {/* Delay de Resposta */}
-                        <div className="flex items-center justify-between p-4 rounded-lg" style={{ background: 'var(--dark-bg-elevated-50)' }}>
-                           <div>
-                              <h4 className="text-sm font-bold text-main">Delay de Resposta</h4>
-                              <p className="text-xs text-muted mt-0.5">Tempo simulado de digitação (segundos)</p>
+                        {/* Recursos Inteligentes */}
+                        <div className="border-t border-barber-800 pt-5">
+                           <div className="flex items-center gap-2 mb-4">
+                              <div className="p-1.5 rounded-lg" style={{ background: 'rgba(168, 85, 247, 0.15)' }}>
+                                 <Zap size={14} className="text-purple-400" />
+                              </div>
+                              <h4 className="text-xs font-bold text-muted uppercase">Recursos Inteligentes</h4>
                            </div>
-                           <input
-                              type="number"
-                              min="1"
-                              max="30"
-                              value={aiResponseDelay}
-                              onChange={(e) => setAiResponseDelay(Number(e.target.value))}
-                              className="w-16 bg-barber-900 border border-barber-800 text-main rounded-lg px-3 py-2 text-center text-sm outline-none focus:border-barber-gold"
-                           />
+
+                           <div className="flex items-center justify-between p-4 rounded-lg mb-2" style={{ background: 'var(--dark-bg-app)', border: '1px solid var(--dark-border-default)' }}>
+                              <div>
+                                 <h4 className="text-sm font-bold text-main">Entende Áudio</h4>
+                                 <p className="text-xs text-muted mt-0.5">Transcreve e responde áudios</p>
+                              </div>
+                              <Switch checked={aiUnderstandsAudio} onCheckedChange={setAiUnderstandsAudio} />
+                           </div>
+
+                           <div className="flex items-center justify-between p-4 rounded-lg" style={{ background: 'var(--dark-bg-app)', border: '1px solid var(--dark-border-default)' }}>
+                              <div>
+                                 <h4 className="text-sm font-bold text-main">Status Sempre Online</h4>
+                                 <p className="text-xs text-muted mt-0.5">Mantém o "Online" visível</p>
+                              </div>
+                              <Switch checked={aiAlwaysOnline} onCheckedChange={setAiAlwaysOnline} />
+                           </div>
+                        </div>
+
+                        {/* Comportamento */}
+                        <div className="border-t border-barber-800 pt-5">
+                           <div className="flex items-center gap-2 mb-4">
+                              <div className="p-1.5 rounded-lg" style={{ background: 'rgba(59, 130, 246, 0.15)' }}>
+                                 <MessageSquare size={14} className="text-blue-400" />
+                              </div>
+                              <h4 className="text-xs font-bold text-muted uppercase">Comportamento</h4>
+                           </div>
+
+                           <div className="flex items-center justify-between p-4 rounded-lg mb-2" style={{ background: 'var(--dark-bg-app)', border: '1px solid var(--dark-border-default)' }}>
+                              <div>
+                                 <h4 className="text-sm font-bold text-main">Incluir Nome na Resposta</h4>
+                                 <p className="text-xs text-muted mt-0.5">"Olá, [Nome]..."</p>
+                              </div>
+                              <Switch checked={aiIncludeName} onCheckedChange={setAiIncludeName} />
+                           </div>
+
+                           <div className="flex items-center justify-between p-4 rounded-lg" style={{ background: 'var(--dark-bg-app)', border: '1px solid var(--dark-border-default)' }}>
+                              <div>
+                                 <h4 className="text-sm font-bold text-main">Ler Automaticamente</h4>
+                                 <p className="text-xs text-muted mt-0.5">Marca mensagens como lidas (azul)</p>
+                              </div>
+                              <Switch checked={aiAutoReadMessages} onCheckedChange={setAiAutoReadMessages} />
+                           </div>
                         </div>
 
                         {/* Info Box */}
                         <div className="p-3 rounded-lg flex items-center gap-2" style={{ background: 'var(--dark-info-box-bg)', border: '1px solid var(--dark-info-box-border)' }}>
                            <RefreshCw size={14} style={{ color: 'var(--dark-info-box-text)' }} />
                            <p className="text-xs" style={{ color: 'var(--dark-info-box-text)' }}>
-                              As alterações no comportamento da IA são enviadas instantaneamente.
+                              As alterações são enviadas instantaneamente para o n8n.
                            </p>
                         </div>
                      </div>

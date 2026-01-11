@@ -15,7 +15,7 @@ import ConfirmacaoPage from './pages/ConfirmacaoPage';
 import PaymentLinkPage from './pages/PaymentLinkPage';
 import AIChatbot from './components/AIChatbot';
 import Settings from './components/Settings';
-import ProfileModal from './components/ProfileModal';
+import UserProfile from './components/UserProfile';
 import Auth from './components/Auth';
 import { BusinessProvider } from './lib/businessContext';
 import { ThemeProvider } from './lib/ThemeContext';
@@ -167,6 +167,7 @@ const App: React.FC = () => {
   };
 
   const handleLogout = async () => {
+    setShowProfileModal(false); // Close profile modal before logout
     await signOut();
     setIsAuthenticated(false);
     setCurrentView('dashboard');
@@ -374,13 +375,20 @@ const App: React.FC = () => {
               </div>
 
               {/* Profile Modal */}
-              <ProfileModal
-                isOpen={showProfileModal}
-                onClose={() => setShowProfileModal(false)}
-                onLogout={handleLogout}
-                userRole={userRole}
-                businessName={settings.businessName}
-              />
+              {showProfileModal && (
+                <UserProfile
+                  user={{
+                    name: settings.businessName,
+                    email: '',
+                    role: userRole,
+                    phone: ''
+                  }}
+                  businessName={settings.businessName}
+                  onSave={() => setShowProfileModal(false)}
+                  onClose={() => setShowProfileModal(false)}
+                  onLogout={handleLogout}
+                />
+              )}
 
               {/* Floating Chatbot (Conditioned by Settings) */}
               {currentView !== 'public_booking' && settings.modules.aiChatbot && (

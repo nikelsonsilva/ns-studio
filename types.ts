@@ -88,6 +88,15 @@ export type LoyaltyTier = 'Bronze' | 'Prata' | 'Ouro' | 'Diamante';
 
 export type Role = 'Admin' | 'Manager' | 'Barber';
 
+export interface UserProfile {
+  name: string;
+  email: string;
+  avatar?: string;
+  role: Role;
+  phone?: string;
+  tenantId?: string;
+}
+
 // =====================================================
 // CORE ENTITIES (Multi-Tenant)
 // =====================================================

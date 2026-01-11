@@ -8,7 +8,7 @@ import CashClosingTab from './finance/CashClosingTab';
 import { useSupabaseQuery } from '../lib/hooks';
 import { fetchProfessionals, fetchFinancialRecords, fetchRecurringExpenses, getCurrentBusinessId, createRecurringExpense } from '../lib/database';
 import { supabase } from '../lib/supabase';
-import { CurrencyInput } from '../src/ui';
+import { CurrencyInput } from './ui/CurrencyInput';
 import { buscarCep, buscarCnpj, buscarCodigoIbge, formatarCep, formatarCnpj } from '../lib/brasilApi';
 
 // UI Components (Design System)
@@ -1086,14 +1086,16 @@ const Finance: React.FC<FinanceProps> = ({ paymentConfig, onSaveConfig, userRole
               <div className="mt-2 text-xs text-[var(--text-subtle)]">{recurringExpenses.length} despesas</div>
             </div>
 
-            {/* TAXAS STRIPE */}
-            <div className="bg-[var(--surface-card)] p-6 rounded-xl border border-[var(--border-default)] shadow-lg relative overflow-hidden group hover:border-purple-500/30 transition-colors">
+            {/* TAXAS DO PROVEDOR ATIVO */}
+            <div className={`bg-[var(--surface-card)] p-6 rounded-xl border border-[var(--border-default)] shadow-lg relative overflow-hidden group transition-colors ${paymentProvider === 'abacatepay' ? 'hover:border-green-500/30' : 'hover:border-purple-500/30'}`}>
               <div className="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                 <CreditCard size={80} />
               </div>
               <div className="flex items-center gap-2 mb-2">
-                <CreditCard size={16} className="text-[var(--accent-purple)]" />
-                <h3 className="text-[var(--text-[var(--text-muted)])] text-sm font-medium uppercase">Taxas Stripe</h3>
+                <CreditCard size={16} className={paymentProvider === 'abacatepay' ? 'text-green-500' : 'text-[var(--accent-purple)]'} />
+                <h3 className="text-[var(--text-[var(--text-muted)])] text-sm font-medium uppercase">
+                  {paymentProvider === 'abacatepay' ? 'Taxas Abacate Pay' : 'Taxas Stripe'}
+                </h3>
               </div>
               {(() => {
                 let totalFees = 0;
@@ -1104,7 +1106,7 @@ const Finance: React.FC<FinanceProps> = ({ paymentConfig, onSaveConfig, userRole
                 });
                 return (
                   <>
-                    <div className="text-2xl font-bold text-[var(--accent-purple)]">
+                    <div className={`text-2xl font-bold ${paymentProvider === 'abacatepay' ? 'text-green-500' : 'text-[var(--accent-purple)]'}`}>
                       {loadingStripeDetails ? '...' : `-R$ ${totalFees.toFixed(2)}`}
                     </div>
                     <div className="mt-2 text-xs text-[var(--text-subtle)]">
@@ -1156,9 +1158,9 @@ const Finance: React.FC<FinanceProps> = ({ paymentConfig, onSaveConfig, userRole
                 <h3 className="text-lg font-bold text-[var(--text-primary)]">Fluxo de Caixa Diário</h3>
                 <div className="flex items-center gap-2">
                   {loadingStripeDetails && (
-                    <span className="text-xs text-[var(--accent-purple)] flex items-center gap-1">
-                      <div className="w-3 h-3 border border-purple-400 border-t-transparent rounded-full animate-spin"></div>
-                      Sincronizando Stripe...
+                    <span className={`text-xs flex items-center gap-1 ${paymentProvider === 'abacatepay' ? 'text-green-500' : 'text-[var(--accent-purple)]'}`}>
+                      <div className={`w-3 h-3 border border-t-transparent rounded-full animate-spin ${paymentProvider === 'abacatepay' ? 'border-green-400' : 'border-purple-400'}`}></div>
+                      {paymentProvider === 'abacatepay' ? 'Sincronizando Abacate Pay...' : 'Sincronizando Stripe...'}
                     </span>
                   )}
                   <span className="text-xs text-[var(--text-subtle)]">{paidAppointments.length} transações</span>
@@ -1224,7 +1226,7 @@ const Finance: React.FC<FinanceProps> = ({ paymentConfig, onSaveConfig, userRole
 
                           // Fallback for appointments without Stripe details
                           const method = apt.payment_method || 'outros';
-                          if (method === 'online') return { label: 'Stripe', sublabel: null, style: 'border-purple-500/30 text-[var(--accent-purple)] bg-[var(--accent-purple)]/10', icon: 'card' };
+                          if (method === 'online') return { label: 'Online', sublabel: null, style: 'border-purple-500/30 text-[var(--accent-purple)] bg-[var(--accent-purple)]/10', icon: 'card' };
                           if (method === 'presential') return { label: 'Presencial', sublabel: null, style: 'border-green-500/30 text-[var(--status-success)] bg-green-500/10', icon: 'banknote' };
                           return { label: method, sublabel: null, style: 'border-gray-500/30 text-[var(--text-[var(--text-muted)])] bg-[var(--surface-subtle)]0/10', icon: 'circle' };
                         };

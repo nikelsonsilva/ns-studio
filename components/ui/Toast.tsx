@@ -122,14 +122,13 @@ const ToastItem: React.FC<{ toast: Toast; onRemove: (id: string) => void }> = ({
           </div>
         )}
       </div>
-      {toast.type !== 'confirm' && (
-        <button
-          onClick={handleClose}
-          className="shrink-0 rounded-lg p-1 text-[var(--dark-toast-close-text)] hover:bg-[var(--dark-toast-close-hover-bg)] hover:text-[var(--dark-text-main)] transition-colors"
-        >
-          <X size={16} />
-        </button>
-      )}
+      {/* Close button - show for all types */}
+      <button
+        onClick={handleClose}
+        className="shrink-0 rounded-lg p-1 text-[var(--dark-toast-close-text)] hover:bg-[var(--dark-toast-close-hover-bg)] hover:text-[var(--dark-text-main)] transition-colors"
+      >
+        <X size={16} />
+      </button>
     </div>
   );
 };
@@ -160,11 +159,18 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   return (
     <ToastContext.Provider value={{ addToast, success, error, info, warning, confirm }}>
       {children}
+      {/* Regular toasts - top right */}
       <div className="fixed top-4 right-4 z-[100] flex flex-col gap-2 w-full max-w-sm pointer-events-none">
-        {toasts.map((toast) => (
+        {toasts.filter(t => t.type !== 'confirm').map((toast) => (
           <ToastItem key={toast.id} toast={toast} onRemove={removeToast} />
         ))}
       </div>
+      {/* Confirm toasts - centered with backdrop */}
+      {toasts.filter(t => t.type === 'confirm').map((toast) => (
+        <div key={toast.id} className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <ToastItem toast={toast} onRemove={removeToast} />
+        </div>
+      ))}
     </ToastContext.Provider>
   );
 };
